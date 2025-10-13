@@ -1,4 +1,4 @@
-package dev.mmatokovic.pantrio.item;
+package dev.mmatokovic.pantrio.item.record;
 
 public record ItemRequest(
         String name,
@@ -6,4 +6,4 @@ public record ItemRequest(
         String pictureUrl,
         String status,
         boolean disabled
-) {}
+) { }

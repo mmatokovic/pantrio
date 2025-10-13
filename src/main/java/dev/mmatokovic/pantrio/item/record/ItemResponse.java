@@ -1,4 +1,4 @@
-package dev.mmatokovic.pantrio.item;
+package dev.mmatokovic.pantrio.item.record;
 
 public record ItemResponse(
         Long id,
@@ -7,4 +7,4 @@ public record ItemResponse(
         String pictureUrl,
         String status,
         Boolean disabled
-) {}
+) { }

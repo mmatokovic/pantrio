@@ -1,9 +1,10 @@
+name: pantrio
 services:
   oracle-db:
     image: container-registry.oracle.com/database/express:21.3.0-xe
     restart: always
     environment:
-      - ORACLE_PWD=W0rkSuck5
+      ORACLE_PWD: W0rkSuck5
     ports:
       - '1521:1521'
     volumes:

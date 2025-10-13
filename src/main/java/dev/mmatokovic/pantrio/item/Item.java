@@ -5,9 +5,9 @@ import jakarta.persistence.*;
 @Entity
 @Table(name = "ITEMS")
 public class Item {
-    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-
     private String name;
     private String remarks;
     private String pictureUrl;

@@ -1,5 +1,7 @@
 package dev.mmatokovic.pantrio.item;
 
+import dev.mmatokovic.pantrio.item.record.ItemRequest;
+import dev.mmatokovic.pantrio.item.record.ItemResponse;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
@@ -23,16 +25,16 @@ public class ItemController {
 
     @PostMapping
     ResponseEntity<ItemResponse> create(@RequestBody ItemRequest request) {
-        ItemResponse created = service.createItem(request);
+        ItemResponse item = service.createItem(request);
 
         URI location = ServletUriComponentsBuilder
                 .fromCurrentRequest()
                 .path("/{id}")
-                .buildAndExpand(created.id())
+                .buildAndExpand(item.id())
                 .toUri();
 
         return ResponseEntity.created(location)
-                             .body(created);
+                             .body(item);
     }
 
     @GetMapping("/{id}")

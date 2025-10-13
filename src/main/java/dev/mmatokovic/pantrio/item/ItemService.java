@@ -1,35 +1,36 @@
 package dev.mmatokovic.pantrio.item;
 
-import jakarta.persistence.EntityNotFoundException;
+import dev.mmatokovic.pantrio.common.exception.NotFoundException;
+import dev.mmatokovic.pantrio.item.mapper.ItemMapper;
+import dev.mmatokovic.pantrio.item.record.ItemRequest;
+import dev.mmatokovic.pantrio.item.record.ItemResponse;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 public class ItemService {
     private final ItemRepository repo;
+    private final ItemMapper mapper;
 
-    public ItemService(ItemRepository repo) {
+    public ItemService(ItemRepository repo, ItemMapper mapper) {
         this.repo = repo;
+        this.mapper = mapper;
     }
 
     public List<ItemResponse> listItems() {
-        return repo.findAll()
-                .stream()
-                .map(ItemMapper::toResponse)
-                .collect(Collectors.toList());
+        return mapper.toResponseList(repo.findAll());
     }
 
     public ItemResponse getItem(Long id) {
         Item item = repo.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Item not found"));
-        return ItemMapper.toResponse(item);
+                .orElseThrow(NotFoundException::new);
+        return mapper.toResponse(item);
     }
 
     public ItemResponse createItem(ItemRequest request) {
-        Item item = ItemMapper.toEntity(request);
+        Item item = mapper.toEntity(request);
         Item saved = repo.save(item);
-        return ItemMapper.toResponse(saved);
+        return mapper.toResponse(saved);
     }
 }
