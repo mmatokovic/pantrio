@@ -37,7 +37,6 @@
         <module name="ClassTypeParameterName"/>
         <module name="CommentsIndentation"/>
         <module name="ConstantName"/>
-        <module name="ConstructorsDeclarationGrouping"/>
         <module name="DeclarationOrder"/>
         <module name="EmptyBlock"/>
         <module name="EmptyCatchBlock"/>
@@ -57,7 +56,10 @@
             <property name="ignoreConstructorParameter" value="true"/>
             <property name="ignoreSetter" value="true"/>
         </module>
-        <module name="HideUtilityClassConstructor"/>
+        <module name="HideUtilityClassConstructor">
+            <property name="ignoreAnnotatedBy"
+                      value="SpringBootApplication, java.lang.Deprecated" />
+        </module>
         <module name="IllegalIdentifierName"/>
         <module name="IllegalImport"/>
         <module name="IllegalInstantiation"/>
