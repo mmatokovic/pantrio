@@ -1,6 +1,15 @@
 package dev.mmatokovic.pantrio.item;
 
-import jakarta.persistence.*;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Table;
+import jakarta.persistence.Id;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Column;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
+
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "ITEMS")
@@ -14,6 +23,26 @@ public class Item {
     private String status;
     @Column(nullable = false)
     private Boolean disabled = false;
+    @CreationTimestamp
+    @Column(name = "CREATED_AT", updatable = false, nullable = false)
+    private LocalDateTime createdAt;
+
+    @UpdateTimestamp
+    @Column(name = "UPDATED_AT")
+    private LocalDateTime updatedAt;
+
+    public Item() {
+
+    }
+
+    public Item(Long id, String name, String remarks, String pictureUrl, String status, Boolean disabled) {
+        this.id = id;
+        this.name = name;
+        this.remarks = remarks;
+        this.pictureUrl = pictureUrl;
+        this.status = status;
+        this.disabled = disabled;
+    }
 
     public Long getId() {
         return id;
@@ -62,4 +91,13 @@ public class Item {
     public void setDisabled(Boolean disabled) {
         this.disabled = disabled;
     }
+
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
+    }
+
+    public LocalDateTime getUpdatedAt() {
+        return updatedAt;
+    }
+
 }

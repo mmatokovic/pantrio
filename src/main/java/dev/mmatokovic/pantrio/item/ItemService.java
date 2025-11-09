@@ -33,4 +33,22 @@ public class ItemService {
         Item saved = repo.save(item);
         return mapper.toResponse(saved);
     }
+
+    public ItemResponse updateItem(Long id, ItemRequest request) {
+        Item item = repo.findById(id)
+            .orElseThrow(NotFoundException::new);
+        item.setName(request.name());
+        item.setRemarks(request.remarks());
+        item.setPictureUrl(request.pictureUrl());
+        item.setStatus(request.status());
+        item.setDisabled(request.disabled());
+        Item updated = repo.save(item);
+        return mapper.toResponse(updated);
+    }
+
+    public void deleteItem(Long id) {
+        Item item = repo.findById(id)
+            .orElseThrow(NotFoundException::new);
+        repo.delete(item);
+    }
 }

@@ -9,5 +9,4 @@ public class PantrioApplication {
     public static void main(String[] args) {
         SpringApplication.run(PantrioApplication.class, args);
     }
-
 }

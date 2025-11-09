@@ -4,6 +4,7 @@ import dev.mmatokovic.pantrio.item.Item;
 import dev.mmatokovic.pantrio.item.record.ItemRequest;
 import dev.mmatokovic.pantrio.item.record.ItemResponse;
 import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
 
 import java.util.List;
 
@@ -14,5 +15,6 @@ public interface ItemMapper {
 
     List<ItemResponse> toResponseList(List<Item> items);
 
+    @Mapping(target = "id", ignore = true)
     Item toEntity(ItemRequest request);
 }

@@ -1,19 +1,26 @@
-FROM registry.access.redhat.com/ubi8/openjdk-21:latest AS builder
+FROM amazoncorretto:21-alpine-jdk AS builder
 
-WORKDIR /deployments
+WORKDIR /build
 
-RUN chgrp -R 0 /deployments && \
-    chmod -R g=u /deployments
+ARG JAR_FILE=target/*.jar
+COPY ${JAR_FILE} app.jar
 
-COPY target/*.jar app.jar
-RUN jar -xf app.jar
+RUN java -Djarmode=layertools -jar app.jar extract --destination extracted
 
-FROM registry.access.redhat.com/ubi8/openjdk-21-runtime:latest
+FROM amazoncorretto:21-alpine-jdk
 
-WORKDIR /home/jboss
+ENV SERVER_PORT=8080
 
-COPY --from=builder /deployments/app.jar .
+WORKDIR /app
 
-EXPOSE 8081
+COPY --from=builder /build/extracted/dependencies/ ./
+COPY --from=builder /build/extracted/spring-boot-loader/ ./
+COPY --from=builder /build/extracted/snapshot-dependencies/ ./
+COPY --from=builder /build/extracted/application/ ./
 
-ENTRYPOINT ["java", "-jar", "app.jar", "dev.mmatokovic.pantrio.PantrioApplication"]
+EXPOSE 8080
+
+HEALTHCHECK --interval=5s --timeout=3s --start-period=10s --retries=3 \
+    CMD wget --no-verbose --tries=1 --spider http://localhost:${SERVER_PORT}/actuator/health || exit 1
+
+ENTRYPOINT ["java", "org.springframework.boot.loader.launch.JarLauncher"]
