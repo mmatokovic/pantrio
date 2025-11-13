@@ -2,6 +2,11 @@ package dev.mmatokovic.pantrio.item;
 
 import dev.mmatokovic.pantrio.item.record.ItemRequest;
 import dev.mmatokovic.pantrio.item.record.ItemResponse;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import org.springdoc.core.annotations.ParameterObject;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -17,20 +22,27 @@ import java.net.URI;
 import java.util.List;
 
 @RestController
+@Tag(name = "Item")
 @RequestMapping("/items")
 public class ItemController {
-    private final ItemService service;
+    private final ItemServiceImpl service;
 
-    public ItemController(ItemService service) {
+    public ItemController(ItemServiceImpl service) {
         this.service = service;
     }
 
-    @GetMapping
-    ResponseEntity<List<ItemResponse>> index() {
-        return ResponseEntity.ok(service.listItems());
+    @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
+    ResponseEntity<List<ItemResponse>> index(
+            @ParameterObject @PageableDefault final Pageable pageable) {
+        final var result = service.listItems(pageable);
+        if (result.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+
+        return ResponseEntity.ok().body(result);
     }
 
-    @PostMapping
+    @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
     ResponseEntity<ItemResponse> create(@RequestBody ItemRequest request) {
         ItemResponse item = service.createItem(request);
 
@@ -44,12 +56,12 @@ public class ItemController {
                              .body(item);
     }
 
-    @GetMapping("/{id}")
+    @GetMapping(value = "/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
     ResponseEntity<ItemResponse> show(@PathVariable Long id) {
         return ResponseEntity.ok(service.getItem(id));
     }
 
-    @PutMapping("/{id}")
+    @PutMapping(value = "/{id}", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
     ResponseEntity<ItemResponse> update(@PathVariable Long id, @RequestBody ItemRequest request) {
         return ResponseEntity.ok(service.updateItem(id, request));
     }

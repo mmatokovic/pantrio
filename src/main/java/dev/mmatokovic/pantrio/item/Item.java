@@ -20,7 +20,6 @@ public class Item {
     private String name;
     private String remarks;
     private String pictureUrl;
-    private String status;
     @Column(nullable = false)
     private Boolean disabled = false;
     @CreationTimestamp
@@ -35,12 +34,11 @@ public class Item {
 
     }
 
-    public Item(Long id, String name, String remarks, String pictureUrl, String status, Boolean disabled) {
+    public Item(Long id, String name, String remarks, String pictureUrl, Boolean disabled) {
         this.id = id;
         this.name = name;
         this.remarks = remarks;
         this.pictureUrl = pictureUrl;
-        this.status = status;
         this.disabled = disabled;
     }
 
@@ -74,14 +72,6 @@ public class Item {
 
     public void setPictureUrl(String pictureUrl) {
         this.pictureUrl = pictureUrl;
-    }
-
-    public String getStatus() {
-        return status;
-    }
-
-    public void setStatus(String status) {
-        this.status = status;
     }
 
     public Boolean getDisabled() {

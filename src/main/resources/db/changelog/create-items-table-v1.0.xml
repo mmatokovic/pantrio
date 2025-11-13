@@ -15,8 +15,13 @@
             </column>
             <column name="remarks" type="VARCHAR2(4000)"/>
             <column name="picture_url" type="VARCHAR2(1024)"/>
-            <column name="status" type="VARCHAR2(50)"/>
             <column name="disabled" type="NUMBER(1,0)" defaultValueNumeric="0">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_at" type="TIMESTAMP" defaultValueComputed="CURRENT_TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_at" type="TIMESTAMP" defaultValueComputed="CURRENT_TIMESTAMP">
                 <constraints nullable="false"/>
             </column>
         </createTable>

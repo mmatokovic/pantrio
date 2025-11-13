@@ -5,6 +5,5 @@ public record ItemResponse(
         String name,
         String remarks,
         String pictureUrl,
-        String status,
         Boolean disabled
 ) { }
