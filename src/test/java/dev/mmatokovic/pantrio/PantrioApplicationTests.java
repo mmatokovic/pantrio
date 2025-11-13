@@ -8,7 +8,7 @@ import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 
 @SpringBootTest
 @Import(TestcontainersConfiguration.class)
-class PantrioApplicationTest {
+class PantrioApplicationTests {
 
     @Test
     void contextLoads() {

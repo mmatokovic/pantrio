@@ -3,8 +3,6 @@ package dev.mmatokovic.pantrio.web;
 import dev.mmatokovic.pantrio.item.ItemController;
 import dev.mmatokovic.pantrio.item.record.ItemResponse;
 import io.restassured.RestAssured;
-import io.restassured.filter.log.LogDetail;
-import io.restassured.response.Response;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -31,7 +29,6 @@ class ItemControllerIT {
     @BeforeEach
     void setUp() {
         jdbcTemplate.execute("TRUNCATE TABLE PANTRIO_TEST.ITEMS CASCADE");
-        jdbcTemplate.execute("TRUNCATE TABLE PANTRIO_TEST.STORAGE CASCADE");
 
         RestAssured.basePath = "/items";
         RestAssured.port = port;
@@ -43,18 +40,18 @@ class ItemControllerIT {
             "INSERT INTO items (id, name) VALUES (1, 'string')"
         );
 
-        Response response = RestAssured.given()
+        ItemResponse itemResponse = RestAssured.given()
             .auth().basic("user", "userpwd")
             .accept(MediaType.APPLICATION_JSON_VALUE)
             .when().get("/1")
-            .then().log().ifValidationFails(LogDetail.ALL)
-            .extract().response();
+            .then()
+            .statusCode(HttpStatus.OK.value())
+            .contentType(MediaType.APPLICATION_JSON_VALUE)
+            .extract()
+            .as(ItemResponse.class);
 
-        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK.value());
-        assertThat(response.getContentType()).isEqualTo(MediaType.APPLICATION_JSON_VALUE);
-
-        ItemResponse itemResponse = response.getBody().as(ItemResponse.class);
-        assertThat(itemResponse).isNotNull();
-        assertThat(itemResponse.name()).isEqualTo("string");
+        assertThat(itemResponse)
+            .isNotNull()
+            .extracting(ItemResponse::name).isEqualTo("string");
     }
 }
