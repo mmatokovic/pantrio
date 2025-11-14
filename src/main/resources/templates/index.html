@@ -1,82 +1,141 @@
-<!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
+<!DOCTYPE HTML>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
 <head>
-    <meta charset="UTF-8">
     <title>Pantrio</title>
-    <script src="https://unpkg.com/htmx.org@1.9.3"></script>
-    <script src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
-    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <script th:src="@{/htmx.min.js}"></script>
+    <script th:src="@{/tailwindcss.min.js}"></script>
 </head>
-<body class="bg-gray-50 p-6">
+<body>
+<main class="container">
+    <section>
+        <h1>Htmx Demo</h1>
+        <div id="parent-div"></div>
+        <button hx-post="/clicked"
+                hx-trigger="click"
+                hx-target="#parent-div"
+                hx-swap="outerHTML">
+            Click Me!
+        </button>
+    </section>
+    <section>
+        <div class="mx-auto max-w-3xl p-6">
+            <div class="space-y-2">
+                <details class="group [&amp;_summary::-webkit-details-marker]:hidden space-y-2" open="">
+                    <summary class="flex cursor-pointer items-center justify-between gap-4 rounded-lg border border-gray-200 bg-white px-4 py-3 font-medium text-gray-900 hover:bg-gray-50">
+                        <span>Team Settings</span>
 
-<h1 class="text-3xl font-bold text-center mb-6 text-indigo-600">Pantrio</h1>
+                        <svg class="size-5 shrink-0 transition-transform duration-300 group-open:-rotate-180" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                        </svg>
+                    </summary>
 
-<div class="space-y-6">
+                    <div class="space-y-2 pl-4">
+                        <details class="group/members [&amp;_summary::-webkit-details-marker]:hidden" open="">
+                            <summary class="flex cursor-pointer items-center justify-between gap-4 rounded-lg border border-gray-200 bg-gray-50 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100">
+                                <span>Members</span>
 
-    <!-- STORAGE AREAS -->
-    <div>
-        <h2 class="text-xl font-semibold mb-2">Storage Areas</h2>
-        <button
-            class="bg-pink-500 text-white px-4 py-2 rounded mb-2"
-            x-data @click="$dispatch('open-add-area-modal')">+ Add Area</button>
+                                <svg class="size-4 shrink-0 transition-transform duration-300 group-open/members:-rotate-180" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                </svg>
+                            </summary>
 
-        <div id="areasTable" hx-get="/areas" hx-trigger="load" hx-target="#areasTable" hx-swap="innerHTML">
-            <!-- Areas will be loaded here -->
-        </div>
-    </div>
+                            <div class="p-4">
+                                <p class="text-gray-700">Lorem, ipsum dolor sit amet consectetur adipisicing elit. Deserunt similique, quae hic dicta quo facere facilis praesentium a sunt, est quia pariatur nam, modi aut minus iste odio consectetur molestias iusto cupiditate ullam laborum veniam quos officia. Quos, temporibus perspiciatis!</p>
+                            </div>
+                        </details>
 
-    <!-- ITEMS -->
-    <div>
-        <h2 class="text-xl font-semibold mb-2">Items</h2>
-        <div id="itemsTable" hx-get="/items" hx-trigger="load" hx-target="#itemsTable" hx-swap="innerHTML">
-            <!-- Items will be loaded here -->
-        </div>
-    </div>
+                        <details class="group/roles [&amp;_summary::-webkit-details-marker]:hidden">
+                            <summary class="flex cursor-pointer items-center justify-between gap-4 rounded-lg border border-gray-200 bg-gray-50 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100">
+                                <span>Roles &amp; Permissions</span>
 
-</div>
+                                <svg class="size-4 shrink-0 transition-transform duration-300 group-open/roles:-rotate-180" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                </svg>
+                            </summary>
 
-<!-- ADD AREA MODAL -->
-<div
-    x-data="{open:false}"
-    x-on:open-add-area-modal.window="open=true"
-    x-show="open"
-    class="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50"
-    style="display:none;"
->
-    <div class="bg-white rounded-lg p-6 w-96" @click.away="open=false">
-        <h3 class="text-lg font-bold mb-4">New Storage Area</h3>
-        <form hx-post="/areas" hx-target="#areasTable" hx-swap="innerHTML" @submit="open=false">
-            <input type="text" name="name" placeholder="Area Name" class="w-full border p-2 mb-4 rounded" required>
-            <div class="text-right space-x-2">
-                <button type="button" @click="open=false" class="px-4 py-2 border rounded">Cancel</button>
-                <button type="submit" class="px-4 py-2 bg-blue-500 text-white rounded">Add</button>
+                            <div class="p-4">
+                                <p class="text-gray-700">Lorem, ipsum dolor sit amet consectetur adipisicing elit. Deserunt similique, quae hic dicta quo facere facilis praesentium a sunt, est quia pariatur nam, modi aut minus iste odio consectetur molestias iusto cupiditate ullam laborum veniam quos officia. Quos, temporibus perspiciatis!</p>
+                            </div>
+                        </details>
+                    </div>
+                </details>
+
+                <details class="group [&amp;_summary::-webkit-details-marker]:hidden space-y-2">
+                    <summary class="flex cursor-pointer items-center justify-between gap-4 rounded-lg border border-gray-200 bg-white px-4 py-3 font-medium text-gray-900 hover:bg-gray-50">
+                        <span>Integration Settings</span>
+
+                        <svg class="size-5 shrink-0 transition-transform duration-300 group-open:-rotate-180" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                        </svg>
+                    </summary>
+
+                    <div class="space-y-2 pl-4">
+                        <details class="group/keys [&amp;_summary::-webkit-details-marker]:hidden">
+                            <summary class="flex cursor-pointer items-center justify-between gap-4 rounded-lg border border-gray-200 bg-gray-50 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100">
+                                <span>API Keys</span>
+
+                                <svg class="size-4 shrink-0 transition-transform duration-300 group-open/keys:-rotate-180" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                </svg>
+                            </summary>
+
+                            <div class="bg-white p-4">
+                                <div class="flex items-center justify-between px-3 py-2">
+                                    <span class="text-sm text-gray-700"> Max price is $600 </span>
+
+                                </div>
+                                <div class="flex flex-1 items-center justify-end gap-2">
+                                    <div>
+                                        <label for="Quantity" class="sr-only"> Quantity </label>
+
+                                        <div class="flex items-center gap-1">
+                                            <button type="button" class="size-10 leading-10 text-gray-600 transition hover:opacity-75">
+                                                −
+                                            </button>
+
+                                            <input type="number" id="Quantity" value="1" class="h-10 w-16 rounded-sm border-gray-200 text-center [-moz-appearance:textfield] sm:text-sm [&amp;::-webkit-inner-spin-button]:m-0 [&amp;::-webkit-inner-spin-button]:appearance-none [&amp;::-webkit-outer-spin-button]:m-0 [&amp;::-webkit-outer-spin-button]:appearance-none">
+
+                                            <button type="button" class="size-10 leading-10 text-gray-600 transition hover:opacity-75">
+                                                +
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    <button class="text-gray-600 transition hover:text-red-600">
+                                        <span class="sr-only">Remove item</span>
+
+                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-4">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0"></path>
+                                        </svg>
+                                    </button>
+                                </div>
+                                <div class="flex items-center gap-3 p-3">
+                                    <label for="MinPrice">
+                                        <span class="text-sm text-gray-700"> Min </span>
+
+                                        <input type="number" id="MinPrice" value="0" class="mt-0.5 w-full rounded border-gray-300 shadow-sm sm:text-sm" />
+                                    </label>
+
+                                    <label for="MaxPrice">
+                                        <span class="text-sm text-gray-700"> Max </span>
+
+                                        <input type="number" id="MaxPrice" value="600" class="mt-0.5 w-full rounded border-gray-300 shadow-sm sm:text-sm" />
+                                    </label>
+                                </div>
+                            </div>
+                        </details>
+                    </div>
+                </details>
             </div>
-        </form>
-    </div>
-</div>
-
-<!-- ADD ITEM MODAL -->
-<div
-    x-data="{open:false}"
-    x-on:open-add-item-modal.window="open=true"
-    x-show="open"
-    class="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50"
-    style="display:none;"
->
-    <div class="bg-white rounded-lg p-6 w-96" @click.away="open=false">
-        <h3 class="text-lg font-bold mb-4">Add Item to <span x-text="areaName"></span></h3>
-        <form hx-post="/items" hx-target="#itemsTable" hx-swap="innerHTML" @submit="open=false">
-            <input type="hidden" name="storageId" x-model="storageId">
-            <input type="text" name="name" placeholder="Item Name" class="w-full border p-2 mb-2 rounded" required>
-            <input type="number" name="quantity" placeholder="Quantity" class="w-full border p-2 mb-2 rounded" required>
-            <input type="text" name="unit" placeholder="Unit" class="w-full border p-2 mb-4 rounded" required>
-            <div class="text-right space-x-2">
-                <button type="button" @click="open=false" class="px-4 py-2 border rounded">Cancel</button>
-                <button type="submit" class="px-4 py-2 bg-blue-500 text-white rounded">Add</button>
-            </div>
-        </form>
-    </div>
-</div>
-
+            <span class="flex items-center">
+            <span class="h-px flex-1 bg-linear-to-r from-transparent to-gray-300"></span>
+            <span class="shrink-0 px-4 text-gray-900">Title goes here</span>
+            <span class="h-px flex-1 bg-linear-to-l from-transparent to-gray-300"></span>
+            </span>
+        </div>
+    </section>
+</main>
 </body>
 </html>
