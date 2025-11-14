@@ -25,3 +25,7 @@ max_line_length = off
 
 [*.xml]
 max_line_length = off
+
+[*.html]
+indent_style = space
+indent_size = 2
