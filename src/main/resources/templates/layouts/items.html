@@ -1,0 +1,20 @@
+<div class="space-y-2">
+    <div th:each="item : ${items}" class="bg-white rounded shadow p-4">
+        <button
+            class="w-full text-left flex justify-between items-center font-semibold"
+            x-data @click="$nextTick(() => document.getElementById('item-'+[[${item.id}]]).classList.toggle('hidden'))">
+            <span th:text="${item.name}">Item Name</span>
+            <span>▼</span>
+        </button>
+        <div id="item-" th:attr="id='item-' + ${item.id}" class="hidden mt-2 space-y-2">
+            <div th:each="inst : ${item.instances}" class="flex justify-between items-center p-2 border rounded">
+                <span th:text="${inst.area.name}">Area</span>
+                <span th:text="${inst.quantity}">Qty</span>
+            </div>
+            <div class="flex justify-between p-2 font-semibold border-t mt-2">
+                <span>Total</span>
+                <span th:text="${#numbers.sum(item.instances, 'quantity')}">0</span>
+            </div>
+        </div>
+    </div>
+</div>

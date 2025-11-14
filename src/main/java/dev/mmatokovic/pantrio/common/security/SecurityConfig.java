@@ -28,6 +28,7 @@ public class SecurityConfig {
                 authz -> {
                     authz.requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").hasRole("ADMIN");
                     authz.requestMatchers("/actuator/health", "/actuator/health/**").permitAll();
+                    authz.requestMatchers("/actuator/prometheus").hasRole("METRICS");
                     authz.anyRequest().authenticated();
                 }
             )
@@ -42,12 +43,19 @@ public class SecurityConfig {
 
     @Bean
     public UserDetailsService userDetailsService() {
-        UserDetails user = User.builder()
+        UserDetails admin = User.builder()
             .username("user")
             .password(passwordEncoder().encode("userpwd"))
             .roles("ADMIN")
             .build();
-        return new InMemoryUserDetailsManager(user);
+
+        UserDetails prometheus = User.builder()
+            .username("prometheus")
+            .password(passwordEncoder().encode("prometheus"))
+            .roles("METRICS")
+            .build();
+
+        return new InMemoryUserDetailsManager(prometheus, admin);
     }
     //TODO: Implement proper user management with database storage
 }

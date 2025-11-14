@@ -1,8 +1,7 @@
-package dev.mmatokovic.pantrio.item.mapper;
+package dev.mmatokovic.pantrio.item;
 
-import dev.mmatokovic.pantrio.item.Item;
-import dev.mmatokovic.pantrio.item.record.ItemRequest;
-import dev.mmatokovic.pantrio.item.record.ItemResponse;
+import dev.mmatokovic.pantrio.item.dto.ItemRequest;
+import dev.mmatokovic.pantrio.item.dto.ItemResponse;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 

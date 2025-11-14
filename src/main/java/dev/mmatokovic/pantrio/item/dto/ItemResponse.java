@@ -1,4 +1,4 @@
-package dev.mmatokovic.pantrio.item.record;
+package dev.mmatokovic.pantrio.item.dto;
 
 public record ItemResponse(
         Long id,

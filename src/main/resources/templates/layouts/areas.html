@@ -1,0 +1,24 @@
+<div class="space-y-2">
+    <div th:each="area : ${areas}" class="bg-white rounded shadow p-4">
+        <button
+            class="w-full text-left flex justify-between items-center font-semibold"
+            x-data @click="$nextTick(() => document.getElementById('area-'+[[${area.id}]]).classList.toggle('hidden'))">
+            <span th:text="${area.name}">Area Name</span>
+            <span>▼</span>
+        </button>
+        <div id="area-" th:attr="id='area-' + ${area.id}" class="hidden mt-2 space-y-2">
+            <div th:each="inst : ${area.instances}" class="flex justify-between items-center p-2 border rounded">
+                <span th:text="${inst.item.name}">Item</span>
+                <form hx-post="/items/update-qty" hx-target="#areasTable" hx-swap="innerHTML" class="flex space-x-2">
+                    <input type="hidden" name="itemId" th:value="${inst.id}">
+                    <input type="number" name="quantity" th:value="${inst.quantity}" class="w-20 border rounded p-1">
+                    <button type="submit" class="px-2 py-1 bg-blue-500 text-white rounded">Update</button>
+                </form>
+            </div>
+            <button
+                class="px-2 py-1 bg-green-500 text-white rounded mt-2"
+                x-data @click="$dispatch('open-add-item-modal', {storageId:[[${area.id}]], areaName:'[[${area.name}]]'})">+ Add Item
+            </button>
+        </div>
+    </div>
+</div>

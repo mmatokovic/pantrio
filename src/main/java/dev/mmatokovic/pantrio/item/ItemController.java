@@ -1,7 +1,7 @@
 package dev.mmatokovic.pantrio.item;
 
-import dev.mmatokovic.pantrio.item.record.ItemRequest;
-import dev.mmatokovic.pantrio.item.record.ItemResponse;
+import dev.mmatokovic.pantrio.item.dto.ItemRequest;
+import dev.mmatokovic.pantrio.item.dto.ItemResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.data.domain.Pageable;
@@ -34,12 +34,7 @@ public class ItemController {
     @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
     ResponseEntity<List<ItemResponse>> index(
             @ParameterObject @PageableDefault final Pageable pageable) {
-        final var result = service.listItems(pageable);
-        if (result.isEmpty()) {
-            return ResponseEntity.notFound().build();
-        }
-
-        return ResponseEntity.ok().body(result);
+        return ResponseEntity.ok(service.listItems(pageable));
     }
 
     @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
@@ -52,8 +47,7 @@ public class ItemController {
                 .buildAndExpand(item.id())
                 .toUri();
 
-        return ResponseEntity.created(location)
-                             .body(item);
+        return ResponseEntity.created(location).build();
     }
 
     @GetMapping(value = "/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
@@ -63,7 +57,8 @@ public class ItemController {
 
     @PutMapping(value = "/{id}", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
     ResponseEntity<ItemResponse> update(@PathVariable Long id, @RequestBody ItemRequest request) {
-        return ResponseEntity.ok(service.updateItem(id, request));
+        service.updateItem(id, request);
+        return ResponseEntity.noContent().build();
     }
 
     @DeleteMapping("/{id}")

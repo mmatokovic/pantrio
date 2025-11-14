@@ -1,7 +1,8 @@
-package dev.mmatokovic.pantrio.web;
+package dev.mmatokovic.pantrio.rest;
 
+import dev.mmatokovic.pantrio.IntegrationTest;
 import dev.mmatokovic.pantrio.item.ItemController;
-import dev.mmatokovic.pantrio.item.record.ItemResponse;
+import dev.mmatokovic.pantrio.item.dto.ItemResponse;
 import io.restassured.RestAssured;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -9,16 +10,16 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.context.annotation.Import;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
 import org.springframework.jdbc.core.JdbcTemplate;
-import dev.mmatokovic.pantrio.TestcontainersConfiguration;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.springframework.boot.test.context.SpringBootTest.WebEnvironment.RANDOM_PORT;
+import static org.springframework.http.HttpStatus.OK;
+import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-@Import({TestcontainersConfiguration.class, ItemController.class})
-class ItemControllerIT {
+@SpringBootTest(webEnvironment = RANDOM_PORT) // starts a full Tomcat in memory
+@Import(ItemController.class)
+class ItemControllerIT extends IntegrationTest {
 
     @LocalServerPort
     private int port;
@@ -42,11 +43,11 @@ class ItemControllerIT {
 
         ItemResponse itemResponse = RestAssured.given()
             .auth().basic("user", "userpwd")
-            .accept(MediaType.APPLICATION_JSON_VALUE)
+            .accept(APPLICATION_JSON_VALUE)
             .when().get("/1")
             .then()
-            .statusCode(HttpStatus.OK.value())
-            .contentType(MediaType.APPLICATION_JSON_VALUE)
+            .statusCode(OK.value())
+            .contentType(APPLICATION_JSON_VALUE)
             .extract()
             .as(ItemResponse.class);
 

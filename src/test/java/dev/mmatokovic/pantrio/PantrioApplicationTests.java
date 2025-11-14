@@ -7,7 +7,6 @@ import org.springframework.context.annotation.Import;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 
 @SpringBootTest
-@Import(TestcontainersConfiguration.class)
 class PantrioApplicationTests {
 
     @Test

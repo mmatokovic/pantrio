@@ -2,6 +2,8 @@
 
 One-stop comestibles management solution.
 
+CQRS in API Level
+
 ## Maven
 
 ```shell

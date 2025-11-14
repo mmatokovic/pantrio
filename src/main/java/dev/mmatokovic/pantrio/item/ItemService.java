@@ -1,7 +1,7 @@
 package dev.mmatokovic.pantrio.item;
 
-import dev.mmatokovic.pantrio.item.record.ItemRequest;
-import dev.mmatokovic.pantrio.item.record.ItemResponse;
+import dev.mmatokovic.pantrio.item.dto.ItemRequest;
+import dev.mmatokovic.pantrio.item.dto.ItemResponse;
 import org.springframework.data.domain.Pageable;
 
 import java.util.List;

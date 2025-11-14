@@ -24,6 +24,7 @@
         <springdoc.version>2.8.14</springdoc.version>
         <liquibase.version>5.0.1</liquibase.version>
         <ojdbc.version>23.26.0.0.0</ojdbc.version>
+        <openapi.diff.version>2.1.5</openapi.diff.version>
     </properties>
     <dependencies>
         <dependency>
@@ -72,6 +73,11 @@
             <version>${springdoc.version}</version>
         </dependency>
         <dependency>
+            <groupId>org.openapitools.openapidiff</groupId>
+            <artifactId>openapi-diff-core</artifactId>
+            <version>${openapi.diff.version}</version>
+        </dependency>
+        <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>
             <scope>test</scope>
@@ -105,6 +111,19 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-devtools</artifactId>
             <optional>true</optional>
+        </dependency>
+        <dependency>
+            <groupId>io.opentelemetry</groupId>
+            <artifactId>opentelemetry-exporter-zipkin</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.micrometer</groupId>
+            <artifactId>micrometer-registry-prometheus</artifactId>
+            <scope>runtime</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.micrometer</groupId>
+            <artifactId>micrometer-tracing-bridge-otel</artifactId>
         </dependency>
     </dependencies>
     <build>
