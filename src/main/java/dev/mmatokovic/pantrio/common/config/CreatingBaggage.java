@@ -9,11 +9,11 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseBodyAdvice;
 
 @RestControllerAdvice
-public class AddTraceIdHeaderToResponses implements ResponseBodyAdvice<Object> {
+public class CreatingBaggage implements ResponseBodyAdvice<Object> {
 
     private final Tracer tracer;
 
-    public AddTraceIdHeaderToResponses(Tracer tracer) {
+    public CreatingBaggage(Tracer tracer) {
         this.tracer = tracer;
     }
 
