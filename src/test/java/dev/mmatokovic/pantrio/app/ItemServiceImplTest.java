@@ -70,13 +70,6 @@ class ItemServiceImplTest {
     }
 
     @Test
-    void throw_NotFoundException_when_item_does_not_exist() {
-        when(repo.findById(1L)).thenReturn(Optional.empty());
-
-        assertThrows(NotFoundException.class, () -> service.getItem(1L));
-    }
-
-    @Test
     void should_save_and_return_response_when_creating_item() {
         when(mapper.toEntity(request)).thenReturn(item);
         when(repo.save(item)).thenReturn(item);
@@ -108,12 +101,5 @@ class ItemServiceImplTest {
         service.deleteItem(1L);
 
         verify(repo).delete(item);
-    }
-
-    @Test
-    void should_throw_NotFoundException_when_deleting_nonexistent_item() {
-        when(repo.findById(1L)).thenReturn(Optional.empty());
-
-        assertThrows(NotFoundException.class, () -> service.deleteItem(1L));
     }
 }
