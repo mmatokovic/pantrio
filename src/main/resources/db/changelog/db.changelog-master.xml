@@ -7,4 +7,5 @@
 
     <include file="create-items-table-v1.0.xml" relativeToChangelogFile="true"/>
     <include file="create-storage-table-v1.0.xml" relativeToChangelogFile="true"/>
+    <include file="create-item-instance-table-v1.0.xml" relativeToChangelogFile="true"/>
 </databaseChangeLog>

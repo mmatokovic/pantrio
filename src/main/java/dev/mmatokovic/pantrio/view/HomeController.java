@@ -24,7 +24,13 @@ public class HomeController {
     @GetMapping(value = "/htmx/storages", produces = MediaType.TEXT_HTML_VALUE)
     public String listStorages(Model model) {
         model.addAttribute("storages", service.listStorages(Pageable.unpaged()));
-        return "fragments/storage-list :: list";
+        return "fragments/list-storages :: list";
+    }
+
+    @GetMapping("/htmx/storages/create")
+    public String createStorage(Model model) {
+        model.addAttribute("storage");
+        return "fragments/create-storage :: create";
     }
 
     @GetMapping("/htmx/storages/{id}/edit")
