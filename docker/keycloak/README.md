@@ -1,23 +1,5 @@
 ## Spring Boot OAuth/OpenID Connect with Keycloak
 
-## Setup
-- Installed Docker Desktop
-- Start Keycloak in a docker by running in terminal:
-
-  ```
-  .\docker/keycloak/start-docker.bat
-  ```
-
-- Access KeyCloak admin console at localhost:8180
-    - login with god/god
-- add realm, importing realm-export.json
-- create roles (if not present): USER and ADMIN
-- add users:
-    - user, with password 'user' and role USER
-    - admin, with password 'admin' and role ADMIN
-- Access localhost:8080 and expect to be redirected to :8180
-
-
 ## Propagate attributes from Keycloak user into the token
 - Users > admin > Attributes > add key="language", value="Java"
 - Client Scopes > create >

@@ -1,23 +1,35 @@
 package dev.mmatokovic.pantrio.view;
 
+import dev.mmatokovic.pantrio.storage.StorageServiceImpl;
+import org.springframework.data.domain.Pageable;
+import org.springframework.http.MediaType;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-
-import java.time.LocalDateTime;
+import org.springframework.web.bind.annotation.PathVariable;
 
 @Controller
 public class HomeController {
+    private final StorageServiceImpl service;
+
+    public HomeController(StorageServiceImpl service) {
+        this.service = service;
+    }
 
     @GetMapping("/")
     public String home() {
         return "index";
     }
 
-    @PostMapping("/clicked")
-    public String clicked(Model model) {
-        model.addAttribute("now", LocalDateTime.now().toString());
-        return "fragments/clicked :: result";
+    @GetMapping(value = "/htmx/storages", produces = MediaType.TEXT_HTML_VALUE)
+    public String listStorages(Model model) {
+        model.addAttribute("storages", service.listStorages(Pageable.unpaged()));
+        return "fragments/storage-list :: list";
+    }
+
+    @GetMapping("/htmx/storages/{id}/edit")
+    public String edit(@PathVariable Long id, Model model) {
+        model.addAttribute("storage", service.getStorage(id));
+        return "fragments/storage-edit :: editForm";
     }
 }

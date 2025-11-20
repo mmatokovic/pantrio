@@ -12,24 +12,37 @@ services:
     container_name: oracle-db
 
   zipkin:
-      image: openzipkin/zipkin
-      ports:
-          - "9411:9411"
-      container_name: zipkin
+    image: openzipkin/zipkin:latest
+    ports:
+        - '9411:9411'
+    container_name: zipkin
 
   prometheus:
-      image: prom/prometheus:latest
-      ports:
-          - 9090:9090
-      volumes:
-          - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
-      container_name: prometheus
+    image: prom/prometheus:latest
+    ports:
+        - '9090:9090'
+    volumes:
+        - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+    container_name: prometheus
 
   grafana:
-      image: grafana/grafana-oss:latest
-      ports:
-          - 3000:3000
-      volumes:
-          - ./grafana/grafana.ini:/etc/grafana/grafana.ini
-          - ./grafana/provisioning/:/etc/grafana/provisioning/
-      container_name: grafana
+    image: grafana/grafana-oss:latest
+    ports:
+        - '3000:3000'
+    volumes:
+        - ./grafana/grafana.ini:/etc/grafana/grafana.ini
+        - ./grafana/provisioning/:/etc/grafana/provisioning/
+    container_name: grafana
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:latest
+    environment:
+        KC_BOOTSTRAP_ADMIN_USERNAME: god
+        KC_BOOTSTRAP_ADMIN_PASSWORD: god
+        JAVA_OPTS_APPEND: -Dkeycloak.profile.feature.upload_scripts=enabled
+    command: start-dev --import-realm
+    ports:
+        - '8180:8080'
+    volumes:
+        - ./keycloak/realm-export.json:/opt/keycloak/data/import/realm-export.json
+    container_name: keycloak
