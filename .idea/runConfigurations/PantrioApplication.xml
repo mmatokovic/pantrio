@@ -1,13 +1,13 @@
 <component name="ProjectRunConfigurationManager">
   <configuration default="false" name="PantrioApplication" type="SpringBootApplicationConfigurationType" factoryName="Spring Boot" nameIsGenerated="true">
+    <envs>
+      <env name="SERVER_PORT" value="8081" />
+    </envs>
     <option name="envFilePaths">
       <option value="$PROJECT_DIR$/.env" />
     </option>
     <module name="pantrio" />
     <target name="@@@LOCAL@@@" />
-    <selectedOptions>
-      <option name="environmentVariables" />
-    </selectedOptions>
     <option name="SPRING_BOOT_MAIN_CLASS" value="dev.mmatokovic.pantrio.PantrioApplication" />
     <method v="2">
       <option name="Make" enabled="true" />

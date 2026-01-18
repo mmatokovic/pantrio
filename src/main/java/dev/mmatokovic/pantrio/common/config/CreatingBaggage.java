@@ -33,4 +33,6 @@ public class CreatingBaggage implements ResponseBodyAdvice<Object> {
 
         return body;
     }
+
+    //TODO: Remove OTLP dependency
 }
