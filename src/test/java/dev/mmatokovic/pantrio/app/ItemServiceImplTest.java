@@ -1,12 +1,12 @@
 package dev.mmatokovic.pantrio.app;
 
-import dev.mmatokovic.pantrio.common.exception.NotFoundException;
 import dev.mmatokovic.pantrio.item.Item;
 import dev.mmatokovic.pantrio.item.ItemRepository;
 import dev.mmatokovic.pantrio.item.ItemServiceImpl;
 import dev.mmatokovic.pantrio.item.ItemMapper;
 import dev.mmatokovic.pantrio.item.dto.ItemRequest;
 import dev.mmatokovic.pantrio.item.dto.ItemResponse;
+import jakarta.persistence.EntityNotFoundException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
@@ -66,7 +66,7 @@ class ItemServiceImplTest {
     void should_return_item_response_when_item_exists() {
         when(repo.findById(1L)).thenReturn(Optional.empty());
 
-        assertThrows(NotFoundException.class, () -> service.getItem(1L));
+        assertThrows(EntityNotFoundException.class, () -> service.getItem(1L));
     }
 
     @Test

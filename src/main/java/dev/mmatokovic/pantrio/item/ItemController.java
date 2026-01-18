@@ -3,6 +3,7 @@ package dev.mmatokovic.pantrio.item;
 import dev.mmatokovic.pantrio.item.dto.ItemRequest;
 import dev.mmatokovic.pantrio.item.dto.ItemResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
@@ -38,7 +39,8 @@ public class ItemController {
     }
 
     @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
-    ResponseEntity<ItemResponse> create(@RequestBody ItemRequest request) {
+    ResponseEntity<ItemResponse> create(
+        @Valid @RequestBody ItemRequest request) {
         ItemResponse item = service.createItem(request);
 
         URI location = ServletUriComponentsBuilder

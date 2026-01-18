@@ -26,8 +26,8 @@ public class CreatingBaggage implements ResponseBodyAdvice<Object> {
     public Object beforeBodyWrite(Object body, MethodParameter returnType, MediaType selectedContentType,
                                   Class selectedConverterType, ServerHttpRequest request, ServerHttpResponse response) {
 
-        String traceId = tracer.currentSpan().context().traceId();
-        if (traceId != null) {
+        if (tracer.currentSpan() != null) {
+            String traceId = tracer.currentSpan().context().traceId();
             response.getHeaders().add("trace-id", traceId);
         }
 

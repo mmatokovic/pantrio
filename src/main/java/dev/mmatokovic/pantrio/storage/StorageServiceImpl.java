@@ -1,8 +1,8 @@
 package dev.mmatokovic.pantrio.storage;
 
-import dev.mmatokovic.pantrio.common.exception.NotFoundException;
 import dev.mmatokovic.pantrio.storage.dto.StorageRequest;
 import dev.mmatokovic.pantrio.storage.dto.StorageResponse;
+import jakarta.persistence.EntityNotFoundException;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
@@ -26,7 +26,7 @@ public class StorageServiceImpl implements StorageService {
     @Override
     public StorageResponse getStorage(Long id) {
         Storage storage = repo.findById(id)
-            .orElseThrow(() -> new NotFoundException("Storage " + id + " not found"));
+            .orElseThrow(() -> new EntityNotFoundException("Storage " + id + " not found"));
         return mapper.toResponse(storage);
     }
 
@@ -40,7 +40,7 @@ public class StorageServiceImpl implements StorageService {
     @Override
     public StorageResponse updateStorage(Long id, StorageRequest request) {
         Storage storage = repo.findById(id)
-            .orElseThrow(() -> new NotFoundException("Storage " + id + " not found"));
+            .orElseThrow(() -> new EntityNotFoundException("Storage " + id + " not found"));
         storage.setName(request.name());
         storage.setDescription(request.description());
         storage.setDisabled(request.disabled());
@@ -51,7 +51,7 @@ public class StorageServiceImpl implements StorageService {
     @Override
     public void deleteStorage(Long id) {
         Storage storage = repo.findById(id)
-            .orElseThrow(() -> new NotFoundException("Storage " + id + " not found"));
+            .orElseThrow(() -> new EntityNotFoundException("Storage " + id + " not found"));
         repo.delete(storage);
     }
 

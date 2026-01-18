@@ -5,6 +5,4 @@ public record StorageResponse(
     String name,
     String description,
     boolean disabled
-) {
-
-}
+) { }

@@ -30,6 +30,7 @@ import static dev.mmatokovic.pantrio.common.logging.HttpLoggingUtils.LOG_ITEM_DE
 @Component
 public class HttpLoggingFilter extends OncePerRequestFilter {
 
+    @SuppressWarnings("checkstyle:ConstantName")
     private static final Logger log;
 
     static {
@@ -60,7 +61,7 @@ public class HttpLoggingFilter extends OncePerRequestFilter {
     protected void doFilterInternal(@NonNull HttpServletRequest request,
                                     @NonNull HttpServletResponse response,
                                     FilterChain filterChain) throws ServletException, IOException {
-        final var requestWrapper = new ContentCachingRequestWrapper(request);
+        final var requestWrapper = new ContentCachingRequestWrapper(request, 1024 * 1024);
         final var responseWrapper = new ContentCachingResponseWrapper(response);
         final var requestId = getUniqueIdentifier(requestWrapper);
         final var httpMethod = request.getMethod();

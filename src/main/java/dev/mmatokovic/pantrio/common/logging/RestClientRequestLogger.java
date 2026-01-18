@@ -28,6 +28,7 @@ import static dev.mmatokovic.pantrio.common.logging.HttpLoggingUtils.LOG_ITEM_DE
 @Component
 public class RestClientRequestLogger implements ClientHttpRequestInterceptor {
 
+    @SuppressWarnings("checkstyle:ConstantName")
     private static final Logger log;
 
     static {

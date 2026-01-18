@@ -1,4 +1,4 @@
-FROM amazoncorretto:21-alpine-jdk AS builder
+FROM eclipse-temurin:25-jdk-alpine AS builder
 
 WORKDIR /build
 
@@ -7,9 +7,7 @@ COPY ${JAR_FILE} app.jar
 
 RUN java -Djarmode=layertools -jar app.jar extract --destination extracted
 
-FROM amazoncorretto:21-alpine-jdk
-
-ENV SERVER_PORT=8080
+FROM eclipse-temurin:25-jre-alpine
 
 WORKDIR /app
 
@@ -21,6 +19,6 @@ COPY --from=builder /build/extracted/application/ ./
 EXPOSE 8080
 
 HEALTHCHECK --interval=5s --timeout=3s --start-period=10s --retries=3 \
-    CMD wget --no-verbose --tries=1 --spider http://localhost:${SERVER_PORT}/actuator/health || exit 1
+    CMD wget --no-verbose --tries=1 --spider http://localhost:8080/actuator/health || exit 1
 
-ENTRYPOINT ["java", "org.springframework.boot.loader.launch.JarLauncher"]
+ENTRYPOINT ["sh", "-c", "exec java $JAVA_OPTS org.springframework.boot.loader.launch.JarLauncher"]

@@ -1,28 +1,23 @@
 package dev.mmatokovic.pantrio.rest;
 
-import dev.mmatokovic.pantrio.IntegrationTest;
-import dev.mmatokovic.pantrio.item.ItemController;
+
+import dev.mmatokovic.pantrio.BaseIntegrationTest;
 import dev.mmatokovic.pantrio.item.dto.ItemResponse;
-import io.restassured.RestAssured;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.web.server.LocalServerPort;
-import org.springframework.context.annotation.Import;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.security.test.context.support.WithMockUser;
+import org.springframework.test.web.servlet.client.RestTestClient;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.springframework.boot.test.context.SpringBootTest.WebEnvironment.RANDOM_PORT;
-import static org.springframework.http.HttpStatus.OK;
-import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
+import static org.springframework.http.MediaType.APPLICATION_JSON;
 
-@SpringBootTest(webEnvironment = RANDOM_PORT) // starts a full Tomcat in memory
-@Import(ItemController.class)
-class ItemControllerIT extends IntegrationTest {
+@WithMockUser(roles = "USER")
+class ItemControllerIT extends BaseIntegrationTest {
 
-    @LocalServerPort
-    private int port;
+    @Autowired
+    RestTestClient rest;
 
     @Autowired
     private JdbcTemplate jdbcTemplate;
@@ -30,9 +25,6 @@ class ItemControllerIT extends IntegrationTest {
     @BeforeEach
     void setUp() {
         jdbcTemplate.execute("TRUNCATE TABLE PANTRIO_TEST.ITEMS CASCADE");
-
-        RestAssured.basePath = "/items";
-        RestAssured.port = port;
     }
 
     @Test
@@ -41,18 +33,21 @@ class ItemControllerIT extends IntegrationTest {
             "INSERT INTO items (id, name) VALUES (1, 'string')"
         );
 
-        ItemResponse itemResponse = RestAssured.given()
-            .auth().basic("user", "userpwd")
-            .accept(APPLICATION_JSON_VALUE)
-            .when().get("/1")
-            .then()
-            .statusCode(OK.value())
-            .contentType(APPLICATION_JSON_VALUE)
-            .extract()
-            .as(ItemResponse.class);
+        ItemResponse itemResponse =
+            rest.get()
+                .uri("/items/{id}", 1)
+                .headers(headers -> headers.setBasicAuth("user", "userpwd"))
+                .accept(APPLICATION_JSON)
+                .exchange()
+                .expectStatus().isOk()
+                .expectBody(ItemResponse.class)
+                .returnResult()
+                .getResponseBody();
 
         assertThat(itemResponse)
             .isNotNull()
-            .extracting(ItemResponse::name).isEqualTo("string");
+            .extracting(ItemResponse::name)
+            .isEqualTo("string");
     }
 }
+

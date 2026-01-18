@@ -9,6 +9,7 @@ import java.util.List;
 
 @Mapper(componentModel = "spring")
 public interface StorageMapper {
+
     StorageResponse toResponse(Storage storage);
 
     List<StorageResponse> toResponseList(List<Storage> storages);

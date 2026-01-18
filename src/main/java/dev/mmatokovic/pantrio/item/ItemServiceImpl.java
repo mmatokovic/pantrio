@@ -1,8 +1,8 @@
 package dev.mmatokovic.pantrio.item;
 
-import dev.mmatokovic.pantrio.common.exception.NotFoundException;
 import dev.mmatokovic.pantrio.item.dto.ItemRequest;
 import dev.mmatokovic.pantrio.item.dto.ItemResponse;
+import jakarta.persistence.EntityNotFoundException;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
@@ -25,7 +25,7 @@ public class ItemServiceImpl implements ItemService {
 
     public ItemResponse getItem(Long id) {
         Item item = repo.findById(id)
-            .orElseThrow(() -> new NotFoundException("Item " + id + " not found"));
+            .orElseThrow(() -> new EntityNotFoundException("Item " + id + " not found"));
         return mapper.toResponse(item);
     }
 
@@ -37,7 +37,7 @@ public class ItemServiceImpl implements ItemService {
 
     public ItemResponse updateItem(Long id, ItemRequest request) {
         Item item = repo.findById(id)
-            .orElseThrow(() -> new NotFoundException("Item " + id + " not found"));
+            .orElseThrow(() -> new EntityNotFoundException("Item " + id + " not found"));
         item.setName(request.name());
         item.setRemarks(request.remarks());
         item.setPictureUrl(request.pictureUrl());
@@ -48,7 +48,7 @@ public class ItemServiceImpl implements ItemService {
 
     public void deleteItem(Long id) {
         Item item = repo.findById(id)
-            .orElseThrow(() -> new NotFoundException("Item " + id + " not found"));
+            .orElseThrow(() -> new EntityNotFoundException("Item " + id + " not found"));
         repo.delete(item);
     }
 }
