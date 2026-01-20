@@ -12,7 +12,6 @@ import org.springframework.http.MediaType;
 import org.springframework.http.client.ClientHttpRequestExecution;
 import org.springframework.http.client.ClientHttpRequestInterceptor;
 import org.springframework.http.client.ClientHttpResponse;
-import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Component;
 
 import java.io.ByteArrayInputStream;
@@ -37,7 +36,7 @@ public class RestClientRequestLogger implements ClientHttpRequestInterceptor {
     }
 
     @Override
-    public @NonNull ClientHttpResponse intercept(@NonNull HttpRequest request, @NonNull byte[] body, @NonNull ClientHttpRequestExecution execution)
+    public ClientHttpResponse intercept(HttpRequest request, byte[] body, ClientHttpRequestExecution execution)
         throws IOException {
         final var httpMethod = request.getMethod();
         final var requestUri = request.getURI().toString();
@@ -106,17 +105,17 @@ public class RestClientRequestLogger implements ClientHttpRequestInterceptor {
     private record BufferingClientHttpResponseWrapper(ClientHttpResponse response, byte[] body) implements ClientHttpResponse {
 
         @Override
-        public @NonNull InputStream getBody() {
+        public InputStream getBody() {
             return new ByteArrayInputStream(body);
         }
 
         @Override
-        public @NonNull HttpStatusCode getStatusCode() throws IOException {
+        public HttpStatusCode getStatusCode() throws IOException {
             return response.getStatusCode();
         }
 
         @Override
-        public @NonNull String getStatusText() throws IOException {
+        public String getStatusText() throws IOException {
             return response.getStatusText();
         }
 
@@ -126,10 +125,9 @@ public class RestClientRequestLogger implements ClientHttpRequestInterceptor {
         }
 
         @Override
-        public @NonNull HttpHeaders getHeaders() {
+        public HttpHeaders getHeaders() {
             return response.getHeaders();
         }
 
     }
-
 }

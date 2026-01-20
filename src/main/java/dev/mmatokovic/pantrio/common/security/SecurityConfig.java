@@ -56,6 +56,4 @@ public class SecurityConfig {
 
         return new InMemoryUserDetailsManager(prometheus, admin);
     }
-
-    //TODO: Implement proper user management with database storage
 }

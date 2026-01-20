@@ -28,6 +28,17 @@ public class Storage {
     @Column(name = "UPDATED_AT")
     private LocalDateTime updatedAt;
 
+    public Storage() {
+
+    }
+
+    public Storage(Long id, String name, String description, Boolean disabled) {
+        this.id = id;
+        this.name = name;
+        this.description = description;
+        this.disabled = disabled;
+    }
+
     public Long getId() {
         return id;
     }
@@ -64,16 +75,8 @@ public class Storage {
         return createdAt;
     }
 
-    public void setCreatedAt(LocalDateTime createdAt) {
-        this.createdAt = createdAt;
-    }
-
     public LocalDateTime getUpdatedAt() {
         return updatedAt;
-    }
-
-    public void setUpdatedAt(LocalDateTime updatedAt) {
-        this.updatedAt = updatedAt;
     }
 
 }

@@ -43,6 +43,15 @@ services:
         - ./grafana/provisioning/:/etc/grafana/provisioning/
     container_name: grafana
 
+  collector:
+    image: otel/opentelemetry-collector-contrib:latest
+    volumes:
+        - ./otel/collector-config.yaml:/etc/otelcol-contrib/config.yaml:ro
+    expose:
+      - '4318'
+    ports:
+      - '4318:4318'
+
   keycloak:
     image: quay.io/keycloak/keycloak:latest
     environment:
@@ -60,16 +69,27 @@ services:
     depends_on:
       oracle-db:
         condition: service_healthy
+      collector:
+        condition: service_started
     build:
       context: ..
       dockerfile: Dockerfile
     restart: unless-stopped
     environment:
+      - PANTRIO_DB_URL=${PANTRIO_DB_URL:-jdbc:oracle:thin:@host.docker.internal:1521/XEPDB1}
+      - PANTRIO_DB_USER=${PANTRIO_DB_USER:-PANTRIO}
+      - PANTRIO_DB_PASS=${PANTRIO_DB_PASS:-"oraclepwd123"}
       - LOG_PATH=${LOG_PATH:-/opt/logs}
     ports:
-      - '8080:8080'
+      - '8081:8080'
     volumes:
       - app-logs:/opt/logs
+    healthcheck:
+      test: [ "CMD-SHELL", "wget -q --spider http://localhost:8080/actuator/health" ]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
 
 volumes:
   oracle-data:
