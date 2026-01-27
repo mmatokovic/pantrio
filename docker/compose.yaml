@@ -21,7 +21,6 @@ services:
       start_period: 120s
     container_name: db
 
-
   zipkin:
     image: openzipkin/zipkin:latest
     ports:

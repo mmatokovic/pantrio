@@ -1,11 +1,11 @@
 package dev.mmatokovic.pantrio.app;
 
-import dev.mmatokovic.pantrio.item.Item;
-import dev.mmatokovic.pantrio.item.ItemRepository;
-import dev.mmatokovic.pantrio.item.ItemServiceImpl;
-import dev.mmatokovic.pantrio.item.ItemMapper;
-import dev.mmatokovic.pantrio.item.dto.ItemRequest;
-import dev.mmatokovic.pantrio.item.dto.ItemResponse;
+import dev.mmatokovic.pantrio.domain.item.Item;
+import dev.mmatokovic.pantrio.domain.item.ItemRepository;
+import dev.mmatokovic.pantrio.app.item.ItemServiceImpl;
+import dev.mmatokovic.pantrio.app.item.ItemMapper;
+import dev.mmatokovic.pantrio.domain.item.ItemRequest;
+import dev.mmatokovic.pantrio.domain.item.ItemResponse;
 import jakarta.persistence.EntityNotFoundException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
