@@ -22,5 +22,5 @@ jobs:
         with:
           name: jacoco-report
           path: |
-            ${{ github.workspace }}/**/target/jacoco-report/jacoco.xml
-            ${{ github.workspace }}/**/target/jacoco-report/index.html
+            ${{ github.workspace }}/target/jacoco-report/jacoco.xml
+            ${{ github.workspace }}/target/jacoco-report/index.html
