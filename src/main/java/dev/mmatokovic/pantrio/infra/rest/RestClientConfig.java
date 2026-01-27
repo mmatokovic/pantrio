@@ -2,7 +2,6 @@ package dev.mmatokovic.pantrio.infra.rest;
 
 import dev.mmatokovic.pantrio.infra.logging.RestClientRequestLogger;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpHeaders;
@@ -16,10 +15,9 @@ public class RestClientConfig {
 
     public RestClientConfig(
         @Value("${spring.application.name}") String appName,
-        @Value("${info.app.version}") String appVersion,
-        @Value("${app.contact-email}") String contactEmail
+        @Value("${info.app.version}") String appVersion
     ) {
-        this.userAgent = "%s/%s (%s)".formatted(appName, appVersion, contactEmail);
+        this.userAgent = "%s/%s".formatted(appName, appVersion);
     }
 
     @Bean

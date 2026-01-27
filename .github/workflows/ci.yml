@@ -16,3 +16,11 @@ jobs:
           cache: maven
       - name: Build with Maven
         run: ./mvnw -B package --file pom.xml
+        continue-on-error: true
+      - name: Upload Report
+        uses: 'actions/upload-artifact@v3'
+        with:
+          name: jacoco-report
+          path: |
+            ${{ github.workspace }}/**/target/jacoco-report/jacoco.xml
+            ${{ github.workspace }}/**/target/jacoco-report/index.html

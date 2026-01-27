@@ -1,7 +1,5 @@
 package dev.mmatokovic.pantrio.domain.openfoodfacts;
 
-import java.util.Optional;
-
 public interface OpenFoodFactsRepo {
 
     /**

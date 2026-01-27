@@ -33,7 +33,7 @@ class ContractFreezeIT extends BaseIntegrationTest {
     private Resource expectedOpenAPI;
 
     @Test
-    void my_contract_did_not_change() throws Exception {
+    void should_keep_openapi_contract_compatible_with_expected() throws Exception {
 
         String actualOpenAPIJson = prettifyJsonString(
             rest.get()
