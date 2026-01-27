@@ -21,9 +21,14 @@ public class AsyncConfig {
     }
 
     /**
-     * Safety net for concurrent calls
+     * Safety net for concurrent calls.
+     * Limit: 5 concurrent calls.
+     *
+     * @deprecated Use Spring Boot 4's declarative concurrency control instead:
+     * @ConcurrencyLimit(5) on the method or bean.
      */
     @Bean
+    @Deprecated
     public Semaphore openFoodFactsSemaphore() {
         return new Semaphore(5, true);
     }

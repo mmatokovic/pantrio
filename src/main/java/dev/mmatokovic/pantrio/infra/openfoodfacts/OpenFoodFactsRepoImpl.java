@@ -2,9 +2,7 @@ package dev.mmatokovic.pantrio.infra.openfoodfacts;
 
 import com.google.common.util.concurrent.RateLimiter;
 import dev.mmatokovic.pantrio.domain.openfoodfacts.OpenFoodFactsProductResponse;
-import dev.mmatokovic.pantrio.domain.openfoodfacts.OpenFoodFactsProperties;
 import dev.mmatokovic.pantrio.domain.openfoodfacts.OpenFoodFactsRepo;
-import org.springframework.http.HttpStatusCode;
 import org.springframework.resilience.annotation.ConcurrencyLimit;
 import org.springframework.resilience.annotation.Retryable;
 import org.springframework.stereotype.Repository;
@@ -16,12 +14,10 @@ import org.springframework.web.client.RestClientException;
 @Repository
 public class OpenFoodFactsRepoImpl implements OpenFoodFactsRepo {
 
-    private final OpenFoodFactsProperties openFoodFactsProperties;
     private final RestClient openFoodFactsRestClient;
     private final RateLimiter openFoodFactsProductRateLimiter;
 
-    public OpenFoodFactsRepoImpl(OpenFoodFactsProperties openFoodFactsProperties, RestClient openFoodFactsRestClient, RateLimiter openFoodFactsProductRateLimiter) {
-        this.openFoodFactsProperties = openFoodFactsProperties;
+    public OpenFoodFactsRepoImpl(RestClient openFoodFactsRestClient, RateLimiter openFoodFactsProductRateLimiter) {
         this.openFoodFactsRestClient = openFoodFactsRestClient;
         this.openFoodFactsProductRateLimiter = openFoodFactsProductRateLimiter;
     }
@@ -37,23 +33,20 @@ public class OpenFoodFactsRepoImpl implements OpenFoodFactsRepo {
      */
     @Retryable(
         includes = {HttpServerErrorException.class, ResourceAccessException.class},
-        delay = 1000, // 1-second delay
-        multiplier = 2 // double the delay for each retry attempt
+        delay = 1500, // 1.5-second delay
+        multiplier = 1.5, // double the delay for each retry attempt
+        maxDelay = 3500
     )
     @ConcurrencyLimit(5)
     @Override
     public OpenFoodFactsProductResponse indexProductByBarcode(String barcode) {
         try {
             openFoodFactsProductRateLimiter.acquire();
-
-            String fields = "product_name,brands,allergens";
+            String fields = "product_name,brands,quantity,image_url";
 
             return openFoodFactsRestClient.get()
-                .uri(openFoodFactsProperties.host() + "/api/v2/product/{barcode}?fields=" + fields, barcode)
+                .uri("/api/v2/product/{barcode}?fields={fields}", barcode, fields)
                 .retrieve()
-                .onStatus(HttpStatusCode::is4xxClientError, (req, res) -> {
-                    throw new IllegalArgumentException("Product with barcode " + barcode + " not found in OpenFoodFacts");
-                })
                 .body(OpenFoodFactsProductResponse.class);
 
         } catch (RestClientException e) {

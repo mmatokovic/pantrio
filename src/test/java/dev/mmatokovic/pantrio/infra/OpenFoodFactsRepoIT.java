@@ -7,11 +7,10 @@ import dev.mmatokovic.pantrio.infra.rest.RestClientConfig;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Import;
-import org.springframework.security.test.context.support.WithMockUser;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
-@WithMockUser(roles = "USER")
 @Import(RestClientConfig.class)
 public class OpenFoodFactsRepoIT extends BaseIntegrationTest {
 
@@ -22,12 +21,19 @@ public class OpenFoodFactsRepoIT extends BaseIntegrationTest {
     void givenValidBarcode_whenIndexProduct_thenReturnProductDetails_realApi() {
         OpenFoodFactsProductResponse response = repo.indexProductByBarcode("8000500179864");
 
-        assertNotNull(response);
-        System.out.println("Status: " + response.status());
-        System.out.println("Verbose: " + response.statusVerbose());
-        if (response.product() != null) {
-            System.out.println("Product name: " + response.product().productName());
-            System.out.println("Brands: " + response.product().brands());
-        }
+        assertNotNull(response, "Response should not be null");
+        assertThat(response.status()).isEqualTo("1");
+        assertThat(response.statusVerbose()).isEqualTo("product found");
+        assertThat(response.product()).isNotNull();
+        assertThat(response.product().productName()).isNotEmpty().isEqualTo("Nutella");
+    }
+
+    @Test
+    void givenInvalidBarcode_whenIndexProduct_thenThrowException() {
+        OpenFoodFactsProductResponse response = repo.indexProductByBarcode("0000000000000");
+
+        assertNotNull(response, "Response should not be null");
+        assertThat(response.status()).isEqualTo("0");
+        assertThat(response.statusVerbose()).isEqualTo("no code or invalid code");
     }
 }
