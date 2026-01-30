@@ -5,5 +5,5 @@ public interface OpenFoodFactsRepo {
     /**
      * Retrieve information for a product with a specific barcode.
      */
-    OpenFoodFactsProductResponse indexProductByBarcode(String code);
+    OpenFoodFactsProductResponse getProductByBarcode(String code);
 }

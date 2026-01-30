@@ -8,6 +8,12 @@ exporters:
     verbosity: detailed
   zipkin:
     endpoint: "http://zipkin:9411/api/v2/spans"
+processors:
+  filter/drop_actuator:
+    traces:
+      span:
+        - attributes["http.url"] == "/actuator/prometheus"
+        - attributes["http.url"] == "/actuator/health"
 service:
   pipelines:
     metrics:
@@ -15,6 +21,7 @@ service:
       exporters: [debug]
     traces:
       receivers: [otlp]
+      processors: [filter/drop_actuator]
       exporters: [debug, zipkin]
     logs:
       receivers: [otlp]

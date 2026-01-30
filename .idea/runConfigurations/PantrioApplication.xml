@@ -12,7 +12,7 @@
     <option name="SPRING_BOOT_MAIN_CLASS" value="dev.mmatokovic.pantrio.PantrioApplication" />
     <method v="2">
       <option name="Make" enabled="true" />
-      <option name="RunConfigurationTask" enabled="true" run_configuration_name="Compose" run_configuration_type="docker-deploy" />
+      <option name="RunConfigurationTask" enabled="false" run_configuration_name="Compose Services" run_configuration_type="docker-deploy" />
     </method>
   </configuration>
 </component>

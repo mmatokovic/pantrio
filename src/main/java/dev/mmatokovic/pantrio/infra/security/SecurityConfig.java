@@ -1,15 +1,19 @@
 package dev.mmatokovic.pantrio.infra.security;
 
+import jakarta.servlet.DispatcherType;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
+import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
+import org.springframework.security.oauth2.server.resource.authentication.JwtGrantedAuthoritiesConverter;
 import org.springframework.security.provisioning.InMemoryUserDetailsManager;
 import org.springframework.security.web.SecurityFilterChain;
 
@@ -23,21 +27,36 @@ public class SecurityConfig {
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         return http
             .csrf(AbstractHttpConfigurer::disable)
+            .sessionManagement(session ->
+                session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+            )
             .authorizeHttpRequests(
                 authz -> {
+                    authz.dispatcherTypeMatchers(DispatcherType.ERROR).permitAll();
                     authz.requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").hasRole("ADMIN");
                     authz.requestMatchers("/actuator/health", "/actuator/health/**").permitAll();
                     authz.requestMatchers("/actuator/prometheus").hasRole("METRICS");
                     authz.anyRequest().authenticated();
                 }
             )
+            .oauth2ResourceServer(resourceServer  ->
+                resourceServer.jwt(jwt ->
+                    jwt.jwtAuthenticationConverter(jwtAuthenticationConverter())
+                )
+            )
             .httpBasic(withDefaults())
             .build();
     }
 
     @Bean
-    public PasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder();
+    public JwtAuthenticationConverter jwtAuthenticationConverter() {
+        JwtGrantedAuthoritiesConverter rolesConverter = new JwtGrantedAuthoritiesConverter();
+        rolesConverter.setAuthorityPrefix("ROLE_");
+        rolesConverter.setAuthoritiesClaimName("realm_access.roles");
+
+        JwtAuthenticationConverter converter = new JwtAuthenticationConverter();
+        converter.setJwtGrantedAuthoritiesConverter(rolesConverter);
+        return converter;
     }
 
     @Bean
@@ -55,5 +74,10 @@ public class SecurityConfig {
             .build();
 
         return new InMemoryUserDetailsManager(prometheus, admin);
+    }
+
+    @Bean
+    public PasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder();
     }
 }

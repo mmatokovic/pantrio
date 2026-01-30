@@ -10,11 +10,26 @@
   Token Claim Name = language
 - Clients > spring-spa > Client Scopes > add 'language' ===> the mapper of user attr is added automatically
 
-## Hierarchical roles
-Roles composed of other roles
-
 ## Client Specific roles
 Are roles that only work for a given client. Can be used to restrict users from entering any application they want.
+
+
+Roles composed of other roles
+
+Create new user 'prometheus' with role METRICS for client 'spring-spa':
+- User: prometheus
+- Set pass: prometheus
+- Role: METRICS
+- Realm: Your realm (e.g., my-app)
+- Token should include:
+
+```json
+{
+    "realm_access": {
+        "roles": ["METRICS"]
+    }
+}
+```
 
 ## Relevant articles:
 - [A Quick Guide to Using Keycloak with Spring Boot](https://www.baeldung.com/spring-boot-keycloak)

@@ -1,4 +1,4 @@
-package dev.mmatokovic.pantrio.domain.openfoodfacts;
+package dev.mmatokovic.pantrio.infra.openfoodfacts;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
 

@@ -1,4 +1,4 @@
-package dev.mmatokovic.pantrio.infra.config;
+package dev.mmatokovic.pantrio.infra.rest;
 
 import com.google.common.util.concurrent.RateLimiter;
 import org.springframework.context.annotation.Bean;
@@ -9,9 +9,9 @@ import java.util.concurrent.Semaphore;
 
 @EnableAsync
 @Configuration
-public class AsyncConfig {
+public class ThrottlingConfig {
 
-    /**
+    /*
      * Product read endpoints
      * Limit: 100 req/min
      */

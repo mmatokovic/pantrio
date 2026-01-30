@@ -19,7 +19,7 @@ public class OpenFoodFactsRepoIT extends BaseIntegrationTest {
 
     @Test
     void givenValidBarcode_whenIndexProduct_thenReturnProductDetails_realApi() {
-        OpenFoodFactsProductResponse response = repo.indexProductByBarcode("8000500179864");
+        OpenFoodFactsProductResponse response = repo.getProductByBarcode("8000500179864");
 
         assertNotNull(response, "Response should not be null");
         assertThat(response.status()).isEqualTo("1");
@@ -30,7 +30,7 @@ public class OpenFoodFactsRepoIT extends BaseIntegrationTest {
 
     @Test
     void givenInvalidBarcode_whenIndexProduct_thenThrowException() {
-        OpenFoodFactsProductResponse response = repo.indexProductByBarcode("0000000000000");
+        OpenFoodFactsProductResponse response = repo.getProductByBarcode("0000000000000");
 
         assertNotNull(response, "Response should not be null");
         assertThat(response.status()).isEqualTo("0");

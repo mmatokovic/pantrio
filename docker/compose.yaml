@@ -81,6 +81,7 @@ services:
       - PANTRIO_DB_URL=${PANTRIO_DB_URL:-jdbc:oracle:thin:@host.docker.internal:1521/XEPDB1}
       - PANTRIO_DB_USER=${PANTRIO_DB_USER:-PANTRIO}
       - PANTRIO_DB_PASS=${PANTRIO_DB_PASS:-"oraclepwd123"}
+      - PANTRIO_OAUTH2_ISSUER_URI=${PANTRIO_OAUTH2_ISSUER_URI:-http://host.docker.internal:8180/realms/Pantrio}
       - LOG_PATH=${LOG_PATH:-/opt/logs}
     ports:
       - '8081:8080'

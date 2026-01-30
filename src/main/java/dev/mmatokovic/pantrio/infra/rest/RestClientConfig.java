@@ -1,6 +1,6 @@
 package dev.mmatokovic.pantrio.infra.rest;
 
-import dev.mmatokovic.pantrio.domain.openfoodfacts.OpenFoodFactsProperties;
+import dev.mmatokovic.pantrio.infra.openfoodfacts.OpenFoodFactsProperties;
 import dev.mmatokovic.pantrio.infra.logging.RestClientRequestLogger;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;

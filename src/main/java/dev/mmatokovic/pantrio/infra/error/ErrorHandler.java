@@ -1,75 +1,83 @@
 package dev.mmatokovic.pantrio.infra.error;
 
 import jakarta.persistence.EntityNotFoundException;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.validation.ConstraintViolation;
 import jakarta.validation.ConstraintViolationException;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.validation.FieldError;
+import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
-import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.servlet.NoHandlerFoundException;
 
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
+import java.util.stream.Collectors;
 
 @RestControllerAdvice
 public class ErrorHandler {
 
-    @ExceptionHandler(NoHandlerFoundException.class)
-    public ResponseEntity<ErrorResponse> handleNoHandlerFoundException(NoHandlerFoundException ex, HttpServletRequest httpServletRequest) {
-        ErrorResponse error = new ErrorResponse(404, "Resource not found");
-        return ResponseEntity
-            .status(HttpStatus.NOT_FOUND)
-            .contentType(MediaType.APPLICATION_JSON)
-            .body(error);
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<ErrorResponse> handleGlobalException(Exception ex) {
+        ErrorResponse error = new ErrorResponse("Something went wrong");
+        return ResponseEntity.internalServerError().body(error);
     }
 
-    @ExceptionHandler(EntityNotFoundException.class)
-    public ResponseEntity<ErrorResponse> handleEntityNotFoundException(EntityNotFoundException ex) {
-        ErrorResponse error = new ErrorResponse(404, ex.getMessage());
-        return ResponseEntity
-            .status(HttpStatus.NOT_FOUND)
-            .contentType(MediaType.APPLICATION_JSON)
-            .body(error);
+    @ExceptionHandler({NoHandlerFoundException.class, EntityNotFoundException.class})
+    public ResponseEntity<ErrorResponse> handleNotFound(Exception ex) {
+        ErrorResponse error = new ErrorResponse(404, ex.getMessage() != null ? ex.getMessage() : "Resource not found");
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
     }
 
-    @ResponseStatus(HttpStatus.BAD_REQUEST)
-    @ExceptionHandler(MethodArgumentNotValidException.class)
-    public Map<String, String> handleValidationExceptions(
-        MethodArgumentNotValidException ex) {
-        Map<String, String> errors = new HashMap<>();
-        ex.getBindingResult().getAllErrors().forEach((error) -> {
-            String fieldName = ((FieldError) error).getField();
-            String errorMessage = error.getDefaultMessage();
-            errors.put(fieldName, errorMessage);
-        });
-        return errors;
-    }
-
-    @ResponseStatus(HttpStatus.BAD_REQUEST)
-    @ExceptionHandler(ConstraintViolationException.class)
-    public List<String> handleConstraintValidationExceptions(ConstraintViolationException ex) {
-        List<String> errors = new ArrayList<>();
-        for (ConstraintViolation<?> violation : ex.getConstraintViolations()) {
-            errors.add(violation.getMessage());
-        }
-        return errors;
-    }
 
     @ExceptionHandler(DataIntegrityViolationException.class)
     public ResponseEntity<ErrorResponse> handleDataIntegrityViolation(DataIntegrityViolationException ex) {
-        ErrorResponse error = new ErrorResponse(422, "Database constraint violated");
-        return ResponseEntity
-            .status(HttpStatus.UNPROCESSABLE_CONTENT)
-            .contentType(MediaType.APPLICATION_JSON)
-            .body(error);
+        ErrorResponse error = new ErrorResponse(422, "Data integrity violation");
+        return ResponseEntity.unprocessableContent().body(error);
+    }
+
+    @ExceptionHandler(ConstraintViolationException.class)
+    public ResponseEntity<ErrorResponse> handleConstraintValidationExceptions(ConstraintViolationException ex) {
+        List<ErrorResponse.Errors> violations = ex.getConstraintViolations()
+            .stream()
+            .map(cv -> new ErrorResponse.Errors(cv.getPropertyPath().toString(), cv.getMessage()))
+            .collect(Collectors.toList());
+
+        ErrorResponse error = new ErrorResponse(400, "Validation Failed", violations);
+        return ResponseEntity.badRequest().body(error);
+    }
+
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity<ErrorResponse> handleMethodArgumentNotValid(MethodArgumentNotValidException ex) {
+        List<ErrorResponse.Errors> errors = ex.getBindingResult()
+            .getFieldErrors()
+            .stream()
+            .map(err -> new ErrorResponse.Errors(err.getField(), err.getDefaultMessage()))
+            .collect(Collectors.toList());
+
+        ErrorResponse error = new ErrorResponse(400, "Validation Failed", errors);
+        return ResponseEntity.badRequest().body(error);
+    }
+
+    @ExceptionHandler(MissingServletRequestParameterException.class)
+    public ResponseEntity<ErrorResponse> handleMissingParams(MissingServletRequestParameterException ex) {
+        ErrorResponse.Errors fieldError = new ErrorResponse.Errors(ex.getParameterName(), "Parameter is required");
+        ErrorResponse error = new ErrorResponse(400, "Missing required parameter", List.of(fieldError));
+        return ResponseEntity.badRequest().body(error);
+    }
+
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity<ErrorResponse> handleHttpMessageNotReadable(HttpMessageNotReadableException ex) {
+        ErrorResponse error = new ErrorResponse(400, "Malformed JSON: " + ex.getMostSpecificCause().getMessage());
+        return ResponseEntity.badRequest().body(error);
+    }
+
+    @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
+    public ResponseEntity<ErrorResponse> handleMethodNotSupported(HttpRequestMethodNotSupportedException ex) {
+        ErrorResponse error = new ErrorResponse(405, "HTTP method not allowed: " + ex.getMethod());
+        return ResponseEntity.status(HttpStatus.METHOD_NOT_ALLOWED).body(error);
+
     }
 }

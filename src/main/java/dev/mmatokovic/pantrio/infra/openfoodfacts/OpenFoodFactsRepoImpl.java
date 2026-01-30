@@ -22,24 +22,16 @@ public class OpenFoodFactsRepoImpl implements OpenFoodFactsRepo {
         this.openFoodFactsProductRateLimiter = openFoodFactsProductRateLimiter;
     }
 
-    /**
-     * Fetch a product by barcode from OpenFoodFacts.
-     *
-     * @Retryable configuration:
-     * - default: All Exceptions & 3 retries
-     * - maxRetries: 4 (1 initial + 3 retries)
-     * - includes: Only retry on OpenFoodFactsApiException
-     * - backoff: Start with 1 second, multiply by 2 (exponential backoff)
-     */
     @Retryable(
         includes = {HttpServerErrorException.class, ResourceAccessException.class},
         delay = 1500, // 1.5-second delay
         multiplier = 1.5, // double the delay for each retry attempt
-        maxDelay = 3500
+        maxDelay = 3500,
+        maxRetries = 3 // 1 initial + 2 retries
     )
     @ConcurrencyLimit(5)
     @Override
-    public OpenFoodFactsProductResponse indexProductByBarcode(String barcode) {
+    public OpenFoodFactsProductResponse getProductByBarcode(String barcode) {
         try {
             openFoodFactsProductRateLimiter.acquire();
             String fields = "product_name,brands,quantity,image_url";
