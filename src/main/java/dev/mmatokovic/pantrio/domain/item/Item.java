@@ -14,11 +14,14 @@ import java.time.LocalDateTime;
 @Entity
 @Table(name = "ITEMS")
 public class Item {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     private String name;
     private String remarks;
+    private String unit;
+    private String barcode;
     private String pictureUrl;
     @Column(nullable = false)
     private Boolean disabled = false;
@@ -34,10 +37,12 @@ public class Item {
 
     }
 
-    public Item(Long id, String name, String remarks, String pictureUrl, Boolean disabled) {
+    public Item(Long id, String name, String remarks, String barcode, String unit, String pictureUrl, Boolean disabled) {
         this.id = id;
         this.name = name;
+        this.barcode = barcode;
         this.remarks = remarks;
+        this.unit = unit;
         this.pictureUrl = pictureUrl;
         this.disabled = disabled;
     }
@@ -60,6 +65,22 @@ public class Item {
 
     public String getRemarks() {
         return remarks;
+    }
+
+    public String getBarcode() {
+        return barcode;
+    }
+
+    public void setBarcode(String barcode) {
+        this.barcode = barcode;
+    }
+
+    public String getUnit() {
+        return unit;
+    }
+
+    public void setUnit(String unit) {
+        this.unit = unit;
     }
 
     public void setRemarks(String remarks) {
@@ -89,5 +110,4 @@ public class Item {
     public LocalDateTime getUpdatedAt() {
         return updatedAt;
     }
-
 }

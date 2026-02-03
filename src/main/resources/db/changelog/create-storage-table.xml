@@ -5,16 +5,15 @@
     xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
             http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.8.xsd">
 
-    <changeSet id="1" author="pantrio">
-        <createTable tableName="items">
+    <changeSet id="2" author="pantrio">
+        <createTable tableName="storage">
             <column name="id" type="BIGINT" autoIncrement="true">
                 <constraints primaryKey="true" nullable="false"/>
             </column>
-            <column name="name" type="VARCHAR2(255)">
+            <column name="name" type="VARCHAR(255)">
                 <constraints nullable="false"/>
             </column>
-            <column name="remarks" type="VARCHAR2(4000)"/>
-            <column name="picture_url" type="VARCHAR2(1024)"/>
+            <column name="description" type="VARCHAR(4000)"/>
             <column name="disabled" type="NUMBER(1,0)" defaultValueNumeric="0">
                 <constraints nullable="false"/>
             </column>

@@ -19,35 +19,36 @@ services:
       timeout: 10s
       retries: 5
       start_period: 120s
-    container_name: db
+    container_name: oracle-db
 
   zipkin:
     image: openzipkin/zipkin:latest
     ports:
-        - '9411:9411'
+      - '9411:9411'
     container_name: zipkin
 
   prometheus:
     image: prom/prometheus:latest
     ports:
-        - '9090:9090'
+      - '9090:9090'
     volumes:
-        - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus-data:/prometheus
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
     container_name: prometheus
 
   grafana:
     image: grafana/grafana-oss:latest
     ports:
-        - '3000:3000'
+      - '3000:3000'
     volumes:
-        - ./grafana/grafana.ini:/etc/grafana/grafana.ini
-        - ./grafana/provisioning/:/etc/grafana/provisioning/
+      - ./grafana/grafana.ini:/etc/grafana/grafana.ini
+      - ./grafana/provisioning/:/etc/grafana/provisioning/
     container_name: grafana
 
   collector:
     image: otel/opentelemetry-collector-contrib:latest
     volumes:
-        - ./otel/collector-config.yaml:/etc/otelcol-contrib/config.yaml:ro
+      - ./otel/collector-config.yaml:/etc/otelcol-contrib/config.yaml:ro
     expose:
       - '4318'
     ports:
@@ -57,14 +58,14 @@ services:
   keycloak:
     image: quay.io/keycloak/keycloak:latest
     environment:
-        KC_BOOTSTRAP_ADMIN_USERNAME: god
-        KC_BOOTSTRAP_ADMIN_PASSWORD: god
-        JAVA_OPTS_APPEND: -Dkeycloak.profile.feature.upload_scripts=enabled
+      KC_BOOTSTRAP_ADMIN_USERNAME: god
+      KC_BOOTSTRAP_ADMIN_PASSWORD: god
+      JAVA_OPTS_APPEND: -Dkeycloak.profile.feature.upload_scripts=enabled
     command: start-dev --import-realm
     ports:
-        - '8180:8080'
+      - '8180:8080'
     volumes:
-        - ./keycloak/realm-export.json:/opt/keycloak/data/import/realm-export.json
+      - ./keycloak/realm-export.json:/opt/keycloak/data/import/realm-export.json
     container_name: keycloak
 
   app:
@@ -78,10 +79,10 @@ services:
       dockerfile: Dockerfile
     restart: unless-stopped
     environment:
-      - PANTRIO_DB_URL=${PANTRIO_DB_URL:-jdbc:oracle:thin:@host.docker.internal:1521/XEPDB1}
+      - PANTRIO_DB_URL=${PANTRIO_DB_URL:-jdbc:oracle:thin:@oracle-db:1521/XEPDB1}
       - PANTRIO_DB_USER=${PANTRIO_DB_USER:-PANTRIO}
       - PANTRIO_DB_PASS=${PANTRIO_DB_PASS:-"oraclepwd123"}
-      - PANTRIO_OAUTH2_ISSUER_URI=${PANTRIO_OAUTH2_ISSUER_URI:-http://host.docker.internal:8180/realms/Pantrio}
+      - PANTRIO_OAUTH2_ISSUER_URI=${PANTRIO_OAUTH2_ISSUER_URI:-http://keycloak:8180/realms/Pantrio}
       - LOG_PATH=${LOG_PATH:-/opt/logs}
     ports:
       - '8081:8080'
@@ -96,6 +97,8 @@ services:
 
 volumes:
   oracle-data:
+    driver: local
+  prometheus-data:
     driver: local
   app-logs:
     driver: local

@@ -40,14 +40,14 @@ public class StorageServiceImpl implements StorageService {
     }
 
     @Override
-    public StorageResponse updateStorage(Long id, StorageRequest request) {
+    public void updateStorage(Long id, StorageRequest request) {
         Storage storage = repo.findById(id)
             .orElseThrow(() -> new EntityNotFoundException("Storage " + id + " not found"));
         storage.setName(request.name());
         storage.setDescription(request.description());
         storage.setDisabled(request.disabled());
         Storage updated = repo.save(storage);
-        return mapper.toResponse(updated);
+        mapper.toResponse(updated);
     }
 
     @Override

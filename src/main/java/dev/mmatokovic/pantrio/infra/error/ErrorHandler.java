@@ -2,6 +2,8 @@ package dev.mmatokovic.pantrio.infra.error;
 
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.validation.ConstraintViolationException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -14,13 +16,15 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.servlet.NoHandlerFoundException;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 @RestControllerAdvice
 public class ErrorHandler {
+    private static final Logger LOGGER = LoggerFactory.getLogger("error-logger");
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleGlobalException(Exception ex) {
+        LOGGER.error(ex.getMessage(), ex);
+
         ErrorResponse error = new ErrorResponse("Something went wrong");
         return ResponseEntity.internalServerError().body(error);
     }
@@ -31,9 +35,10 @@ public class ErrorHandler {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
     }
 
-
     @ExceptionHandler(DataIntegrityViolationException.class)
     public ResponseEntity<ErrorResponse> handleDataIntegrityViolation(DataIntegrityViolationException ex) {
+        LOGGER.error(ex.getMessage(), ex);
+
         ErrorResponse error = new ErrorResponse(422, "Data integrity violation");
         return ResponseEntity.unprocessableContent().body(error);
     }
@@ -43,7 +48,7 @@ public class ErrorHandler {
         List<ErrorResponse.Errors> violations = ex.getConstraintViolations()
             .stream()
             .map(cv -> new ErrorResponse.Errors(cv.getPropertyPath().toString(), cv.getMessage()))
-            .collect(Collectors.toList());
+            .toList();
 
         ErrorResponse error = new ErrorResponse(400, "Validation Failed", violations);
         return ResponseEntity.badRequest().body(error);
@@ -55,7 +60,7 @@ public class ErrorHandler {
             .getFieldErrors()
             .stream()
             .map(err -> new ErrorResponse.Errors(err.getField(), err.getDefaultMessage()))
-            .collect(Collectors.toList());
+            .toList();
 
         ErrorResponse error = new ErrorResponse(400, "Validation Failed", errors);
         return ResponseEntity.badRequest().body(error);
@@ -78,6 +83,5 @@ public class ErrorHandler {
     public ResponseEntity<ErrorResponse> handleMethodNotSupported(HttpRequestMethodNotSupportedException ex) {
         ErrorResponse error = new ErrorResponse(405, "HTTP method not allowed: " + ex.getMethod());
         return ResponseEntity.status(HttpStatus.METHOD_NOT_ALLOWED).body(error);
-
     }
 }

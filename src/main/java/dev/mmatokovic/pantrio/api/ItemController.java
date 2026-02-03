@@ -1,6 +1,6 @@
 package dev.mmatokovic.pantrio.api;
 
-import dev.mmatokovic.pantrio.app.item.ItemServiceImpl;
+import dev.mmatokovic.pantrio.app.item.ItemService;
 import dev.mmatokovic.pantrio.domain.item.ItemRequest;
 import dev.mmatokovic.pantrio.domain.item.ItemResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -27,9 +27,9 @@ import java.util.List;
 @Tag(name = "Item")
 @RequestMapping("/items")
 public class ItemController {
-    private final ItemServiceImpl service;
+    private final ItemService service;
 
-    public ItemController(ItemServiceImpl service) {
+    public ItemController(ItemService service) {
         this.service = service;
     }
 

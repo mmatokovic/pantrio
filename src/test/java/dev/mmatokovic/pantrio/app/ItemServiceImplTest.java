@@ -44,9 +44,9 @@ class ItemServiceImplTest {
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
-        item = new Item(1L, "item", "remarks", "pic.png", false);
-        request = new ItemRequest("item", "remarks", "pic.png", false);
-        response = new ItemResponse(1L, "item", "remarks", "pic.png", false);
+        item = new Item(1L, "item", "description", "8000500179864","pcs", "pic.png", false);
+        request = new ItemRequest("item", "description", "8000500179864", ItemRequest.Unit.PCS, "pic.png", false);
+        response = new ItemResponse(1L, "item", "remarks", "8000500179864", "pcs", "pic.png", false);
     }
 
     @Test

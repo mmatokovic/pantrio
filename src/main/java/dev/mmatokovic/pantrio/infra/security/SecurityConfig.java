@@ -24,27 +24,25 @@ import static org.springframework.security.config.Customizer.withDefaults;
 public class SecurityConfig {
 
     @Bean
-    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+    public SecurityFilterChain filterChain(HttpSecurity http) {
         return http
             .csrf(AbstractHttpConfigurer::disable)
             .sessionManagement(session ->
                 session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
             )
-            .authorizeHttpRequests(
-                authz -> {
-                    authz.dispatcherTypeMatchers(DispatcherType.ERROR).permitAll();
-                    authz.requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").hasRole("ADMIN");
-                    authz.requestMatchers("/actuator/health", "/actuator/health/**").permitAll();
-                    authz.requestMatchers("/actuator/prometheus").hasRole("METRICS");
-                    authz.anyRequest().authenticated();
-                }
-            )
-            .oauth2ResourceServer(resourceServer  ->
-                resourceServer.jwt(jwt ->
+            .authorizeHttpRequests(authz -> {
+                authz.dispatcherTypeMatchers(DispatcherType.ERROR).permitAll();
+                authz.requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").hasRole("ADMIN");
+                authz.requestMatchers("/actuator/health", "/actuator/health/**").permitAll();
+                authz.requestMatchers("/actuator/prometheus").hasRole("METRICS");
+                authz.anyRequest().authenticated();
+            })
+            .httpBasic(withDefaults())
+            .oauth2ResourceServer(oauth ->
+                oauth.jwt(jwt ->
                     jwt.jwtAuthenticationConverter(jwtAuthenticationConverter())
                 )
             )
-            .httpBasic(withDefaults())
             .build();
     }
 

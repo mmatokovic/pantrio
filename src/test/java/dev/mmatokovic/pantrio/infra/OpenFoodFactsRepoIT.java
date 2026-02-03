@@ -1,8 +1,8 @@
 package dev.mmatokovic.pantrio.infra;
 
 import dev.mmatokovic.pantrio.BaseIntegrationTest;
-import dev.mmatokovic.pantrio.domain.openfoodfacts.OpenFoodFactsProductResponse;
-import dev.mmatokovic.pantrio.domain.openfoodfacts.OpenFoodFactsRepo;
+import dev.mmatokovic.pantrio.domain.product.OpenFoodFactsProductResponse;
+import dev.mmatokovic.pantrio.domain.product.OpenFoodFactsPort;
 import dev.mmatokovic.pantrio.infra.rest.RestClientConfig;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,7 +15,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 public class OpenFoodFactsRepoIT extends BaseIntegrationTest {
 
     @Autowired
-    private OpenFoodFactsRepo repo;
+    private OpenFoodFactsPort repo;
 
     @Test
     void givenValidBarcode_whenIndexProduct_thenReturnProductDetails_realApi() {

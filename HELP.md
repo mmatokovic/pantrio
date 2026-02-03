@@ -192,13 +192,12 @@ Since for most of the tests RabbitMQ isn't necessary, property is present to dis
 Due to shared configuration between both application, RabbitMQ has been extracted to separate microservice (acting just
 as a library) called `rabbitmq`.
 
-### Flyway
+### Liquibase
 
-Project is using default naming schema for Flyway migrations: `Vx.x__migration-description.sql`
+This project uses Liquibase for database schema versioning and migration.
 
-First version represents major project version and should be in sync. So, it can be said that migrations are grouped by
-major project version.
-Second version is plain iterating number of migration.
+Validate changeSets `.\mvnw liquibase:validate`
+
 
 ### Internal library autoconfiguration
 
@@ -212,6 +211,12 @@ hardcoded package names.
 
 Application has available OpenAPI UI, for example at: _localhost:8080/api/swagger-ui.html_. It can be only accessed by
 existing user (authentication is required).
+
+Generate OpenAPI documentation:
+
+```shell
+.\mvnw clean verify springdoc-openapi:generate
+```
 
 ### Actuator
 
@@ -264,8 +269,15 @@ Mockito (which has strict stubbing enabled by default).
 
 More info can be found here: https://github.com/spring-projects/spring-framework/issues/33318
 
-
 ## Docker
+
+Application is dockerized with `Dockerfile`. To run the application using Docker, use the following command:
+
+- build image: `docker build -t pantrio .`
+- build container: `docker run --env-file .env -network pantrio_default pantrio:latest .`
+- start container: `docker start pantrio`
+- stop container: `docker stop pantrio`
+- clear cache: `docker builder prune -f`
 
 ### Stopping winnat
 

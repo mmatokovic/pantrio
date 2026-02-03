@@ -4,35 +4,36 @@
   <title>Pantrio</title>
   <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="color-scheme" content="light dark" />
   <script th:src="@{/htmx.min.js}"></script>
   <script th:src="@{/tailwindcss.min.js}"></script>
 </head>
 <body>
-<main>
-  <section>
-    <div class="mx-auto max-w-3xl p-6">
-      <div class="mb-4">
-        <span class="flex items-center mb-4">
-          <span class="shrink-0 pe-4 text-gray-900">Storage Ares</span>
-          <span class="h-px flex-1 bg-linear-to-l from-transparent to-gray-300"></span>
-        </span>
-        <div id="storage-list" hx-get="/htmx/storages" hx-trigger="load" hx-target="#storage-list" hx-swap="innerHTML">
-          <div class="flex justify-center gap-2">
-            <span class="size-3 animate-bounce rounded-full bg-indigo-600"></span>
-            <span class="size-3 animate-bounce rounded-full bg-indigo-600 [animation-delay:0.2s]"></span>
-            <span class="size-3 animate-bounce rounded-full bg-indigo-600 [animation-delay:0.4s]"></span>
+  <main>
+    <section>
+      <div class="mx-auto max-w-3xl p-6">
+        <div class="mb-4">
+          <span class="flex items-center mb-4">
+            <span class="shrink-0 pe-4 text-gray-900">Storage Ares</span>
+            <span class="h-px flex-1 bg-linear-to-l from-transparent to-gray-300"></span>
+          </span>
+          <div id="storage-list" hx-get="@{/htmx/storages}" hx-trigger="load" hx-target="#storage-list" hx-swap="innerHTML">
+            <div class="flex justify-center gap-2">
+              <span class="size-3 animate-bounce rounded-full bg-indigo-600 animate-pulse"></span>
+              <span class="size-3 animate-bounce rounded-full bg-indigo-600 animate-pulse delay-200"></span>
+              <span class="size-3 animate-bounce rounded-full bg-indigo-600 animate-pulse delay-400"></span>
+            </div>
           </div>
         </div>
+        <div class="flex justify-center">
+          <button class="w-12 h-12 rounded-full bg-green-600 text-white flex items-center justify-center hover:bg-green-700" aria-label="Add new storage">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+            </svg>
+          </button>
+        </div>
       </div>
-      <div class="flex justify-center">
-        <button class="w-12 h-12 rounded-full bg-green-600 text-white flex items-center justify-center hover:bg-green-700">
-          <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-          </svg>
-        </button>
-      </div>
-    </div>
-  </section>
-</main>
+    </section>
+  </main>
 </body>
 </html>
