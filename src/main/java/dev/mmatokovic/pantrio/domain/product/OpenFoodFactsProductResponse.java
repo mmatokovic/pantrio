@@ -9,7 +9,7 @@ public record OpenFoodFactsProductResponse(
     @JsonProperty("status_verbose")
     String statusVerbose
 ) {
-   public record Product(
+    public record Product(
        @JsonProperty("product_name")
        String productName,
        @JsonProperty("product_quantity")

@@ -6,6 +6,7 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.apache.commons.lang3.StringUtils;
+import org.jspecify.annotations.NonNull;
 import org.slf4j.Logger;
 import org.slf4j.MDC;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -27,7 +28,7 @@ import java.util.regex.Pattern;
 import static dev.mmatokovic.pantrio.infra.logging.HttpLoggingUtils.LOG_ITEM_DELIMITER;
 
 @Component
-public class HttpLoggingFilter extends OncePerRequestFilter {
+class HttpLoggingFilter extends OncePerRequestFilter {
 
     @SuppressWarnings("checkstyle:ConstantName")
     private static final Logger log;
@@ -57,8 +58,8 @@ public class HttpLoggingFilter extends OncePerRequestFilter {
     }
 
     @Override
-    protected void doFilterInternal(HttpServletRequest request,
-                                    HttpServletResponse response,
+    protected void doFilterInternal(@NonNull HttpServletRequest request,
+                                    @NonNull HttpServletResponse response,
                                     FilterChain filterChain) throws ServletException, IOException {
         final var requestWrapper = new ContentCachingRequestWrapper(request, 1024 * 1024);
         final var responseWrapper = new ContentCachingResponseWrapper(response);

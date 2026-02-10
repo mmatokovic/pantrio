@@ -3,6 +3,7 @@ package dev.mmatokovic.pantrio.infra.logging;
 import ch.qos.logback.classic.LoggerContext;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.jspecify.annotations.NonNull;
 import org.slf4j.Logger;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
@@ -20,6 +21,8 @@ import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 import static dev.mmatokovic.pantrio.infra.logging.HttpLoggingUtils.LOG_ITEM_DELIMITER;
@@ -35,13 +38,24 @@ public class RestClientRequestLogger implements ClientHttpRequestInterceptor {
         log = loggerContext.getLogger("audit-logger");
     }
 
+    private static final List<String> IGNORABLE_URIS = new ArrayList<>();
+
+    static {
+        IGNORABLE_URIS.add("/actuator");
+    }
+
     @Override
-    public ClientHttpResponse intercept(HttpRequest request, byte[] body, ClientHttpRequestExecution execution)
+    public @NonNull ClientHttpResponse intercept(HttpRequest request, byte @NonNull [] body, @NonNull ClientHttpRequestExecution execution)
         throws IOException {
         final var httpMethod = request.getMethod();
         final var requestUri = request.getURI().toString();
         final var requestId = UUID.randomUUID().toString();
         final var startTime = Instant.now();
+
+        final var shouldIgnoreLogging = IGNORABLE_URIS.stream().anyMatch(requestUri::contains);
+        if (shouldIgnoreLogging) {
+            return execution.execute(request, body);
+        }
 
         logRequest(body, requestId, requestUri, httpMethod, request.getHeaders().getContentType());
 
@@ -105,27 +119,27 @@ public class RestClientRequestLogger implements ClientHttpRequestInterceptor {
     private record BufferingClientHttpResponseWrapper(ClientHttpResponse response, byte[] body) implements ClientHttpResponse {
 
         @Override
-        public InputStream getBody() {
+        public  @NonNull InputStream getBody() {
             return new ByteArrayInputStream(body);
         }
 
         @Override
-        public HttpStatusCode getStatusCode() throws IOException {
+        public  @NonNull HttpStatusCode getStatusCode() throws IOException {
             return response.getStatusCode();
         }
 
         @Override
-        public String getStatusText() throws IOException {
+        public @NonNull String getStatusText() throws IOException {
             return response.getStatusText();
         }
 
         @Override
-        public void close() {
+        public  void close() {
             response.close();
         }
 
         @Override
-        public HttpHeaders getHeaders() {
+        public @NonNull HttpHeaders getHeaders() {
             return response.getHeaders();
         }
 

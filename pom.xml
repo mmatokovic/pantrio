@@ -7,6 +7,7 @@
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
         <version>4.0.1</version>
+        <relativePath/> <!-- lookup parent from repository -->
     </parent>
     <groupId>dev.mmatokovic</groupId>
     <artifactId>pantrio</artifactId>
@@ -24,14 +25,15 @@
     <scm>
         <connection>scm:git:git@github.com:mmatokovic/pantrio.git</connection>
         <developerConnection>scm:git:git@github.com:mmatokovic/pantrio.git</developerConnection>
+        <tag/>
         <url>https://github.com/mmatokovic/pantrio</url>
     </scm>
     <properties>
         <java.version>25</java.version>
         <mapstruct.version>1.6.3</mapstruct.version>
-        <ecs-logging-java.version>1.7.0</ecs-logging-java.version>
         <springdoc.version>3.0.1</springdoc.version>
         <openapi-diff.version>2.1.7</openapi-diff.version>
+        <archunit.version>1.4.1</archunit.version>
         <ojdbc.version>23.26.0.0.0</ojdbc.version>
         <testcontainers.version>1.21.3</testcontainers.version>
         <opentelemetry-logback-appender.version>2.24.0-alpha</opentelemetry-logback-appender.version>
@@ -79,18 +81,14 @@
             <artifactId>spring-boot-starter-liquibase</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.micrometer</groupId>
-            <artifactId>micrometer-registry-prometheus</artifactId>
-            <scope>runtime</scope>
-        </dependency>
-        <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-opentelemetry</artifactId>
         </dependency>
+
         <dependency>
-            <groupId>io.opentelemetry.instrumentation</groupId>
-            <artifactId>opentelemetry-logback-appender-1.0</artifactId>
-            <version>${opentelemetry-logback-appender.version}</version>
+            <groupId>io.micrometer</groupId>
+            <artifactId>micrometer-registry-prometheus</artifactId>
+            <scope>runtime</scope>
         </dependency>
         <dependency>
             <groupId>com.oracle.database.jdbc</groupId>
@@ -110,11 +108,6 @@
             <scope>compile</scope>
         </dependency>
         <dependency>
-            <groupId>org.openapitools.openapidiff</groupId>
-            <artifactId>openapi-diff-core</artifactId>
-            <version>${openapi-diff.version}</version>
-        </dependency>
-        <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>
             <scope>test</scope>
@@ -122,6 +115,18 @@
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-testcontainers</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.openapitools.openapidiff</groupId>
+            <artifactId>openapi-diff-core</artifactId>
+            <version>${openapi-diff.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.tngtech.archunit</groupId>
+            <artifactId>archunit-junit5</artifactId>
+            <version>${archunit.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -156,6 +161,7 @@
             </dependency>
         </dependencies>
     </dependencyManagement>
+
     <build>
         <plugins>
             <plugin>
@@ -171,7 +177,8 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <configuration>
-                    <argLine>${argLine} -XX:+EnableDynamicAgentLoading</argLine>
+                    <!--suppress UnresolvedMavenProperty -->
+                    <argLine>${argLine} -javaagent:${settings.localRepository}/org/mockito/mockito-core/${mockito.version}/mockito-core-${mockito.version}.jar -Xshare:off</argLine>
                 </configuration>
             </plugin>
             <plugin>

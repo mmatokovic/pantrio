@@ -1,7 +1,6 @@
 package dev.mmatokovic.pantrio.api;
 
 import dev.mmatokovic.pantrio.app.storage.StorageService;
-import dev.mmatokovic.pantrio.domain.item.ItemResponse;
 import dev.mmatokovic.pantrio.domain.storage.StorageRequest;
 import dev.mmatokovic.pantrio.domain.storage.StorageResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -12,7 +11,6 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -68,43 +66,5 @@ public class StorageController {
     ResponseEntity<Void> delete(@PathVariable Long id) {
         service.deleteStorage(id);
         return ResponseEntity.noContent().build();
-    }
-
-    @PostMapping(value = "/{storageId}/items", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
-    ResponseEntity<StorageResponse> addItem(
-            @RequestBody StorageRequest request,
-            @PathVariable Long storageId
-    ) {
-        StorageResponse storage = service.addItem(request);
-
-        URI location = ServletUriComponentsBuilder
-            .fromCurrentRequest()
-            .path("/{storageId}/items/{itemId}")
-            .buildAndExpand(storage.id())
-            .toUri();
-
-        return ResponseEntity.created(location).build();
-    }
-
-    @GetMapping(value = "/{storageId}/items/{itemId}", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<List<ItemResponse>> getItem(
-            @PathVariable Long storageId,
-            @PathVariable Long itemId) {
-        return ResponseEntity.ok(service.listItem(storageId, itemId));
-    }
-
-    @GetMapping(value = "/{storageId}/items", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<List<ItemResponse>> getItems(@PathVariable Long storageId) {
-        return ResponseEntity.ok(service.listItems(storageId));
-    }
-
-    @PatchMapping(value = "/{storageId}/items/{itemId}", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<ItemResponse> consume(
-        @PathVariable Long storageId,
-        @PathVariable Long itemId,
-        @RequestBody UpdateQuantityRequest request
-    ) {
-        ItemResponse updated = service.updateQuantity(storageId, itemId, request.quantity());
-        return ResponseEntity.ok(updated);
     }
 }

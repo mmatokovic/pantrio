@@ -15,7 +15,7 @@
             <option value="oracle-db" />
             <option value="prometheus" />
             <option value="zipkin" />
-            <option value="collector" />
+            <option value="otel-collector" />
             <option value="app" />
           </list>
         </option>

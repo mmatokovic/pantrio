@@ -1,4 +1,4 @@
-package dev.mmatokovic.pantrio.infra;
+package dev.mmatokovic.pantrio.domain;
 
 import dev.mmatokovic.pantrio.BaseIntegrationTest;
 import dev.mmatokovic.pantrio.domain.product.OpenFoodFactsProductResponse;
@@ -9,10 +9,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Import;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 @Import(RestClientConfig.class)
-public class OpenFoodFactsRepoIT extends BaseIntegrationTest {
+class OpenFoodFactsPortIT extends BaseIntegrationTest {
 
     @Autowired
     private OpenFoodFactsPort repo;
@@ -21,7 +20,7 @@ public class OpenFoodFactsRepoIT extends BaseIntegrationTest {
     void givenValidBarcode_whenIndexProduct_thenReturnProductDetails_realApi() {
         OpenFoodFactsProductResponse response = repo.getProductByBarcode("8000500179864");
 
-        assertNotNull(response, "Response should not be null");
+        assertThat(response).isNotNull();
         assertThat(response.status()).isEqualTo("1");
         assertThat(response.statusVerbose()).isEqualTo("product found");
         assertThat(response.product()).isNotNull();
@@ -32,7 +31,7 @@ public class OpenFoodFactsRepoIT extends BaseIntegrationTest {
     void givenInvalidBarcode_whenIndexProduct_thenThrowException() {
         OpenFoodFactsProductResponse response = repo.getProductByBarcode("0000000000000");
 
-        assertNotNull(response, "Response should not be null");
+        assertThat(response).isNotNull();
         assertThat(response.status()).isEqualTo("0");
         assertThat(response.statusVerbose()).isEqualTo("no code or invalid code");
     }

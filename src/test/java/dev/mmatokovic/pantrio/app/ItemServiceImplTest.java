@@ -19,12 +19,12 @@ import org.springframework.data.domain.PageRequest;
 import java.util.List;
 import java.util.Optional;
 
+import static org.assertj.core.api.AssertionsForClassTypes.assertThatExceptionOfType;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class ItemServiceImplTest {
 
@@ -66,7 +66,8 @@ class ItemServiceImplTest {
     void should_return_item_response_when_item_exists() {
         when(repo.findById(1L)).thenReturn(Optional.empty());
 
-        assertThrows(EntityNotFoundException.class, () -> service.getItem(1L));
+        assertThatExceptionOfType(EntityNotFoundException.class)
+            .isThrownBy(() -> service.getItem(1L));
     }
 
     @Test

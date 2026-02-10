@@ -1,11 +1,11 @@
 package dev.mmatokovic.pantrio.domain.item;
 
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.Table;
-import jakarta.persistence.Id;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
-import jakarta.persistence.Column;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
@@ -48,66 +48,75 @@ public class Item {
     }
 
     public Long getId() {
-        return id;
+        return this.id;
+    }
+
+    public String getName() {
+        return this.name;
+    }
+
+    public String getRemarks() {
+        return this.remarks;
+    }
+
+    public String getUnit() {
+        return this.unit;
+    }
+
+    public String getBarcode() {
+        return this.barcode;
+    }
+
+    public String getPictureUrl() {
+        return this.pictureUrl;
+    }
+
+    public Boolean getDisabled() {
+        return this.disabled;
+    }
+
+    public LocalDateTime getCreatedAt() {
+        return this.createdAt;
+    }
+
+    public LocalDateTime getUpdatedAt() {
+        return this.updatedAt;
     }
 
     public void setId(Long id) {
         this.id = id;
     }
 
-    public String getName() {
-        return name;
-    }
-
     public void setName(String name) {
         this.name = name;
-    }
-
-    public String getRemarks() {
-        return remarks;
-    }
-
-    public String getBarcode() {
-        return barcode;
-    }
-
-    public void setBarcode(String barcode) {
-        this.barcode = barcode;
-    }
-
-    public String getUnit() {
-        return unit;
-    }
-
-    public void setUnit(String unit) {
-        this.unit = unit;
     }
 
     public void setRemarks(String remarks) {
         this.remarks = remarks;
     }
 
-    public String getPictureUrl() {
-        return pictureUrl;
+    public void setUnit(String unit) {
+        this.unit = unit;
+    }
+
+    public void setBarcode(String barcode) {
+        this.barcode = barcode;
     }
 
     public void setPictureUrl(String pictureUrl) {
         this.pictureUrl = pictureUrl;
     }
 
-    public Boolean getDisabled() {
-        return disabled;
-    }
-
     public void setDisabled(Boolean disabled) {
         this.disabled = disabled;
     }
 
-    public LocalDateTime getCreatedAt() {
-        return createdAt;
+    public void setCreatedAt(LocalDateTime createdAt) {
+        this.createdAt = createdAt;
     }
 
-    public LocalDateTime getUpdatedAt() {
-        return updatedAt;
+    public void setUpdatedAt(LocalDateTime updatedAt) {
+        this.updatedAt = updatedAt;
     }
+
 }

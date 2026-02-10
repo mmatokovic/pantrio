@@ -1,6 +1,5 @@
 package dev.mmatokovic.pantrio.infra.openfoodfacts;
 
-import com.google.common.util.concurrent.RateLimiter;
 import dev.mmatokovic.pantrio.domain.product.OpenFoodFactsProductResponse;
 import dev.mmatokovic.pantrio.domain.product.OpenFoodFactsPort;
 import org.springframework.resilience.annotation.ConcurrencyLimit;
@@ -15,11 +14,9 @@ import org.springframework.web.client.RestClientException;
 public class OpenFoodFactsAdapter implements OpenFoodFactsPort {
 
     private final RestClient openFoodFactsRestClient;
-    private final RateLimiter openFoodFactsProductRateLimiter;
 
-    public OpenFoodFactsAdapter(RestClient openFoodFactsRestClient, RateLimiter openFoodFactsProductRateLimiter) {
+    public OpenFoodFactsAdapter(RestClient openFoodFactsRestClient) {
         this.openFoodFactsRestClient = openFoodFactsRestClient;
-        this.openFoodFactsProductRateLimiter = openFoodFactsProductRateLimiter;
     }
 
     @Retryable(
@@ -33,7 +30,6 @@ public class OpenFoodFactsAdapter implements OpenFoodFactsPort {
     @Override
     public OpenFoodFactsProductResponse getProductByBarcode(String barcode) {
         try {
-            openFoodFactsProductRateLimiter.acquire();
             String fields = "product_name,product_quantity,product_quantity_unit,image_url";
 
             return openFoodFactsRestClient.get()

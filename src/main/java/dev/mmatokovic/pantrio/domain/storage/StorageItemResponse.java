@@ -4,7 +4,8 @@ import dev.mmatokovic.pantrio.domain.item.ItemResponse;
 
 public record StorageItemResponse(
     ItemResponse item,
-    Long quantity
+    Long quantity,
+    Storage storage
 ) {
     public record Storage(
         Long id,

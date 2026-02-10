@@ -15,7 +15,7 @@
             <option value="oracle-db" />
             <option value="prometheus" />
             <option value="zipkin" />
-            <option value="collector" />
+            <option value="otel-collector" />
           </list>
         </option>
         <option name="sourceFilePath" value="docker/compose.yaml" />
