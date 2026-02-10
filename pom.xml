@@ -25,8 +25,8 @@
     <scm>
         <connection>scm:git:git@github.com:mmatokovic/pantrio.git</connection>
         <developerConnection>scm:git:git@github.com:mmatokovic/pantrio.git</developerConnection>
-        <tag/>
         <url>https://github.com/mmatokovic/pantrio</url>
+        <tag/>
     </scm>
     <properties>
         <java.version>25</java.version>
@@ -36,7 +36,6 @@
         <archunit.version>1.4.1</archunit.version>
         <ojdbc.version>23.26.0.0.0</ojdbc.version>
         <testcontainers.version>1.21.3</testcontainers.version>
-        <opentelemetry-logback-appender.version>2.24.0-alpha</opentelemetry-logback-appender.version>
         <checkstyle.version>12.3.0</checkstyle.version>
         <failsafe.version>3.5.4</failsafe.version>
         <jacoco.version>0.8.14</jacoco.version>
