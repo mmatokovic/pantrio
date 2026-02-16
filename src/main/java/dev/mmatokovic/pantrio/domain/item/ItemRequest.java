@@ -14,13 +14,13 @@ public record ItemRequest(
     String remarks,
     @Size(max = 13)
     String barcode,
-    Unit unit,
+    UnitEnum unit,
     @URL
     String pictureUrl,
     @NotNull
     Boolean disabled
 ) {
-    public enum Unit {
+    public enum UnitEnum {
         PCS("pcs"),
         G("g"),
         KL("kl"),
@@ -29,7 +29,7 @@ public record ItemRequest(
 
         private final String value;
 
-        Unit(String value) {
+        UnitEnum(String value) {
             this.value = value;
         }
 

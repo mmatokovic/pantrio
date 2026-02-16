@@ -1,7 +1,6 @@
 package dev.mmatokovic.pantrio.archunit;
 
 import com.tngtech.archunit.junit.AnalyzeClasses;
-import com.tngtech.archunit.junit.ArchIgnore;
 import com.tngtech.archunit.junit.ArchTest;
 import com.tngtech.archunit.lang.ArchRule;
 import com.tngtech.archunit.lang.syntax.ArchRuleDefinition;
@@ -18,8 +17,6 @@ class DeprecatedRule {
     public static final ArchRule deprecatedClassRule = ArchRuleDefinition.noClasses()
         .should().dependOnClassesThat().areAnnotatedWith(Deprecated.class);
 
-    // disabled temporarily, due to config of HttpClient
-    @ArchIgnore
     @ArchTest
     public static final ArchRule deprecatedMethodRule = ArchRuleDefinition.noClasses()
         .should().callMethodWhere(target(annotatedWith(Deprecated.class)));

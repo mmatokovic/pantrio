@@ -14,7 +14,4 @@ COPY --from=builder /build/extracted/spring-boot-loader/ ./
 COPY --from=builder /build/extracted/snapshot-dependencies/ ./
 COPY --from=builder /build/extracted/application/ ./
 
-COPY docker/otel/agent/opentelemetry-javaagent.jar /opentelemetry-javaagent.jar
-ENV JAVA_TOOL_OPTIONS=-javaagent:/opentelemetry-javaagent.jar
-
 ENTRYPOINT ["java", "-jar", "app.jar"]

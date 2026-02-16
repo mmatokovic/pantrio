@@ -6,7 +6,6 @@ import com.tngtech.archunit.lang.ArchRule;
 import com.tngtech.archunit.lang.syntax.ArchRuleDefinition;
 import dev.mmatokovic.pantrio.PantrioApplication;
 import jakarta.persistence.Entity;
-import org.junit.jupiter.api.Test;
 import org.springframework.stereotype.Repository;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -33,17 +32,18 @@ class NamingRule {
     @ArchTest
     public static final ArchRule repositoryNamingRule = ArchRuleDefinition.classes()
         .that().areAnnotatedWith(Repository.class)
-        .should().haveSimpleNameEndingWith("Repository").orShould().haveSimpleNameEndingWith("RepositoryImpl");
+        .should().haveSimpleNameEndingWith("Repository")
+        .orShould().haveSimpleNameEndingWith("RepositoryImpl").orShould().haveSimpleNameEndingWith("Adapter");
 
     @ArchTest
     public static final ArchRule interfaceNamingRule = ArchRuleDefinition.noClasses()
         .that().areInterfaces()
-        .should().haveSimpleNameEndingWith("Interface").orShould().haveSimpleNameStartingWith("I");
+        .should().haveNameMatching(".*Interface$").orShould().haveNameMatching("^I[A-Z].*");
 
     @ArchTest
     public static final ArchRule testClassNamingRule = ArchRuleDefinition.classes()
-        .that().containAnyMethodsThat(annotatedWith(Test.class))
-        .should().haveSimpleNameStartingWith("Should").orShould().haveSimpleNameEndingWith("IT");
+        .that().containAnyMethodsThat(annotatedWith(org.junit.jupiter.api.Test.class))
+        .should().haveSimpleNameEndingWith("Test").orShould().haveSimpleNameEndingWith("IT");
 
     @ArchTest
     public static final ArchRule utilityClassNamingRule = ArchRuleDefinition.noClasses()

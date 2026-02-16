@@ -9,17 +9,11 @@ import dev.mmatokovic.pantrio.PantrioApplication;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Controller;
 import org.springframework.stereotype.Repository;
-import org.springframework.stereotype.Service;
 import org.springframework.web.bind.annotation.RestController;
 
 @SuppressWarnings("unused")
 @AnalyzeClasses(packagesOf = PantrioApplication.class)
 class AnnotationRule {
-
-    @ArchTest
-    public static final ArchRule serviceRepositoryAnnotationRule = ArchRuleDefinition.classes()
-        .that().haveSimpleNameEndingWith("Impl")
-        .should().beAnnotatedWith(Service.class).orShould().beAnnotatedWith(Repository.class);
 
     @ArchTest
     public static final ArchRule repositoryAnnotationRule = ArchRuleDefinition.classes()

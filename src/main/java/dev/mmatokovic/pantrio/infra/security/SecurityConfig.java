@@ -12,8 +12,6 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
-import org.springframework.security.oauth2.server.resource.authentication.JwtGrantedAuthoritiesConverter;
 import org.springframework.security.provisioning.InMemoryUserDetailsManager;
 import org.springframework.security.web.SecurityFilterChain;
 
@@ -38,23 +36,7 @@ public class SecurityConfig {
                 authz.anyRequest().authenticated();
             })
             .httpBasic(withDefaults())
-            .oauth2ResourceServer(oauth ->
-                oauth.jwt(jwt ->
-                    jwt.jwtAuthenticationConverter(jwtAuthenticationConverter())
-                )
-            )
             .build();
-    }
-
-    @Bean
-    public JwtAuthenticationConverter jwtAuthenticationConverter() {
-        JwtGrantedAuthoritiesConverter rolesConverter = new JwtGrantedAuthoritiesConverter();
-        rolesConverter.setAuthorityPrefix("ROLE_");
-        rolesConverter.setAuthoritiesClaimName("realm_access.roles");
-
-        JwtAuthenticationConverter converter = new JwtAuthenticationConverter();
-        converter.setJwtGrantedAuthoritiesConverter(rolesConverter);
-        return converter;
     }
 
     @Bean

@@ -1,5 +1,7 @@
 package dev.mmatokovic.pantrio.api;
-import com.fasterxml.jackson.core.JsonProcessingException;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.jupiter.api.Test;
@@ -22,6 +24,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 @WithMockUser(roles = "ADMIN")
 class ContractFreezeIT extends BaseIntegrationTest {
+
+    private static final Logger log = LoggerFactory.getLogger(ContractFreezeIT.class);
 
     @Autowired
     private RestTestClient rest;
@@ -64,7 +68,7 @@ class ContractFreezeIT extends BaseIntegrationTest {
         }
     }
 
-    private String prettifyJsonString(String raw) throws JsonProcessingException {
+    private String prettifyJsonString(String raw) {
         if (StringUtils.isBlank(raw)) return raw;
         return jackson.writerWithDefaultPrettyPrinter()
             .writeValueAsString(

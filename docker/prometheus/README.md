@@ -1,5 +1,8 @@
+# Prometheus and Grafana
 
-1. make sure http://localhost:8081/actuator/prometheus returns data:
+## Configuration
+
+1. Make sure http://localhost:8081/actuator/prometheus returns data:
    `management.endpoints.web.exposure.include=prometheus,health`
 
    - add to pom.xml:
@@ -23,20 +26,20 @@
 
 4. Create a Panel and Add Queries
 
-- Maximum HTTP request time:
+   - Maximum HTTP request time:
 
-    ```plain
-    http_server_requests_seconds_max
-    ```
+       ```plain
+       http_server_requests_seconds_max
+       ```
 
-- Requests per minute:
+   - Requests per minute:
 
-    ```plain
-    rate(http_server_requests_seconds_count[1m])
-    ```
+       ```plain
+       rate(http_server_requests_seconds_count[1m])
+       ```
 
-- Cache size (after adding cache management):
+   - Cache size (after adding cache management):
 
-    ```plain
-    cache_size
-    ```
+       ```plain
+       cache_size
+       ```

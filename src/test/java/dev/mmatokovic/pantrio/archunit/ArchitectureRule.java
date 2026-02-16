@@ -1,6 +1,7 @@
 package dev.mmatokovic.pantrio.archunit;
 
 import com.tngtech.archunit.base.DescribedPredicate;
+import com.tngtech.archunit.core.importer.ImportOption;
 import com.tngtech.archunit.junit.AnalyzeClasses;
 import com.tngtech.archunit.junit.ArchTest;
 import com.tngtech.archunit.lang.ArchRule;
@@ -12,31 +13,31 @@ import org.springframework.web.bind.annotation.RestController;
 import static com.tngtech.archunit.core.domain.JavaClass.Predicates.resideInAnyPackage;
 
 @SuppressWarnings("unused")
-@AnalyzeClasses(packagesOf = PantrioApplication.class)
+@AnalyzeClasses(packagesOf = PantrioApplication.class, importOptions = ImportOption.DoNotIncludeTests.class)
 class ArchitectureRule {
 
     @ArchTest
     public static final ArchRule domainLayerRule = ArchRuleDefinition.noClasses()
-        .that().resideInAPackage("..domain..")
+        .that().resideInAPackage("dev.mmatokovic.pantrio.domain..")
         .should().dependOnClassesThat()
-        .resideInAnyPackage("..application..", "..infrastructure..", "..api..");
+        .resideInAnyPackage("dev.mmatokovic.pantrio.app..", "dev.mmatokovic.pantrio.infra..", "dev.mmatokovic.pantrio.api..");
 
     @ArchTest
     public static final ArchRule applicationLayerRule = ArchRuleDefinition.noClasses()
-        .that().resideInAPackage("..application..")
+        .that().resideInAPackage("dev.mmatokovic.pantrio.app..")
         .should().dependOnClassesThat()
-        .resideInAnyPackage("..api..");
+        .resideInAnyPackage("dev.mmatokovic.pantrio.api..");
 
     @ArchTest
     public static final ArchRule infrastructureLayerRule = ArchRuleDefinition.noClasses()
-        .that().resideInAPackage("..infrastructure..")
+        .that().resideInAPackage("dev.mmatokovic.pantrio.infra..")
         .should().dependOnClassesThat()
-        .resideInAnyPackage("..api..");
+        .resideInAnyPackage("dev.mmatokovic.pantrio.api..");
 
     @ArchTest
     public static final ArchRule packageStructureRule = ArchRuleDefinition.classes()
-        .that(DescribedPredicate.not(resideInAnyPackage("hr.crosig.integration.einvoicebilling", "hr.crosig.integration.einvoicebilling.archunit")))
-        .should().resideInAnyPackage("..application..", "..infrastructure..", "..api..", "..domain..");
+        .that(DescribedPredicate.not(resideInAnyPackage("dev.mmatokovic.pantrio", "dev.mmatokovic.pantrio.archunit")))
+        .should().resideInAnyPackage("dev.mmatokovic.pantrio.app..", "dev.mmatokovic.pantrio.infra..", "dev.mmatokovic.pantrio.api..", "dev.mmatokovic.pantrio.domain..");
 
     @ArchTest
     public static final ArchRule implementationPackageRule = ArchRuleDefinition.noClasses()
@@ -49,11 +50,11 @@ class ArchitectureRule {
     @ArchTest
     public static final ArchRule controllerPackageRule = ArchRuleDefinition.classes()
         .that().areAnnotatedWith(RestController.class)
-        .should().resideInAPackage("..api..");
+        .should().resideInAPackage("dev.mmatokovic.pantrio.api..");
 
     @ArchTest
     public static final ArchRule entityPackageRule = ArchRuleDefinition.classes()
         .that().areAnnotatedWith(Entity.class)
-        .should().resideInAPackage("..domain..");
+        .should().resideInAPackage("dev.mmatokovic.pantrio.domain..");
 
 }

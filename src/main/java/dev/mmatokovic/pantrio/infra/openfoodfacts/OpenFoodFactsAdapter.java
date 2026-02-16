@@ -1,5 +1,6 @@
 package dev.mmatokovic.pantrio.infra.openfoodfacts;
 
+import dev.mmatokovic.pantrio.app.product.ProductException;
 import dev.mmatokovic.pantrio.domain.product.OpenFoodFactsProductResponse;
 import dev.mmatokovic.pantrio.domain.product.OpenFoodFactsPort;
 import org.springframework.resilience.annotation.ConcurrencyLimit;
@@ -38,7 +39,7 @@ public class OpenFoodFactsAdapter implements OpenFoodFactsPort {
                 .body(OpenFoodFactsProductResponse.class);
 
         } catch (RestClientException e) {
-            throw new RuntimeException("Unexpected error calling OpenFoodFacts API", e);
+            throw new ProductException("Unexpected error calling OpenFoodFacts API", e);
         }
     }
 }
