@@ -9,6 +9,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.jspecify.annotations.NonNull;
 import org.slf4j.Logger;
 import org.slf4j.MDC;
+import org.springframework.core.annotation.Order;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 import org.springframework.util.CollectionUtils;
@@ -28,6 +29,7 @@ import java.util.regex.Pattern;
 import static dev.mmatokovic.pantrio.infra.logging.HttpLoggingUtils.LOG_ITEM_DELIMITER;
 
 @Component
+@Order(2)
 class HttpLoggingFilter extends OncePerRequestFilter {
 
     @SuppressWarnings("checkstyle:ConstantName")
@@ -35,7 +37,7 @@ class HttpLoggingFilter extends OncePerRequestFilter {
 
     static {
         LoggerContext loggerContext = (LoggerContext) org.slf4j.LoggerFactory.getILoggerFactory();
-        log = loggerContext.getLogger("audit-logger");
+        log = loggerContext.getLogger("audit.logger");
     }
 
     private static final String REQUEST_ID_HEADER_KEY = "X-Request-Id";
@@ -75,14 +77,14 @@ class HttpLoggingFilter extends OncePerRequestFilter {
         MDC.put("authUser", SecurityContextHolder.getContext().getAuthentication().getName());
 
         try {
-            // execute request
-            filterChain.doFilter(requestWrapper, responseWrapper);
-        } finally {
             if (shouldLogRequestResponse) {
                 logRequest(httpMethod, requestId, requestUri, source, target, requestWrapper);
+            }
+            filterChain.doFilter(requestWrapper, responseWrapper);
+            if (shouldLogRequestResponse) {
                 logResponse(responseWrapper, httpMethod, requestId, requestUri, source, target, startTime);
             }
-
+        } finally {
             responseWrapper.copyBodyToResponse();
             MDC.clear();
         }

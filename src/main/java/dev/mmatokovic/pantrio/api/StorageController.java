@@ -66,9 +66,11 @@ public class StorageController {
         return ResponseEntity.noContent().build();
     }
 
-    //TODO: Dont return the whole storage item response, just the location id of the created instance
     @PostMapping(value = "/{storageId}/items", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
     ResponseEntity<StorageItemResponse> addItem(@PathVariable Long storageId, @Valid @RequestBody StorageItemRequest request) {
-        return ResponseEntity.ok(service.addInstance(storageId, request));
+        StorageItemResponse instance = service.addInstance(storageId, request);
+        URI location = ServletUriComponentsBuilder.fromCurrentRequest().path("/{id}").buildAndExpand(instance.id()).toUri();
+
+        return ResponseEntity.created(location).build();
     }
 }

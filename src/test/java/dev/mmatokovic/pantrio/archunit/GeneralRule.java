@@ -18,7 +18,7 @@ import static com.tngtech.archunit.library.GeneralCodingRules.NO_CLASSES_SHOULD_
 @AnalyzeClasses(packagesOf = PantrioApplication.class)
 class GeneralRule {
 
-    //TODO: disabled temporarily, due to how ContracFreezeIT is setup
+    //TODO: disabled temporarily, due to how ContractFreezeIT is setup
     @ArchIgnore
     @ArchTest
     public static final ArchRule standardStreamRule = NO_CLASSES_SHOULD_ACCESS_STANDARD_STREAMS;

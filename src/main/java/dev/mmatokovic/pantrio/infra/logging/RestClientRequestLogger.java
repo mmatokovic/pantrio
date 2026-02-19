@@ -5,6 +5,7 @@ import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.jspecify.annotations.NonNull;
 import org.slf4j.Logger;
+import org.slf4j.MDC;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpRequest;
@@ -35,7 +36,7 @@ public class RestClientRequestLogger implements ClientHttpRequestInterceptor {
 
     static {
         LoggerContext loggerContext = (LoggerContext) org.slf4j.LoggerFactory.getILoggerFactory();
-        log = loggerContext.getLogger("audit-logger");
+        log = loggerContext.getLogger("audit.logger");
     }
 
     private static final List<String> IGNORABLE_URIS = new ArrayList<>();
@@ -52,12 +53,15 @@ public class RestClientRequestLogger implements ClientHttpRequestInterceptor {
         final var requestId = UUID.randomUUID().toString();
         final var startTime = Instant.now();
 
+        String traceparent = MDC.get("traceparent");
+        request.getHeaders().set("traceparent", traceparent);
+
         final var shouldIgnoreLogging = IGNORABLE_URIS.stream().anyMatch(requestUri::contains);
         if (shouldIgnoreLogging) {
             return execution.execute(request, body);
         }
 
-        logRequest(body, requestId, requestUri, httpMethod, request.getHeaders().getContentType());
+        logRequest(body, requestId, requestUri, httpMethod, request.getHeaders());
 
         final ClientHttpResponse response = execution.execute(request, body);
 
@@ -68,14 +72,15 @@ public class RestClientRequestLogger implements ClientHttpRequestInterceptor {
         return new BufferingClientHttpResponseWrapper(response, responseBody);
     }
 
-    private static void logRequest(byte[] body, String requestId, String requestUri, HttpMethod httpMethod, MediaType mediaType) {
+    private static void logRequest(byte[] body, String requestId, String requestUri, HttpMethod httpMethod, HttpHeaders headers) {
         final var requestSb = new StringBuilder();
         requestSb
             .append("EXTERNAL HTTP ").append(httpMethod.name()).append(" request :: ")
             .append("Request ID: ").append(requestId).append(LOG_ITEM_DELIMITER)
+            .append("Headers: ").append(headers).append(LOG_ITEM_DELIMITER)
             .append("Request URI: ").append(requestUri);
 
-        if (HttpLoggingUtils.shouldLogRequestBody(httpMethod.name(), mediaType)) {
+        if (HttpLoggingUtils.shouldLogRequestBody(httpMethod.name(), headers.getContentType())) {
             final var requestBody = new String(body, StandardCharsets.UTF_8);
             if (StringUtils.isEmpty(requestBody)) {
                 requestSb.append(LOG_ITEM_DELIMITER).append("Request body is empty");

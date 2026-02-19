@@ -49,10 +49,12 @@ public interface StorageService {
      */
     void deleteStorage(Long id);
 
-    //TODO: write docs for this method
+    /**
+     * Adds a new item instance to an existing storage.
+     *
+     * @param storageId the unique identifier of the storage to which the item will be added
+     * @param request   the details of the item instance to add
+     * @return the newly added storage item with its assigned identifiers and details
+     */
     StorageItemResponse addInstance(Long storageId, StorageItemRequest request);
-
-    //StorageItemResponse getInstance(Long storageId, Long instanceId, Long quantity);
-
-    //StorageItemResponse deleteInstance(Long storageId, Long instanceId, Long quantity);
 }

@@ -33,8 +33,12 @@ public class OpenFoodFactsAdapter implements OpenFoodFactsPort {
 
             return openFoodFactsRestClient.get()
                 .uri("/api/v2/product/{barcode}?fields={fields}", barcode, fields)
-                .retrieve()
-                .body(OpenFoodFactsProductResponse.class);
+                .exchange((request, response) -> switch (response.getStatusCode().value()) {
+                    case 200 -> response.bodyTo(OpenFoodFactsProductResponse.class);
+                    case 404 -> throw new ProductException("Product not found for barcode: " + barcode);
+                    case 429 -> throw new ProductException("Rate limit exceeded");
+                    default -> throw new ProductException("Unexpected status: " + response.getStatusCode());
+                });
 
         } catch (RestClientException e) {
             throw new ProductException("Unexpected error calling OpenFoodFacts API", e);

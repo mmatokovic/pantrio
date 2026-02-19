@@ -31,5 +31,7 @@ public interface StorageMapper {
     @Mapping(target = "updatedAt", ignore = true)
     Instance toInstance(StorageItemRequest request);
 
+    @Mapping(source = "item.id", target = "itemId")
+    @Mapping(source = "storage.id", target = "storageId")
     StorageItemResponse toItemResponse(Instance instance);
 }

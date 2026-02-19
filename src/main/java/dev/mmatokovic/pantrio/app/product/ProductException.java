@@ -6,7 +6,6 @@ public class ProductException extends RuntimeException {
         super(message, cause);
     }
 
-    @SuppressWarnings("unused")
     public ProductException(String message) {
         super(message);
     }
