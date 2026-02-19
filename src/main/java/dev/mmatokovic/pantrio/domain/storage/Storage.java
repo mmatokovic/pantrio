@@ -19,7 +19,10 @@ public class Storage {
     private Long id;
     private String name;
     private String description;
-    private Boolean disabled = false;
+
+    @Column(name = "DISABLED", nullable = false)
+    private boolean disabled = false;
+
     @CreationTimestamp
     @Column(name = "CREATED_AT", updatable = false, nullable = false)
     private LocalDateTime createdAt;
@@ -63,11 +66,11 @@ public class Storage {
         this.description = description;
     }
 
-    public Boolean getDisabled() {
+    public boolean getDisabled() {
         return disabled;
     }
 
-    public void setDisabled(Boolean disabled) {
+    public void setDisabled(boolean disabled) {
         this.disabled = disabled;
     }
 
@@ -79,4 +82,11 @@ public class Storage {
         return updatedAt;
     }
 
+    public void setCreatedAt(LocalDateTime createdAt) {
+        this.createdAt = createdAt;
+    }
+
+    public void setUpdatedAt(LocalDateTime updatedAt) {
+        this.updatedAt = updatedAt;
+    }
 }

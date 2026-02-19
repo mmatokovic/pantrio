@@ -1,9 +1,12 @@
 package dev.mmatokovic.pantrio.api;
 
 import dev.mmatokovic.pantrio.app.storage.StorageService;
+import dev.mmatokovic.pantrio.domain.storage.StorageItemRequest;
+import dev.mmatokovic.pantrio.domain.storage.StorageItemResponse;
 import dev.mmatokovic.pantrio.domain.storage.StorageRequest;
 import dev.mmatokovic.pantrio.domain.storage.StorageResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
@@ -33,20 +36,14 @@ public class StorageController {
     }
 
     @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
-    ResponseEntity<List<StorageResponse>> index(
-        @ParameterObject @PageableDefault final Pageable pageable) {
+    ResponseEntity<List<StorageResponse>> index(@ParameterObject @PageableDefault final Pageable pageable) {
         return ResponseEntity.ok(service.listStorages(pageable));
     }
 
     @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
-    ResponseEntity<StorageResponse> create(@RequestBody StorageRequest request) {
+    ResponseEntity<StorageResponse> create(@Valid @RequestBody StorageRequest request) {
         StorageResponse storage = service.createStorage(request);
-
-        URI location = ServletUriComponentsBuilder
-            .fromCurrentRequest()
-            .path("/{id}")
-            .buildAndExpand(storage.id())
-            .toUri();
+        URI location = ServletUriComponentsBuilder.fromCurrentRequest().path("/{id}").buildAndExpand(storage.id()).toUri();
 
         return ResponseEntity.created(location).build();
     }
@@ -57,14 +54,22 @@ public class StorageController {
     }
 
     @PutMapping(value = "/{id}", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
-    ResponseEntity<StorageResponse> update(@PathVariable Long id, @RequestBody StorageRequest request) {
+    ResponseEntity<StorageResponse> update(@PathVariable Long id, @Valid @RequestBody StorageRequest request) {
         service.updateStorage(id, request);
+
         return ResponseEntity.noContent().build();
     }
 
     @DeleteMapping("/{id}")
     ResponseEntity<Void> delete(@PathVariable Long id) {
         service.deleteStorage(id);
+
         return ResponseEntity.noContent().build();
+    }
+
+    //TODO: Dont return the whole storage item response, just the location id of the created instance
+    @PostMapping(value = "/{storageId}/items", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+    ResponseEntity<StorageItemResponse> addItem(@PathVariable Long storageId, @Valid @RequestBody StorageItemRequest request) {
+        return ResponseEntity.ok(service.addInstance(storageId, request));
     }
 }

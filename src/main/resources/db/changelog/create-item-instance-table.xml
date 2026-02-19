@@ -16,7 +16,7 @@
             <column name="storage_id" type="BIGINT">
                 <constraints nullable="false"/>
             </column>
-            <column name="quantity" type="NUMBER(12,3)">
+            <column name="quantity" type="BIGINT">
                 <constraints nullable="false"/>
             </column>
             <column name="expiry_date" type="DATE">
@@ -50,5 +50,18 @@
             constraintName="fk_item_instance_storage"
             referencedTableName="storage"
             referencedColumnNames="id"/>
+    </changeSet>
+
+    <changeSet id="4" author="pantrio">
+        <addUniqueConstraint
+            tableName="item_instance"
+            columnNames="storage_id, item_id"
+            constraintName="uk_item_instance_storage_item"/>
+    </changeSet>
+
+    <changeSet id="5" author="pantrio">
+        <createIndex tableName="item_instance" indexName="idx_item_instance_storage">
+            <column name="storage_id"/>
+        </createIndex>
     </changeSet>
 </databaseChangeLog>

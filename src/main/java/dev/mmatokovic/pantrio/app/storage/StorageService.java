@@ -1,5 +1,7 @@
 package dev.mmatokovic.pantrio.app.storage;
 
+import dev.mmatokovic.pantrio.domain.storage.StorageItemRequest;
+import dev.mmatokovic.pantrio.domain.storage.StorageItemResponse;
 import dev.mmatokovic.pantrio.domain.storage.StorageRequest;
 import dev.mmatokovic.pantrio.domain.storage.StorageResponse;
 import org.springframework.data.domain.Pageable;
@@ -46,4 +48,11 @@ public interface StorageService {
      * @param id the unique identifier of the storage to delete
      */
     void deleteStorage(Long id);
+
+    //TODO: write docs for this method
+    StorageItemResponse addInstance(Long storageId, StorageItemRequest request);
+
+    //StorageItemResponse getInstance(Long storageId, Long instanceId, Long quantity);
+
+    //StorageItemResponse deleteInstance(Long storageId, Long instanceId, Long quantity);
 }

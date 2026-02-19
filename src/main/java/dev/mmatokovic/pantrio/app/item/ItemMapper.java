@@ -16,5 +16,7 @@ public interface ItemMapper {
     List<ItemResponse> toResponseList(List<Item> items);
 
     @Mapping(target = "id", ignore = true)
+    @Mapping(target = "createdAt", ignore = true)
+    @Mapping(target = "updatedAt", ignore = true)
     Item toEntity(ItemRequest request);
 }

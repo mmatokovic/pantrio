@@ -34,21 +34,14 @@ public class ItemController {
     }
 
     @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
-    ResponseEntity<List<ItemResponse>> index(
-            @ParameterObject @PageableDefault final Pageable pageable) {
+    ResponseEntity<List<ItemResponse>> index(@ParameterObject @PageableDefault final Pageable pageable) {
         return ResponseEntity.ok(service.listItems(pageable));
     }
 
     @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
-    ResponseEntity<ItemResponse> create(
-        @Valid @RequestBody ItemRequest request) {
+    ResponseEntity<ItemResponse> create(@Valid @RequestBody ItemRequest request) {
         ItemResponse item = service.createItem(request);
-
-        URI location = ServletUriComponentsBuilder
-                .fromCurrentRequest()
-                .path("/{id}")
-                .buildAndExpand(item.id())
-                .toUri();
+        URI location = ServletUriComponentsBuilder.fromCurrentRequest().path("/{id}").buildAndExpand(item.id()).toUri();
 
         return ResponseEntity.created(location).build();
     }
@@ -61,12 +54,14 @@ public class ItemController {
     @PutMapping(value = "/{id}", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
     ResponseEntity<ItemResponse> update(@PathVariable Long id, @RequestBody ItemRequest request) {
         service.updateItem(id, request);
+
         return ResponseEntity.noContent().build();
     }
 
     @DeleteMapping("/{id}")
     ResponseEntity<Void> delete(@PathVariable Long id) {
         service.deleteItem(id);
+
         return ResponseEntity.noContent().build();
     }
 }

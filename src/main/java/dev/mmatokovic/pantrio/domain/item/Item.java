@@ -23,8 +23,10 @@ public class Item {
     private String unit;
     private String barcode;
     private String pictureUrl;
-    @Column(nullable = false)
-    private Boolean disabled = false;
+
+    @Column(name = "DISABLED", nullable = false)
+    private boolean disabled = false;
+
     @CreationTimestamp
     @Column(name = "CREATED_AT", updatable = false, nullable = false)
     private LocalDateTime createdAt;
@@ -71,7 +73,7 @@ public class Item {
         return this.pictureUrl;
     }
 
-    public Boolean getDisabled() {
+    public boolean getDisabled() {
         return this.disabled;
     }
 
@@ -107,7 +109,7 @@ public class Item {
         this.pictureUrl = pictureUrl;
     }
 
-    public void setDisabled(Boolean disabled) {
+    public void setDisabled(boolean disabled) {
         this.disabled = disabled;
     }
 

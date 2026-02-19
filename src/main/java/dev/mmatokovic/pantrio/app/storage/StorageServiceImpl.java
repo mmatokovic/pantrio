@@ -1,6 +1,12 @@
 package dev.mmatokovic.pantrio.app.storage;
 
+import dev.mmatokovic.pantrio.domain.instance.Instance;
+import dev.mmatokovic.pantrio.domain.instance.InstanceRepository;
+import dev.mmatokovic.pantrio.domain.item.Item;
+import dev.mmatokovic.pantrio.domain.item.ItemRepository;
 import dev.mmatokovic.pantrio.domain.storage.Storage;
+import dev.mmatokovic.pantrio.domain.storage.StorageItemRequest;
+import dev.mmatokovic.pantrio.domain.storage.StorageItemResponse;
 import dev.mmatokovic.pantrio.domain.storage.StorageRepository;
 import dev.mmatokovic.pantrio.domain.storage.StorageRequest;
 import dev.mmatokovic.pantrio.domain.storage.StorageResponse;
@@ -14,10 +20,14 @@ import java.util.List;
 public class StorageServiceImpl implements StorageService {
     private final StorageRepository repo;
     private final StorageMapper mapper;
+    private final InstanceRepository instanceRepository;
+    private final ItemRepository itemRepository;
 
-    public StorageServiceImpl(StorageRepository repo, StorageMapper mapper) {
+    public StorageServiceImpl(StorageRepository repo, StorageMapper mapper, InstanceRepository instanceRepository, ItemRepository itemRepository) {
         this.repo = repo;
+        this.instanceRepository = instanceRepository;
         this.mapper = mapper;
+        this.itemRepository = itemRepository;
     }
 
     @Override
@@ -57,4 +67,29 @@ public class StorageServiceImpl implements StorageService {
         repo.delete(storage);
     }
 
+    @Override
+    public StorageItemResponse addInstance(Long storageId, StorageItemRequest request) {
+        Storage storage = repo.findById(storageId)
+            .orElseThrow(() -> new EntityNotFoundException("Storage " + storageId + " not found"));
+
+        Item item = itemRepository.findById(request.itemId())
+            .orElseThrow(() -> new EntityNotFoundException("Item " + request.itemId() + " not found"));
+
+        Instance instance = instanceRepository.findByStorageAndItem(storage, item)
+            .map(existing -> {
+                existing.setQuantity(request.quantity());
+                existing.setExpiryDate(request.expiryDate());
+                return existing;
+            })
+            .orElseGet(() -> {
+                Instance newInstance = mapper.toInstance(request);
+                newInstance.setStorage(storage);
+                newInstance.setItem(item);
+                return newInstance;
+            });
+
+        Instance saved = instanceRepository.save(instance);
+
+        return mapper.toItemResponse(saved);
+    }
 }

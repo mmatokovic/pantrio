@@ -21,7 +21,7 @@ public class ProductController {
     }
 
     @GetMapping(value = "/{code}", produces = MediaType.APPLICATION_JSON_VALUE)
-    ResponseEntity<ProductResponse> show(@PathVariable String code) {
+    ResponseEntity<ProductResponse> find(@PathVariable String code) {
         return ResponseEntity.ok(service.findProductByBarcode(code));
     }
 }

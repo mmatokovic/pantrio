@@ -42,14 +42,12 @@ public class SecurityConfig {
     @Bean
     public UserDetailsService userDetailsService() {
         UserDetails admin = User.builder()
-            .username("user")
-            .password(passwordEncoder().encode("userpwd"))
+            .username("user").password(passwordEncoder().encode("userpwd"))
             .roles("ADMIN")
             .build();
 
         UserDetails prometheus = User.builder()
-            .username("prometheus")
-            .password(passwordEncoder().encode("prometheus"))
+            .username("prometheus").password(passwordEncoder().encode("prometheus"))
             .roles("METRICS")
             .build();
 
