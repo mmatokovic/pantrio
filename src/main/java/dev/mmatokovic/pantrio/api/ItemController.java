@@ -5,6 +5,7 @@ import dev.mmatokovic.pantrio.domain.item.ItemRequest;
 import dev.mmatokovic.pantrio.domain.item.ItemResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
@@ -26,12 +27,10 @@ import java.util.List;
 @RestController
 @Tag(name = "Item")
 @RequestMapping("/items")
+@RequiredArgsConstructor
 public class ItemController {
-    private final ItemService service;
 
-    public ItemController(ItemService service) {
-        this.service = service;
-    }
+    private final ItemService service;
 
     @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
     ResponseEntity<List<ItemResponse>> index(@ParameterObject @PageableDefault final Pageable pageable) {

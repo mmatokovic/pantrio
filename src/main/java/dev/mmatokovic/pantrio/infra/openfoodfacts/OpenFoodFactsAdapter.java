@@ -3,6 +3,7 @@ package dev.mmatokovic.pantrio.infra.openfoodfacts;
 import dev.mmatokovic.pantrio.app.product.ProductException;
 import dev.mmatokovic.pantrio.domain.product.OpenFoodFactsProductResponse;
 import dev.mmatokovic.pantrio.domain.product.OpenFoodFactsPort;
+import lombok.RequiredArgsConstructor;
 import org.springframework.resilience.annotation.ConcurrencyLimit;
 import org.springframework.resilience.annotation.Retryable;
 import org.springframework.stereotype.Repository;
@@ -12,13 +13,10 @@ import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientException;
 
 @Repository
+@RequiredArgsConstructor
 public class OpenFoodFactsAdapter implements OpenFoodFactsPort {
 
     private final RestClient openFoodFactsRestClient;
-
-    public OpenFoodFactsAdapter(RestClient openFoodFactsRestClient) {
-        this.openFoodFactsRestClient = openFoodFactsRestClient;
-    }
 
     @Retryable(
         includes = {HttpServerErrorException.class, ResourceAccessException.class},

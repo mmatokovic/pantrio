@@ -11,24 +11,20 @@ import dev.mmatokovic.pantrio.domain.storage.StorageRepository;
 import dev.mmatokovic.pantrio.domain.storage.StorageRequest;
 import dev.mmatokovic.pantrio.domain.storage.StorageResponse;
 import jakarta.persistence.EntityNotFoundException;
+import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 
 @Service
+@RequiredArgsConstructor
 public class StorageServiceImpl implements StorageService {
+
     private final StorageRepository repo;
     private final StorageMapper mapper;
     private final InstanceRepository instanceRepository;
     private final ItemRepository itemRepository;
-
-    public StorageServiceImpl(StorageRepository repo, StorageMapper mapper, InstanceRepository instanceRepository, ItemRepository itemRepository) {
-        this.repo = repo;
-        this.instanceRepository = instanceRepository;
-        this.mapper = mapper;
-        this.itemRepository = itemRepository;
-    }
 
     @Override
     public List<StorageResponse> listStorages(Pageable pageable) {

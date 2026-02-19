@@ -5,20 +5,18 @@ import dev.mmatokovic.pantrio.domain.item.ItemRepository;
 import dev.mmatokovic.pantrio.domain.item.ItemRequest;
 import dev.mmatokovic.pantrio.domain.item.ItemResponse;
 import jakarta.persistence.EntityNotFoundException;
+import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 
 @Service
+@RequiredArgsConstructor
 public class ItemServiceImpl implements ItemService {
+
     private final ItemRepository repo;
     private final ItemMapper mapper;
-
-    public ItemServiceImpl(ItemRepository repo, ItemMapper mapper) {
-        this.repo = repo;
-        this.mapper = mapper;
-    }
 
     @Override
     public List<ItemResponse> listItems(Pageable pageable) {

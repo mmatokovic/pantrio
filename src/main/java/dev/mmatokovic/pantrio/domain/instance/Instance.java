@@ -14,6 +14,10 @@ import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 import jakarta.persistence.Version;
 import jakarta.validation.constraints.NotNull;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.OnDelete;
 import org.hibernate.annotations.OnDeleteAction;
@@ -22,6 +26,10 @@ import org.hibernate.annotations.UpdateTimestamp;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
 @Entity
 @Table(
     name = "ITEM_INSTANCE",
@@ -67,79 +75,4 @@ public class Instance {
     @UpdateTimestamp
     @Column(name = "UPDATED_AT")
     private LocalDateTime updatedAt;
-
-    public Instance() {
-    }
-
-    public Instance(Long id, Item item, Storage storage, Long quantity, LocalDate expiryDate) {
-        this.id = id;
-        this.item = item;
-        this.storage = storage;
-        this.quantity = quantity;
-        this.expiryDate = expiryDate;
-    }
-
-    public Long getId() {
-        return id;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
-    }
-
-    public Item getItem() {
-        return item;
-    }
-
-    public void setItem(Item item) {
-        this.item = item;
-    }
-
-    public Storage getStorage() {
-        return storage;
-    }
-
-    public void setStorage(Storage storage) {
-        this.storage = storage;
-    }
-
-    public Long getQuantity() {
-        return quantity;
-    }
-
-    public void setQuantity(Long quantity) {
-        this.quantity = quantity;
-    }
-
-    public LocalDate getExpiryDate() {
-        return expiryDate;
-    }
-
-    public void setExpiryDate(LocalDate expiryDate) {
-        this.expiryDate = expiryDate;
-    }
-
-    public Long getVersion() {
-        return version;
-    }
-
-    public void setVersion(Long version) {
-        this.version = version;
-    }
-
-    public LocalDateTime getCreatedAt() {
-        return createdAt;
-    }
-
-    public LocalDateTime getUpdatedAt() {
-        return updatedAt;
-    }
-
-    public void setCreatedAt(LocalDateTime createdAt) {
-        this.createdAt = createdAt;
-    }
-
-    public void setUpdatedAt(LocalDateTime updatedAt) {
-        this.updatedAt = updatedAt;
-    }
 }

@@ -7,6 +7,7 @@ import dev.mmatokovic.pantrio.domain.storage.StorageRequest;
 import dev.mmatokovic.pantrio.domain.storage.StorageResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
@@ -28,12 +29,10 @@ import java.util.List;
 @RestController
 @Tag(name = "Storage")
 @RequestMapping("/storages")
+@RequiredArgsConstructor
 public class StorageController {
-    private final StorageService service;
 
-    public StorageController(StorageService service) {
-        this.service = service;
-    }
+    private final StorageService service;
 
     @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
     ResponseEntity<List<StorageResponse>> index(@ParameterObject @PageableDefault final Pageable pageable) {

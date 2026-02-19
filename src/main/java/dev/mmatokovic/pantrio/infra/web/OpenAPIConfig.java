@@ -4,20 +4,27 @@ import io.swagger.v3.oas.models.Components;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.info.Info;
 import io.swagger.v3.oas.models.security.SecurityScheme;
-import org.springframework.beans.factory.annotation.Value;
+import lombok.RequiredArgsConstructor;
+import org.springframework.boot.info.BuildProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 @Configuration
+@RequiredArgsConstructor
 public class OpenAPIConfig {
 
+    private final BuildProperties buildProperties;
+
     @Bean
-    public OpenAPI defineOpenAPI(@Value("${info.app.version}") String appVersion) {
+    public OpenAPI defineOpenAPI() {
         return new OpenAPI()
-            .components(new Components().addSecuritySchemes("basicScheme",
-                new SecurityScheme().type(SecurityScheme.Type.HTTP).scheme("basic")))
-            .info(new Info().title("Pantrio API")
-                .description("One-stop comestibles management solution.")
-                .version(appVersion));
+            .components(new Components().addSecuritySchemes(
+                "basicScheme",
+                new SecurityScheme()
+                    .type(SecurityScheme.Type.HTTP)
+                    .scheme("basic")))
+            .info(new Info()
+                .title(buildProperties.getName())
+                .version(buildProperties.getVersion()));
     }
 }

@@ -6,11 +6,21 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.LocalDateTime;
 
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 @Entity
 @Table(name = "STORAGE")
 public class Storage {
@@ -21,7 +31,7 @@ public class Storage {
     private String description;
 
     @Column(name = "DISABLED", nullable = false)
-    private boolean disabled = false;
+    private boolean disabled;
 
     @CreationTimestamp
     @Column(name = "CREATED_AT", updatable = false, nullable = false)
@@ -30,63 +40,4 @@ public class Storage {
     @UpdateTimestamp
     @Column(name = "UPDATED_AT")
     private LocalDateTime updatedAt;
-
-    public Storage() {
-
-    }
-
-    public Storage(Long id, String name, String description, Boolean disabled) {
-        this.id = id;
-        this.name = name;
-        this.description = description;
-        this.disabled = disabled;
-    }
-
-    public Long getId() {
-        return id;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public String getDescription() {
-        return description;
-    }
-
-    public void setDescription(String description) {
-        this.description = description;
-    }
-
-    public boolean getDisabled() {
-        return disabled;
-    }
-
-    public void setDisabled(boolean disabled) {
-        this.disabled = disabled;
-    }
-
-    public LocalDateTime getCreatedAt() {
-        return createdAt;
-    }
-
-    public LocalDateTime getUpdatedAt() {
-        return updatedAt;
-    }
-
-    public void setCreatedAt(LocalDateTime createdAt) {
-        this.createdAt = createdAt;
-    }
-
-    public void setUpdatedAt(LocalDateTime updatedAt) {
-        this.updatedAt = updatedAt;
-    }
 }

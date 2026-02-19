@@ -44,7 +44,7 @@ class ItemServiceImplTest {
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
-        item = new Item(1L, "item", "description", "8000500179864","pcs", "pic.png", false);
+        item = Item.builder().id(1L).name("item").remarks("description").barcode("8000500179864").unit("pcs").pictureUrl("pic.png").disabled(false).build();
         request = new ItemRequest("item", "description", "8000500179864", ItemRequest.UnitEnum.PCS, "pic.png", false);
         response = new ItemResponse(1L, "item", "remarks", "8000500179864", "pcs", "pic.png", false);
     }
