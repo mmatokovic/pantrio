@@ -1,12 +1,12 @@
 package dev.mmatokovic.pantrio.domain.product;
 
-public interface OpenFoodFactsPort {
+public interface ProductCatalogPort {
 
     /**
      * Retrieve information for a product with a specific barcode.
      *
      * @param code product barcode
-     * @return product details
+     * @return {@link Product} details
      */
-    OpenFoodFactsProductResponse getProductByBarcode(String code);
+    Product getProductByBarcode(String code);
 }

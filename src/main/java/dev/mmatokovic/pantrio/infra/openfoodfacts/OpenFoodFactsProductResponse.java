@@ -1,4 +1,4 @@
-package dev.mmatokovic.pantrio.domain.product;
+package dev.mmatokovic.pantrio.infra.openfoodfacts;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
@@ -10,6 +10,7 @@ public record OpenFoodFactsProductResponse(
     String statusVerbose
 ) {
     public record Product(
+       String code,
        @JsonProperty("product_name")
        String productName,
        @JsonProperty("product_quantity")

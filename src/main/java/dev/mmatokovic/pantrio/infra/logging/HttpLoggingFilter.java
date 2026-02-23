@@ -62,7 +62,7 @@ class HttpLoggingFilter extends OncePerRequestFilter {
     @Override
     protected void doFilterInternal(@NonNull HttpServletRequest request,
                                     @NonNull HttpServletResponse response,
-                                    FilterChain filterChain) throws ServletException, IOException {
+                                    @NonNull FilterChain chain) throws ServletException, IOException {
         final var requestWrapper = new ContentCachingRequestWrapper(request, 1024 * 1024);
         final var responseWrapper = new ContentCachingResponseWrapper(response);
         final var requestId = getUniqueIdentifier(requestWrapper);
@@ -72,15 +72,16 @@ class HttpLoggingFilter extends OncePerRequestFilter {
         final var target = request.getServerName();
         final var startTime = Instant.now();
         final var shouldLogRequestResponse = IGNORED_APIS.stream().noneMatch(requestUri::contains);
+        final var auth = SecurityContextHolder.getContext().getAuthentication();
 
         MDC.put("requestId", requestId);
-        MDC.put("authUser", SecurityContextHolder.getContext().getAuthentication().getName());
+        MDC.put("authUser", auth != null ? auth.getName() : "anonymous");
 
         try {
             if (shouldLogRequestResponse) {
                 logRequest(httpMethod, requestId, requestUri, source, target, requestWrapper);
             }
-            filterChain.doFilter(requestWrapper, responseWrapper);
+            chain.doFilter(requestWrapper, responseWrapper);
             if (shouldLogRequestResponse) {
                 logResponse(responseWrapper, httpMethod, requestId, requestUri, source, target, startTime);
             }

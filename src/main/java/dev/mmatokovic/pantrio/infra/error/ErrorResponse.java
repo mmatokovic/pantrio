@@ -12,7 +12,8 @@ public record ErrorResponse(
 ) {
     public record Errors(
         String field,
-        String detail) { }
+        String detail
+    ) { }
 
     public ErrorResponse(String message) {
         this(null, message, null);

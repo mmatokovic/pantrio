@@ -1,6 +1,6 @@
 package dev.mmatokovic.pantrio.infra.error;
 
-import dev.mmatokovic.pantrio.app.product.ProductException;
+import dev.mmatokovic.pantrio.domain.product.ProductNotFoundException;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.validation.ConstraintViolationException;
 import org.slf4j.Logger;
@@ -14,6 +14,9 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.client.HttpClientErrorException;
+import org.springframework.web.client.HttpServerErrorException;
+import org.springframework.web.client.UnknownHttpStatusCodeException;
 import org.springframework.web.servlet.NoHandlerFoundException;
 
 import java.util.List;
@@ -94,10 +97,24 @@ public class ErrorHandler {
         return ResponseEntity.status(HttpStatus.METHOD_NOT_ALLOWED).body(error);
     }
 
-    @ExceptionHandler(ProductException.class)
-    public ResponseEntity<ErrorResponse> handleProductException(ProductException ex) {
-        ErrorResponse error = new ErrorResponse("Something went wrong: " + ex.getMessage());
+    @ExceptionHandler(HttpClientErrorException.class)
+    public ResponseEntity<ErrorResponse> handleClientError(HttpClientErrorException ex) {
+        int status = ex.getStatusCode().value();
+        String message = ex.getResponseBodyAsString();
 
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
+        return ResponseEntity.status(status).body(new ErrorResponse(status, message));
+    }
+
+    @ExceptionHandler({UnknownHttpStatusCodeException.class, HttpServerErrorException.class})
+    public ResponseEntity<ErrorResponse> handleUnknownStatus() {
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+            .body(new ErrorResponse(502, "Unexpected external service error"));
+    }
+
+    @ExceptionHandler(ProductNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleExternalNotFound(Exception ex) {
+        ErrorResponse error = new ErrorResponse(404, ex.getMessage() != null ? ex.getMessage() : "Resource not found");
+
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
     }
 }

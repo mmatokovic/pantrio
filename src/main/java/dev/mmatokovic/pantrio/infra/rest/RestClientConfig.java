@@ -9,13 +9,11 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.client.ClientHttpRequestFactory;
 import org.springframework.http.client.SimpleClientHttpRequestFactory;
-import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.web.client.RestClient;
 
 import java.time.Duration;
 
 @Configuration
-@EnableMethodSecurity
 public class RestClientConfig {
 
     private final OpenFoodFactsProperties properties;
