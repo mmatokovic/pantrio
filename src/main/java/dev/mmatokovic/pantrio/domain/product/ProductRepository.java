@@ -1,6 +1,8 @@
 package dev.mmatokovic.pantrio.domain.product;
 
-public interface ProductCatalogPort {
+import java.util.Optional;
+
+public interface ProductRepository {
 
     /**
      * Retrieve information for a product with a specific barcode.
@@ -8,5 +10,5 @@ public interface ProductCatalogPort {
      * @param code product barcode
      * @return {@link Product} details
      */
-    Product getProductByBarcode(String code);
+    Optional<Product> getProductByBarcode(String code);
 }

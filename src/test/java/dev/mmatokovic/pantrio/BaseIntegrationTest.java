@@ -8,6 +8,7 @@ import org.springframework.context.annotation.Import;
 import org.testcontainers.containers.OracleContainer;
 import org.testcontainers.utility.DockerImageName;
 import org.springframework.boot.resttestclient.autoconfigure.AutoConfigureRestTestClient;
+import org.wiremock.spring.EnableWireMock;
 
 import static org.springframework.boot.test.context.SpringBootTest.WebEnvironment.RANDOM_PORT;
 
@@ -16,6 +17,7 @@ import static org.springframework.boot.test.context.SpringBootTest.WebEnvironmen
 @Import({
     BaseIntegrationTest.TestContainersConfig.class,
 })
+@EnableWireMock
 public abstract class BaseIntegrationTest {
 
     @TestConfiguration(proxyBeanMethods = false)

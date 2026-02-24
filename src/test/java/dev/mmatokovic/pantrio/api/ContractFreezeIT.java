@@ -16,6 +16,7 @@ import dev.mmatokovic.pantrio.BaseIntegrationTest;
 import org.springframework.test.web.servlet.client.RestTestClient;
 import tools.jackson.databind.ObjectMapper;
 
+import java.io.ByteArrayOutputStream;
 import java.io.OutputStreamWriter;
 import java.util.Map;
 
@@ -59,8 +60,9 @@ class ContractFreezeIT extends BaseIntegrationTest {
             OpenApiCompare.fromContents(expectedOpenAPIJson, actualOpenAPIJson);
 
         if (!diff.isCompatible()) {
-            MarkdownRender markdownRender = new MarkdownRender();
-            markdownRender.render(diff, new OutputStreamWriter(System.err));
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            new MarkdownRender().render(diff, new OutputStreamWriter(baos, UTF_8));
+            log.error("OpenAPI contract diff:\n{}", baos.toString(UTF_8));
 
             assertThat(actualOpenAPIJson)
                 .describedAs("Exposed OpenAPI should not have changed")

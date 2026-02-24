@@ -1,6 +1,6 @@
 package dev.mmatokovic.pantrio.infra.error;
 
-import dev.mmatokovic.pantrio.domain.product.ProductNotFoundException;
+import dev.mmatokovic.pantrio.app.product.ProductNotFoundException;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.validation.ConstraintViolationException;
 import org.slf4j.Logger;
@@ -14,10 +14,10 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
-import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.HttpServerErrorException;
 import org.springframework.web.client.UnknownHttpStatusCodeException;
 import org.springframework.web.servlet.NoHandlerFoundException;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import java.util.List;
 
@@ -29,25 +29,22 @@ public class ErrorHandler {
     public ResponseEntity<ErrorResponse> handleGlobalException(Exception ex) {
         LOGGER.error(ex.getMessage(), ex);
 
-        ErrorResponse error = new ErrorResponse("Something went wrong");
-
-        return ResponseEntity.internalServerError().body(error);
+        return ResponseEntity.internalServerError()
+            .body(new ErrorResponse("Something went wrong"));
     }
 
-    @ExceptionHandler({NoHandlerFoundException.class, EntityNotFoundException.class})
+    @ExceptionHandler({NoHandlerFoundException.class, EntityNotFoundException.class, NoResourceFoundException.class})
     public ResponseEntity<ErrorResponse> handleNotFound(Exception ex) {
-        ErrorResponse error = new ErrorResponse(404, ex.getMessage() != null ? ex.getMessage() : "Resource not found");
-
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+            .body(new ErrorResponse(404, ex.getMessage() != null ? ex.getMessage() : "Resource not found"));
     }
 
     @ExceptionHandler(DataIntegrityViolationException.class)
     public ResponseEntity<ErrorResponse> handleDataIntegrityViolation(DataIntegrityViolationException ex) {
         LOGGER.error(ex.getMessage(), ex);
 
-        ErrorResponse error = new ErrorResponse(422, "Data integrity violation");
-
-        return ResponseEntity.unprocessableContent().body(error);
+        return ResponseEntity.unprocessableContent()
+            .body(new ErrorResponse(422, "Data integrity violation"));
     }
 
     @ExceptionHandler(ConstraintViolationException.class)
@@ -57,9 +54,8 @@ public class ErrorHandler {
             .map(cv -> new ErrorResponse.Errors(cv.getPropertyPath().toString(), cv.getMessage()))
             .toList();
 
-        ErrorResponse error = new ErrorResponse(400, "Validation Failed", violations);
-
-        return ResponseEntity.badRequest().body(error);
+        return ResponseEntity.badRequest()
+            .body(new ErrorResponse(400, "Validation Failed", violations));
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
@@ -70,51 +66,39 @@ public class ErrorHandler {
             .map(err -> new ErrorResponse.Errors(err.getField(), err.getDefaultMessage()))
             .toList();
 
-        ErrorResponse error = new ErrorResponse(400, "Validation Failed", errors);
-
-        return ResponseEntity.badRequest().body(error);
+        return ResponseEntity.badRequest()
+            .body(new ErrorResponse(400, "Validation Failed", errors));
     }
 
     @ExceptionHandler(MissingServletRequestParameterException.class)
     public ResponseEntity<ErrorResponse> handleMissingParams(MissingServletRequestParameterException ex) {
         ErrorResponse.Errors fieldError = new ErrorResponse.Errors(ex.getParameterName(), "Parameter is required");
-        ErrorResponse error = new ErrorResponse(400, "Missing required parameter", List.of(fieldError));
 
-        return ResponseEntity.badRequest().body(error);
+        return ResponseEntity.badRequest()
+            .body(new ErrorResponse(400, "Missing required parameter", List.of(fieldError)));
     }
 
     @ExceptionHandler(HttpMessageNotReadableException.class)
     public ResponseEntity<ErrorResponse> handleHttpMessageNotReadable(HttpMessageNotReadableException ex) {
-        ErrorResponse error = new ErrorResponse(400, "Malformed JSON: " + ex.getMostSpecificCause().getMessage());
-
-        return ResponseEntity.badRequest().body(error);
+        return ResponseEntity.badRequest()
+            .body(new ErrorResponse(400, "Malformed JSON: " + ex.getMostSpecificCause().getMessage()));
     }
 
     @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
     public ResponseEntity<ErrorResponse> handleMethodNotSupported(HttpRequestMethodNotSupportedException ex) {
-        ErrorResponse error = new ErrorResponse(405, "HTTP method not allowed: " + ex.getMethod());
-
-        return ResponseEntity.status(HttpStatus.METHOD_NOT_ALLOWED).body(error);
-    }
-
-    @ExceptionHandler(HttpClientErrorException.class)
-    public ResponseEntity<ErrorResponse> handleClientError(HttpClientErrorException ex) {
-        int status = ex.getStatusCode().value();
-        String message = ex.getResponseBodyAsString();
-
-        return ResponseEntity.status(status).body(new ErrorResponse(status, message));
+        return ResponseEntity.status(HttpStatus.METHOD_NOT_ALLOWED)
+            .body(new ErrorResponse(405, "HTTP method not allowed: " + ex.getMethod()));
     }
 
     @ExceptionHandler({UnknownHttpStatusCodeException.class, HttpServerErrorException.class})
-    public ResponseEntity<ErrorResponse> handleUnknownStatus() {
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+    public ResponseEntity<ErrorResponse> handleExternalUnknownStatus() {
+        return ResponseEntity.status(HttpStatus.BAD_GATEWAY)
             .body(new ErrorResponse(502, "Unexpected external service error"));
     }
 
     @ExceptionHandler(ProductNotFoundException.class)
     public ResponseEntity<ErrorResponse> handleExternalNotFound(Exception ex) {
-        ErrorResponse error = new ErrorResponse(404, ex.getMessage() != null ? ex.getMessage() : "Resource not found");
-
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+            .body(new ErrorResponse(404, ex.getMessage() != null ? ex.getMessage() : "Resource not found"));
     }
 }

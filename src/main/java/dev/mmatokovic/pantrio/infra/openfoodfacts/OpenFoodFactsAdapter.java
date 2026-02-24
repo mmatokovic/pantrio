@@ -1,27 +1,28 @@
 package dev.mmatokovic.pantrio.infra.openfoodfacts;
 
-import dev.mmatokovic.pantrio.domain.product.ProductNotFoundException;
+import dev.mmatokovic.pantrio.app.product.ProductNotFoundException;
 import dev.mmatokovic.pantrio.domain.product.Product;
-import dev.mmatokovic.pantrio.domain.product.ProductCatalogPort;
+import dev.mmatokovic.pantrio.domain.product.ProductRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.resilience.annotation.ConcurrencyLimit;
 import org.springframework.resilience.annotation.Retryable;
-import org.springframework.stereotype.Repository;
+import org.springframework.stereotype.Component;
 import org.springframework.web.client.HttpServerErrorException;
 import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.client.RestClient;
 
-import java.util.Objects;
+import java.util.Optional;
 
-@Repository
+@Component
 @RequiredArgsConstructor
-public class OpenFoodFactsAdapter implements ProductCatalogPort {
+public class OpenFoodFactsAdapter implements ProductRepository {
+
+    private static final String PRODUCT_FIELDS = "product_name,product_quantity,product_quantity_unit,image_url,code";
 
     private final RestClient client;
     private final OpenFoodFactsMapper mapper;
-
-    private static final String PRODUCT_FIELDS = "product_name,product_quantity,product_quantity_unit,image_url,code";
 
     @Retryable(
         includes = {HttpServerErrorException.class, ResourceAccessException.class},
@@ -32,10 +33,11 @@ public class OpenFoodFactsAdapter implements ProductCatalogPort {
     )
     @ConcurrencyLimit(6)
     @Override
-    public Product getProductByBarcode(String barcode) {
+    public Optional<Product> getProductByBarcode(String barcode) {
 
         OpenFoodFactsProductResponse response = client.get()
             .uri("/api/v2/product/{barcode}?fields={fields}", barcode, PRODUCT_FIELDS)
+            .accept(MediaType.APPLICATION_JSON)
             .retrieve()
             .onStatus(
                 status -> status == HttpStatus.NOT_FOUND,
@@ -44,10 +46,10 @@ public class OpenFoodFactsAdapter implements ProductCatalogPort {
                 })
             .body(OpenFoodFactsProductResponse.class);
 
-        if (response == null || Objects.equals(response.status(), "0")) {
-            throw new ProductNotFoundException("Product " + barcode + " not found");
+        if (response == null || response.status() == 0) {
+            return Optional.empty();
         }
 
-        return mapper.toDomain(response);
+        return Optional.ofNullable(mapper.toDomain(response));
     }
 }

@@ -1,8 +1,7 @@
 {
     "openapi": "3.1.0",
     "info": {
-        "title": "Pantrio API",
-        "description": "One-stop comestibles management solution.",
+        "title": "pantrio",
         "version": "0.0.1-SNAPSHOT"
     },
     "servers": [
@@ -283,6 +282,47 @@
                 }
             }
         },
+        "/storages/{storageId}/items": {
+            "post": {
+                "tags": [
+                    "Storage"
+                ],
+                "operationId": "addItem",
+                "parameters": [
+                    {
+                        "name": "storageId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "format": "int64"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/StorageItemRequest"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/StorageItemResponse"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/items": {
             "get": {
                 "tags": [
@@ -375,7 +415,7 @@
                 "tags": [
                     "Product"
                 ],
-                "operationId": "show_2",
+                "operationId": "find",
                 "parameters": [
                     {
                         "name": "code",
@@ -471,7 +511,7 @@
                             "ml"
                         ]
                     },
-                    "pictureUrl": {
+                    "picture_url": {
                         "type": "string"
                     },
                     "disabled": {
@@ -502,11 +542,58 @@
                     "unit": {
                         "type": "string"
                     },
-                    "pictureUrl": {
+                    "picture_url": {
                         "type": "string"
                     },
                     "disabled": {
                         "type": "boolean"
+                    }
+                }
+            },
+            "StorageItemRequest": {
+                "type": "object",
+                "properties": {
+                    "itemId": {
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    "quantity": {
+                        "type": "integer",
+                        "format": "int64",
+                        "minimum": 1
+                    },
+                    "expiryDate": {
+                        "type": "string",
+                        "format": "date"
+                    }
+                },
+                "required": [
+                    "itemId",
+                    "quantity"
+                ]
+            },
+            "StorageItemResponse": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    "itemId": {
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    "storageId": {
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    "quantity": {
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    "expiryDate": {
+                        "type": "string",
+                        "format": "date"
                     }
                 }
             },
@@ -526,7 +613,7 @@
                     "unit": {
                         "type": "string"
                     },
-                    "pictureUrl": {
+                    "picture_url": {
                         "type": "string"
                     }
                 }

@@ -1,4 +1,4 @@
-package dev.mmatokovic.pantrio.domain.product;
+package dev.mmatokovic.pantrio.app.product;
 
 public class ProductNotFoundException extends RuntimeException {
 
