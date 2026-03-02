@@ -1,104 +1,102 @@
 package dev.mmatokovic.pantrio.infra.error;
 
-import dev.mmatokovic.pantrio.app.product.ProductNotFoundException;
-import jakarta.persistence.EntityNotFoundException;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 import jakarta.validation.ConstraintViolationException;
+import org.jspecify.annotations.NonNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
-import org.springframework.http.converter.HttpMessageNotReadableException;
-import org.springframework.web.HttpRequestMethodNotSupportedException;
+import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
-import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
-import org.springframework.web.client.HttpServerErrorException;
-import org.springframework.web.client.UnknownHttpStatusCodeException;
-import org.springframework.web.servlet.NoHandlerFoundException;
-import org.springframework.web.servlet.resource.NoResourceFoundException;
+import org.springframework.web.context.request.WebRequest;
+import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 
-import java.util.List;
+import java.time.LocalDateTime;
+import java.util.Objects;
 
 @RestControllerAdvice
-public class ErrorHandler {
+public class ErrorHandler extends ResponseEntityExceptionHandler {
+
     private static final Logger LOGGER = LoggerFactory.getLogger("error.logger");
 
+    @Value("${pantrio.print.trace:false}")
+    private boolean printStackTrace;
+
     @ExceptionHandler(Exception.class)
-    public ResponseEntity<ErrorResponse> handleGlobalException(Exception ex) {
-        LOGGER.error(ex.getMessage(), ex);
+    public ResponseEntity<ErrorResponse> handleGlobalException(Exception ex, WebRequest request) {
 
-        return ResponseEntity.internalServerError()
-            .body(new ErrorResponse("Something went wrong"));
-    }
+        if (isTraceOn(request)) { LOGGER.error(ex.getMessage(), ex); }
 
-    @ExceptionHandler({NoHandlerFoundException.class, EntityNotFoundException.class, NoResourceFoundException.class})
-    public ResponseEntity<ErrorResponse> handleNotFound(Exception ex) {
-        return ResponseEntity.status(HttpStatus.NOT_FOUND)
-            .body(new ErrorResponse(404, ex.getMessage() != null ? ex.getMessage() : "Resource not found"));
-    }
+        ErrorResponse body = buildErrorResponse(ex, "Something went wrong", HttpStatus.INTERNAL_SERVER_ERROR, request);
 
-    @ExceptionHandler(DataIntegrityViolationException.class)
-    public ResponseEntity<ErrorResponse> handleDataIntegrityViolation(DataIntegrityViolationException ex) {
-        LOGGER.error(ex.getMessage(), ex);
-
-        return ResponseEntity.unprocessableContent()
-            .body(new ErrorResponse(422, "Data integrity violation"));
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(body);
     }
 
     @ExceptionHandler(ConstraintViolationException.class)
-    public ResponseEntity<ErrorResponse> handleConstraintValidationExceptions(ConstraintViolationException ex) {
-        List<ErrorResponse.Errors> violations = ex.getConstraintViolations()
-            .stream()
-            .map(cv -> new ErrorResponse.Errors(cv.getPropertyPath().toString(), cv.getMessage()))
-            .toList();
-
+    public ResponseEntity<ErrorResponse> handleConstraintViolation(ConstraintViolationException ex, WebRequest request) {
         return ResponseEntity.badRequest()
-            .body(new ErrorResponse(400, "Validation Failed", violations));
+            .body(buildErrorResponse(ex, "Validation failed", HttpStatus.BAD_REQUEST, request));
     }
 
-    @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<ErrorResponse> handleMethodArgumentNotValid(MethodArgumentNotValidException ex) {
-        List<ErrorResponse.Errors> errors = ex.getBindingResult()
-            .getFieldErrors()
-            .stream()
-            .map(err -> new ErrorResponse.Errors(err.getField(), err.getDefaultMessage()))
-            .toList();
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    public ResponseEntity<ErrorResponse> handleDataIntegrityViolation(DataIntegrityViolationException ex, WebRequest request) {
+        if (isTraceOn(request)) { LOGGER.error(ex.getMessage(), ex); }
 
-        return ResponseEntity.badRequest()
-            .body(new ErrorResponse(400, "Validation Failed", errors));
+        return ResponseEntity.unprocessableContent()
+            .body(buildErrorResponse(ex, "Data integrity violation", HttpStatus.UNPROCESSABLE_CONTENT, request));
     }
 
-    @ExceptionHandler(MissingServletRequestParameterException.class)
-    public ResponseEntity<ErrorResponse> handleMissingParams(MissingServletRequestParameterException ex) {
-        ErrorResponse.Errors fieldError = new ErrorResponse.Errors(ex.getParameterName(), "Parameter is required");
-
-        return ResponseEntity.badRequest()
-            .body(new ErrorResponse(400, "Missing required parameter", List.of(fieldError)));
-    }
-
-    @ExceptionHandler(HttpMessageNotReadableException.class)
-    public ResponseEntity<ErrorResponse> handleHttpMessageNotReadable(HttpMessageNotReadableException ex) {
-        return ResponseEntity.badRequest()
-            .body(new ErrorResponse(400, "Malformed JSON: " + ex.getMostSpecificCause().getMessage()));
-    }
-
-    @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
-    public ResponseEntity<ErrorResponse> handleMethodNotSupported(HttpRequestMethodNotSupportedException ex) {
-        return ResponseEntity.status(HttpStatus.METHOD_NOT_ALLOWED)
-            .body(new ErrorResponse(405, "HTTP method not allowed: " + ex.getMethod()));
-    }
-
-    @ExceptionHandler({UnknownHttpStatusCodeException.class, HttpServerErrorException.class})
-    public ResponseEntity<ErrorResponse> handleExternalUnknownStatus() {
-        return ResponseEntity.status(HttpStatus.BAD_GATEWAY)
-            .body(new ErrorResponse(502, "Unexpected external service error"));
-    }
-
-    @ExceptionHandler(ProductNotFoundException.class)
-    public ResponseEntity<ErrorResponse> handleExternalNotFound(Exception ex) {
+    @ExceptionHandler(NoSuchElementFoundException.class)
+    public ResponseEntity<ErrorResponse> handleProductNotFound(NoSuchElementFoundException ex, WebRequest request) {
         return ResponseEntity.status(HttpStatus.NOT_FOUND)
-            .body(new ErrorResponse(404, ex.getMessage() != null ? ex.getMessage() : "Resource not found"));
+            .body(buildErrorResponse(ex, "Product not found", HttpStatus.NOT_FOUND, request));
+    }
+
+    @Override
+    protected ResponseEntity<Object> handleMethodArgumentNotValid(@NonNull MethodArgumentNotValidException ex, @NonNull HttpHeaders headers, @NonNull HttpStatusCode status, @NonNull WebRequest request) {
+
+        ErrorResponse errorResponse = buildErrorResponse(ex, "Data integrity violation", HttpStatus.UNPROCESSABLE_CONTENT, request);
+
+        for (FieldError fieldError : ex.getBindingResult().getFieldErrors()) {
+            errorResponse = errorResponse.addValidationError(fieldError.getField(), fieldError.getDefaultMessage());
+        }
+
+        return ResponseEntity.unprocessableContent().body(errorResponse);
+    }
+
+    private static boolean isTraceOn(WebRequest request) {
+        String[] value = request.getParameterValues("trace");
+        return Objects.nonNull(value) && value.length > 0 && value[0].contentEquals("true");
+    }
+
+    private ErrorResponse buildErrorResponse(Exception ex, String message, HttpStatusCode status, WebRequest request) {
+
+        ErrorResponse errorResponse = new ErrorResponse(LocalDateTime.now(), status.value(), message);
+
+        if (printStackTrace && isTraceOn(request)) {
+            errorResponse = errorResponse.withTrace(
+                ExceptionUtils.getStackTrace(ex)
+            );
+        }
+
+        return errorResponse;
+    }
+
+    private ErrorResponse buildErrorResponse(Exception ex, HttpStatusCode status, WebRequest request) {
+        return buildErrorResponse(ex, ex.getMessage(), status, request);
+    }
+
+    @Override
+    public ResponseEntity<Object> handleExceptionInternal(@NonNull Exception ex, Object body, @NonNull HttpHeaders headers, @NonNull HttpStatusCode status, @NonNull WebRequest request) {
+        final var errorResponse = buildErrorResponse(ex, status, request);
+
+        return super.handleExceptionInternal(ex, errorResponse, headers, status, request);
     }
 }

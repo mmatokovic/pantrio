@@ -10,6 +10,6 @@ public record StorageItemRequest(
     Long itemId,
     @NotNull
     @Min(1)
-    Long quantity,
+    Integer quantity,
     LocalDate expiryDate
 ) { }

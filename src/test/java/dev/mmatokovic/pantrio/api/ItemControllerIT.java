@@ -14,7 +14,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
 
 @WithMockUser(roles = "USER")
-class ItemControllerIT extends BaseIntegrationTest {
+class   ItemControllerIT extends BaseIntegrationTest {
 
     @Autowired
     RestTestClient rest;

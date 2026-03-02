@@ -26,6 +26,9 @@
             <column name="disabled" type="NUMBER(1,0)" defaultValueNumeric="0">
                 <constraints nullable="false"/>
             </column>
+            <column name="version" type="INT" defaultValueNumeric="0">
+                <constraints nullable="false"/>
+            </column>
             <column name="created_at" type="TIMESTAMP" defaultValueComputed="CURRENT_TIMESTAMP">
                 <constraints nullable="false"/>
             </column>

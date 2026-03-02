@@ -14,6 +14,7 @@ import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 import jakarta.persistence.Version;
 import jakarta.validation.constraints.NotNull;
+import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -59,14 +60,15 @@ public class Instance {
     private Storage storage;
 
     @Column(name = "QUANTITY")
-    private Long quantity;
+    private Integer quantity;
 
     @Column(name = "EXPIRY_DATE")
     private LocalDate expiryDate;
 
     @Version
+    @Setter(AccessLevel.NONE)
     @Column(name = "VERSION", nullable = false)
-    private Long version;
+    private Integer version;
 
     @CreationTimestamp
     @Column(name = "CREATED_AT", updatable = false, nullable = false)

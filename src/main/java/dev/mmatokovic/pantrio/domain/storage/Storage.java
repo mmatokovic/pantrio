@@ -6,6 +6,8 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import jakarta.persistence.Version;
+import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -32,6 +34,11 @@ public class Storage {
 
     @Column(name = "DISABLED", nullable = false)
     private boolean disabled;
+
+    @Version
+    @Setter(AccessLevel.NONE)
+    @Column(name = "VERSION", nullable = false)
+    private Integer version;
 
     @CreationTimestamp
     @Column(name = "CREATED_AT", updatable = false, nullable = false)

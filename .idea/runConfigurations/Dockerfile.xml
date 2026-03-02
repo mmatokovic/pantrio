@@ -12,7 +12,7 @@
             </DockerPortBindingImpl>
           </list>
         </option>
-        <option name="commandLineOptions" value="--env-file .env -network pantrio_default" />
+        <option name="commandLineOptions" value="--env-file .env.example -network pantrio_default" />
         <option name="sourceFilePath" value="Dockerfile" />
       </settings>
     </deployment>

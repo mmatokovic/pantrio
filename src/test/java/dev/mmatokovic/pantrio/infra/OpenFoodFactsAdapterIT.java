@@ -12,14 +12,12 @@ import static com.github.tomakehurst.wiremock.client.WireMock.verify;
 import static com.github.tomakehurst.wiremock.stubbing.Scenario.STARTED;
 
 import dev.mmatokovic.pantrio.BaseIntegrationTest;
-import dev.mmatokovic.pantrio.app.product.ProductNotFoundException;
 import dev.mmatokovic.pantrio.domain.product.Product;
+import dev.mmatokovic.pantrio.infra.error.NoSuchElementFoundException;
 import dev.mmatokovic.pantrio.infra.openfoodfacts.OpenFoodFactsAdapter;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.client.HttpServerErrorException;
-
-import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
@@ -46,16 +44,18 @@ class OpenFoodFactsAdapterIT extends BaseIntegrationTest {
                 }
             """)));
 
-        Optional<Product> result = adapter.getProductByBarcode("737628064502");
+        Product result = adapter.getProductByBarcode("737628064502");
 
-        assertThat(result).isPresent()
-            .get()
+        assertThat(result)
+            .isNotNull()
             .satisfies(p -> {
                 assertThat(p.productName()).isEqualTo("Pasta");
                 assertThat(p.code()).isEqualTo("737628064502");
                 assertThat(p.quantity()).isEqualTo(500);
                 assertThat(p.unit()).isEqualTo("g");
             });
+
+        verify(1, getRequestedFor(urlPathEqualTo("/api/v2/product/737628064502")));
     }
 
     @Test
@@ -69,7 +69,7 @@ class OpenFoodFactsAdapterIT extends BaseIntegrationTest {
                 """)));
 
         assertThatThrownBy(() -> adapter.getProductByBarcode("000000000000"))
-            .isInstanceOf(ProductNotFoundException.class)
+            .isInstanceOf(NoSuchElementFoundException.class)
             .hasMessageContaining("000000000000 not found");
     }
 
@@ -94,9 +94,9 @@ class OpenFoodFactsAdapterIT extends BaseIntegrationTest {
                 {"code":"737628064502","status":1,"product":{"product_name":"Pasta"}}
             """)));
 
-        Optional<Product> result = adapter.getProductByBarcode("737628064502");
+        Product result = adapter.getProductByBarcode("737628064502");
 
-        assertThat(result).isPresent();
+        assertThat(result).isNotNull();
         verify(3, getRequestedFor(urlPathEqualTo("/api/v2/product/737628064502")));
     }
 

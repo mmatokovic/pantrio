@@ -34,7 +34,7 @@ class ContractFreezeIT extends BaseIntegrationTest {
     @Autowired
     private ObjectMapper jackson;
 
-    @Value("classpath:/openapi.json") // extracted from deploy
+    @Value("classpath:/openapi.json")
     private Resource expectedOpenAPI;
 
     @Test
@@ -53,7 +53,7 @@ class ContractFreezeIT extends BaseIntegrationTest {
 
         String expectedOpenAPIJson = prettifyJsonString(
             IOUtils.toString(expectedOpenAPI.getInputStream(), UTF_8)
-                .replace(":8080", "") // hack the extracted port
+                .replace(":8080", "")
         );
 
         ChangedOpenApi diff =

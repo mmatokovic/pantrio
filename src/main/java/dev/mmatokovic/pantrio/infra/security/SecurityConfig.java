@@ -25,12 +25,13 @@ public class SecurityConfig {
     public SecurityFilterChain filterChain(HttpSecurity http) {
         return http
             .csrf(AbstractHttpConfigurer::disable)
+            .cors(AbstractHttpConfigurer::disable)
             .sessionManagement(session ->
                 session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
             )
             .authorizeHttpRequests(authz -> {
                 authz.dispatcherTypeMatchers(DispatcherType.ERROR).permitAll();
-                authz.requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").hasRole("ADMIN");
+                authz.requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll();
                 authz.requestMatchers("/actuator/health", "/actuator/health/**").permitAll();
                 authz.requestMatchers("/actuator/prometheus").hasRole("METRICS");
                 authz.anyRequest().authenticated();

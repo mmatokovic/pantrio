@@ -15,8 +15,7 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     public ProductResponse findProductByBarcode(String barcode) {
-        Product product = repo.getProductByBarcode(barcode)
-            .orElseThrow(() -> new ProductNotFoundException("no code or invalid code"));
+        Product product = repo.getProductByBarcode(barcode);
 
         return mapper.toResponse(product);
     }

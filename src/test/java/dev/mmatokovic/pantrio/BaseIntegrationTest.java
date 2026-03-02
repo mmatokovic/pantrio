@@ -13,7 +13,7 @@ import org.wiremock.spring.EnableWireMock;
 import static org.springframework.boot.test.context.SpringBootTest.WebEnvironment.RANDOM_PORT;
 
 @AutoConfigureRestTestClient
-@SpringBootTest(webEnvironment = RANDOM_PORT) // start the entire app context in-memory
+@SpringBootTest(webEnvironment = RANDOM_PORT)
 @Import({
     BaseIntegrationTest.TestContainersConfig.class,
 })
@@ -23,12 +23,15 @@ public abstract class BaseIntegrationTest {
     @TestConfiguration(proxyBeanMethods = false)
     public static class TestContainersConfig {
 
+        private static final OracleContainer DATABASE_CONTAINER =
+            new OracleContainer(DockerImageName.parse("gvenzl/oracle-xe:21-slim-faststart"))
+                .withUsername("PANTRIO_TEST")
+                .withReuse(true);
+
         @Bean
         @ServiceConnection
         OracleContainer databaseContainer(){
-            return new OracleContainer(DockerImageName.parse("gvenzl/oracle-xe:21-slim-faststart"))
-                .withUsername("PANTRIO_TEST")
-                .withReuse(true);
+            return DATABASE_CONTAINER;
         }
     }
 }

@@ -1,8 +1,8 @@
 package dev.mmatokovic.pantrio.infra.openfoodfacts;
 
-import dev.mmatokovic.pantrio.app.product.ProductNotFoundException;
 import dev.mmatokovic.pantrio.domain.product.Product;
 import dev.mmatokovic.pantrio.domain.product.ProductRepository;
+import dev.mmatokovic.pantrio.infra.error.NoSuchElementFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -12,8 +12,6 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.client.HttpServerErrorException;
 import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.client.RestClient;
-
-import java.util.Optional;
 
 @Component
 @RequiredArgsConstructor
@@ -31,9 +29,9 @@ public class OpenFoodFactsAdapter implements ProductRepository {
         maxDelay = 3500,
         maxRetries = 2 // 1 initial + 2 defined retries
     )
-    @ConcurrencyLimit(6)
+    @ConcurrencyLimit(5)
     @Override
-    public Optional<Product> getProductByBarcode(String barcode) {
+    public Product getProductByBarcode(String barcode) {
 
         OpenFoodFactsProductResponse response = client.get()
             .uri("/api/v2/product/{barcode}?fields={fields}", barcode, PRODUCT_FIELDS)
@@ -42,14 +40,14 @@ public class OpenFoodFactsAdapter implements ProductRepository {
             .onStatus(
                 status -> status == HttpStatus.NOT_FOUND,
                 (_, _) -> {
-                    throw new ProductNotFoundException("Product " + barcode + " not found");
+                    throw new NoSuchElementFoundException("Product " + barcode + " not found");
                 })
             .body(OpenFoodFactsProductResponse.class);
 
         if (response == null || response.status() == 0) {
-            return Optional.empty();
+            throw new IllegalStateException("no code or invalid code");
         }
 
-        return Optional.ofNullable(mapper.toDomain(response));
+        return mapper.toDomain(response);
     }
 }

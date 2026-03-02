@@ -1,7 +1,5 @@
 package dev.mmatokovic.pantrio.domain.product;
 
-import java.util.Optional;
-
 public interface ProductRepository {
 
     /**
@@ -10,5 +8,5 @@ public interface ProductRepository {
      * @param code product barcode
      * @return {@link Product} details
      */
-    Optional<Product> getProductByBarcode(String code);
+    Product getProductByBarcode(String code);
 }

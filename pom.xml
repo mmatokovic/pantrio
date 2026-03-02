@@ -198,11 +198,13 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <configuration>
+                    <!-- Force alphabetical order to have a reproducible build -->
+                    <runOrder>alphabetical</runOrder>
                     <includes>
                         <include>**/*Test.java</include>
                         <include>**/*Rule.java</include>
                     </includes>
-                    <argLine>@{argLine} -javaagent:${settings.localRepository}/org/mockito/mockito-core/${mockito.version}/mockito-core-${mockito.version}.jar -Xshare:off</argLine>
+                    <argLine>@{argLine} -Xshare:off -javaagent:${settings.localRepository}/org/mockito/mockito-core/${mockito.version}/mockito-core-${mockito.version}.jar</argLine>
                 </configuration>
             </plugin>
             <plugin>
@@ -275,6 +277,7 @@
                     <includes>
                         <include>**/*IT.java</include>
                     </includes>
+                    <argLine>@{argLine} -Xshare:off -javaagent:${settings.localRepository}/org/mockito/mockito-core/${mockito.version}/mockito-core-${mockito.version}.jar</argLine>
                 </configuration>
             </plugin>
             <plugin>
