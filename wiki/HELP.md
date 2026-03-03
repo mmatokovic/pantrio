@@ -135,6 +135,14 @@ Maven wrapper is available, so use it instead your local installation (if using 
 This application is imagined as a web service (API), so it hasn't implemented translations, proper error mapping to keys
 etc.
 
+### Maven
+
+Check for dependency updates
+
+```shell
+.\mvnw versions:display-dependency-updates
+```
+
 ### Microservices
 
 Project contains two runnable microservices: `api` and `batch`. Purpose of it is to split functionalities and load to

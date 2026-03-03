@@ -1,13 +1,12 @@
 package dev.mmatokovic.pantrio.infra.logging;
 
-import ch.qos.logback.classic.LoggerContext;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.jspecify.annotations.NonNull;
-import org.slf4j.Logger;
 import org.slf4j.MDC;
 import org.springframework.core.annotation.Order;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -28,17 +27,10 @@ import java.util.regex.Pattern;
 
 import static dev.mmatokovic.pantrio.infra.logging.HttpLoggingUtils.LOG_ITEM_DELIMITER;
 
+@Slf4j(topic = "audit.logger")
 @Component
 @Order(2)
 class HttpLoggingFilter extends OncePerRequestFilter {
-
-    @SuppressWarnings("checkstyle:ConstantName")
-    private static final Logger log;
-
-    static {
-        LoggerContext loggerContext = (LoggerContext) org.slf4j.LoggerFactory.getILoggerFactory();
-        log = loggerContext.getLogger("audit.logger");
-    }
 
     private static final String REQUEST_ID_HEADER_KEY = "X-Request-Id";
     private static final String LOAD_BALANCER_HEADER_KEY = "X-Forwarded-For";

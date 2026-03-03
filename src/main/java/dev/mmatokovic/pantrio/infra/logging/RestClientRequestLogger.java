@@ -1,10 +1,9 @@
 package dev.mmatokovic.pantrio.infra.logging;
 
-import ch.qos.logback.classic.LoggerContext;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.jspecify.annotations.NonNull;
-import org.slf4j.Logger;
 import org.slf4j.MDC;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
@@ -28,16 +27,9 @@ import java.util.UUID;
 
 import static dev.mmatokovic.pantrio.infra.logging.HttpLoggingUtils.LOG_ITEM_DELIMITER;
 
+@Slf4j(topic = "audit.logger")
 @Component
 public class RestClientRequestLogger implements ClientHttpRequestInterceptor {
-
-    @SuppressWarnings("checkstyle:ConstantName")
-    private static final Logger log;
-
-    static {
-        LoggerContext loggerContext = (LoggerContext) org.slf4j.LoggerFactory.getILoggerFactory();
-        log = loggerContext.getLogger("audit.logger");
-    }
 
     private static final List<String> IGNORABLE_URIS = new ArrayList<>();
 

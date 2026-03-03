@@ -45,7 +45,7 @@ public class OpenFoodFactsAdapter implements ProductRepository {
             .body(OpenFoodFactsProductResponse.class);
 
         if (response == null || response.status() == 0) {
-            throw new IllegalStateException("no code or invalid code");
+            throw new NoSuchElementFoundException("no code or invalid code");
         }
 
         return mapper.toDomain(response);
