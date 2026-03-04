@@ -83,6 +83,7 @@ services:
       - PANTRIO_DB_USER=${PANTRIO_DB_USER:-PANTRIO}
       - PANTRIO_DB_PASS=${PANTRIO_DB_PASS:-"oraclepwd123"}
       - PANTRIO_OAUTH2_ISSUER_URI=${PANTRIO_OAUTH2_ISSUER_URI:-http://keycloak:8180/realms/Pantrio}
+      - PANTRIO_OPENFOODFACTS_HOST=${PANTRIO_OPENFOODFACTS_HOST:-https://world.openfoodfacts.org}
       - LOG_PATH=${LOG_PATH:-/opt/logs}
       - OTEL_EXPORTER_OTLP_ENDPOINT=${OTEL_EXPORTER_OTLP_ENDPOINT:-http://otel-collector:4318}
     ports:

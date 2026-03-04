@@ -16,11 +16,11 @@ target/
 
 ### IntelliJ IDEA ###
 .idea/*
+!.idea/runConfigurations/
 *.iws
 *.iml
 *.ipr
 *.ip
-!.idea/runConfigurations/
 
 ### NetBeans ###
 /nbproject/private/

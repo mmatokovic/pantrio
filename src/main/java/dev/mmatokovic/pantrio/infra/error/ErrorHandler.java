@@ -17,6 +17,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.HttpServerErrorException;
 import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.context.request.WebRequest;
@@ -36,8 +37,6 @@ public class ErrorHandler extends ResponseEntityExceptionHandler {
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleGlobalException(Exception ex) {
-        log.error(ex.getMessage(), ex);
-
         final var error = buildErrorResponse(ex, "Something went wrong", HttpStatus.INTERNAL_SERVER_ERROR);
 
         return ResponseEntity.internalServerError().body(error);
@@ -84,25 +83,26 @@ public class ErrorHandler extends ResponseEntityExceptionHandler {
     }
 
     @ExceptionHandler(HttpServerErrorException.class)
-    public ResponseEntity<ErrorResponse> handleUnknownStatus(HttpServerErrorException ex) {
+    public ResponseEntity<ErrorResponse> handleUpstreamServerError(HttpServerErrorException ex) {
+        final var error = buildErrorResponse(ex, "External service returned an error", HttpStatus.BAD_GATEWAY);
+        return ResponseEntity.status(HttpStatus.BAD_GATEWAY).body(error);
+    }
 
-        final var error = buildErrorResponse(ex, "Unexpected external service error", HttpStatus.BAD_GATEWAY);
-
+    @ExceptionHandler(HttpClientErrorException.class)
+    public ResponseEntity<ErrorResponse> handleUpstreamClientError(HttpClientErrorException ex) {
+        final var error = buildErrorResponse(ex, "Invalid request to external service", HttpStatus.BAD_GATEWAY);
         return ResponseEntity.status(HttpStatus.BAD_GATEWAY).body(error);
     }
 
     @ExceptionHandler(ResourceAccessException.class)
-    public ResponseEntity<ErrorResponse> handleUnknownStatus(ResourceAccessException ex) {
-
-        final var error = buildErrorResponse(ex, "Unexpected external service error", HttpStatus.SERVICE_UNAVAILABLE);
-
+    public ResponseEntity<ErrorResponse> handleResourceAccessError(ResourceAccessException ex) {
+        final var error = buildErrorResponse(ex, "External service is unreachable", HttpStatus.SERVICE_UNAVAILABLE);
         return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(error);
     }
 
     @Override
     protected @Nullable ResponseEntity<Object> handleHttpRequestMethodNotSupported(
         @NonNull HttpRequestMethodNotSupportedException ex, @NonNull HttpHeaders headers, @NonNull HttpStatusCode status, @NonNull WebRequest request) {
-
         final var error = buildErrorResponse(ex, "HTTP method not allowed: " + ex.getMethod(), HttpStatus.METHOD_NOT_ALLOWED);
 
         return handleExceptionInternal(ex, error, headers, status, request);
@@ -123,7 +123,6 @@ public class ErrorHandler extends ResponseEntityExceptionHandler {
 
     @Override
     protected ResponseEntity<Object> handleNoHandlerFoundException(@NonNull NoHandlerFoundException ex, @NonNull HttpHeaders headers, @NonNull HttpStatusCode status, @NonNull WebRequest request) {
-
         final var error = buildErrorResponse(ex, ex.getMessage() != null ? ex.getMessage() : "Resource not found", HttpStatus.NOT_FOUND);
 
         return handleExceptionInternal(ex, error, headers, status, request);
@@ -147,6 +146,9 @@ public class ErrorHandler extends ResponseEntityExceptionHandler {
     }
 
     private ErrorResponse buildErrorResponse(Exception ex, String message, HttpStatusCode status, List<ErrorResponse.ErrorInfo> errors) {
+        if (status.is5xxServerError()) {
+            log.error(ex.getMessage(), ex);
+        }
         return new ErrorResponse(status.value(), message, errors);
     }
 

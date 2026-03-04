@@ -43,6 +43,11 @@ public class OpenFoodFactsAdapter implements ProductRepository {
                 (req, res) -> {
                     throw new NoSuchElementFoundException("Product " + barcode + " not found");
                 })
+            .onStatus(
+                status -> status == HttpStatus.TOO_MANY_REQUESTS,
+                (req, res) -> {
+                    throw new HttpServerErrorException(HttpStatus.TOO_MANY_REQUESTS, "Rate limited by OpenFoodFacts");
+                })
             .body(OpenFoodFactsProductResponse.class);
 
         if (response == null || response.status() == 0) {

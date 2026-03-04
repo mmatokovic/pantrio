@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.InvalidMediaTypeException;
 import org.springframework.http.MediaType;
@@ -61,10 +62,13 @@ public final class HttpLoggingUtils {
     public static String normalizeBody(byte[] rawBody) {
         try {
             Object json = MAPPER.readValue(rawBody, Object.class);
+            String jsonString = MAPPER.writeValueAsString(json);
 
-            return MAPPER.writeValueAsString(json);
+            return StringUtils.normalizeSpace(jsonString.replace("\n", "").replace("\r", ""));
         } catch (Exception e) {
-            return new String(rawBody, StandardCharsets.UTF_8);
+            String text = new String(rawBody, StandardCharsets.UTF_8);
+
+            return StringUtils.normalizeSpace(text.replace("\n", "").replace("\r", ""));
         }
     }
 }

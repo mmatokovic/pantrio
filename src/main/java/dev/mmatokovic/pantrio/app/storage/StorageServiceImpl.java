@@ -15,9 +15,9 @@ import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -41,10 +41,12 @@ public class StorageServiceImpl implements StorageService {
     }
 
     @Override
+    @Transactional
     public StorageResponse createStorage(StorageRequest request) {
-        Storage storage = mapper.toEntity(request);
-        Storage saved = repo.save(storage);
-        return mapper.toResponse(saved);
+        if (repo.existsByName(request.name())) {
+            throw new ConflictException("Storage with name '" + request.name() + "' already exists");
+        }
+        return mapper.toResponse(repo.save(mapper.toEntity(request)));
     }
 
     @Override
@@ -54,8 +56,7 @@ public class StorageServiceImpl implements StorageService {
         storage.setName(request.name());
         storage.setDescription(request.description());
         storage.setDisabled(request.disabled());
-        Storage updated = repo.save(storage);
-        mapper.toResponse(updated);
+        mapper.toResponse(repo.save(storage));
     }
 
     @Override
@@ -73,18 +74,14 @@ public class StorageServiceImpl implements StorageService {
         Item item = itemRepository.findById(request.itemId())
             .orElseThrow(() -> new EntityNotFoundException("Item " + request.itemId() + " not found"));
 
-        Optional<Instance> existingInstance = instanceRepository.findByStorageAndItem(storage, item);
-
-        if (existingInstance.isPresent()) {
-            throw new ConflictException("Instance of item " + request.itemId() + " already exists in storage " + storageId);
+        if (instanceRepository.existsByStorageAndItem(storage, item)) {
+            throw new ConflictException("Item " + request.itemId() + " already exists in storage " + storageId);
         }
 
-        Instance newInstance = mapper.toInstance(request);
-        newInstance.setStorage(storage);
-        newInstance.setItem(item);
+        Instance instance = mapper.toInstance(request);
+        instance.setStorage(storage);
+        instance.setItem(item);
 
-        Instance saved = instanceRepository.save(newInstance);
-
-        return mapper.toItemResponse(saved);
+        return mapper.toItemResponse(instanceRepository.save(instance));
     }
 }

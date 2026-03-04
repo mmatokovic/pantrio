@@ -85,11 +85,13 @@ final class HttpLoggingFilter extends OncePerRequestFilter {
 
         try {
             chain.doFilter(requestWrapper, responseWrapper);
-        } finally {
+
             if (shouldLogRequestResponse) {
                 logRequest(httpMethod, requestId, requestUri, source, target, requestWrapper);
                 logResponse(responseWrapper, httpMethod, requestId, requestUri, source, target, startTime);
             }
+
+        } finally {
             responseWrapper.copyBodyToResponse();
             MDC.clear();
         }
