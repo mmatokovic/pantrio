@@ -6,6 +6,7 @@ import dev.mmatokovic.pantrio.domain.item.ItemRequest;
 import dev.mmatokovic.pantrio.domain.item.ItemResponse;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
+import org.jspecify.annotations.NonNull;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
@@ -38,7 +39,7 @@ public class ItemServiceImpl implements ItemService {
     }
 
     @Override
-    public ItemResponse updateItem(Long id, ItemRequest request) {
+    public ItemResponse updateItem(Long id, @NonNull ItemRequest request) {
         Item item = repo.findById(id)
             .orElseThrow(() -> new EntityNotFoundException("Item " + id + " not found"));
         item.setName(request.name());

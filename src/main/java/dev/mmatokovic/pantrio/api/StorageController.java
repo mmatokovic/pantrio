@@ -3,6 +3,7 @@ package dev.mmatokovic.pantrio.api;
 import dev.mmatokovic.pantrio.app.storage.StorageService;
 import dev.mmatokovic.pantrio.domain.storage.StorageItemRequest;
 import dev.mmatokovic.pantrio.domain.storage.StorageItemResponse;
+import dev.mmatokovic.pantrio.domain.storage.StorageItemUpdateRequest;
 import dev.mmatokovic.pantrio.domain.storage.StorageRequest;
 import dev.mmatokovic.pantrio.domain.storage.StorageResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -53,7 +54,8 @@ public class StorageController {
     }
 
     @PutMapping(value = "/{id}", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
-    ResponseEntity<StorageResponse> update(@PathVariable Long id, @Valid @RequestBody StorageRequest request) {
+    ResponseEntity<StorageResponse> update(@PathVariable Long id,
+                                           @Valid @RequestBody StorageRequest request) {
         service.updateStorage(id, request);
 
         return ResponseEntity.noContent().build();
@@ -67,10 +69,19 @@ public class StorageController {
     }
 
     @PostMapping(value = "/{storageId}/items", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
-    ResponseEntity<StorageItemResponse> addItem(@PathVariable Long storageId, @Valid @RequestBody StorageItemRequest request) {
+    ResponseEntity<StorageItemResponse> addItem(@PathVariable Long storageId,
+                                                @Valid @RequestBody StorageItemRequest request) {
         StorageItemResponse instance = service.addInstance(storageId, request);
         URI location = ServletUriComponentsBuilder.fromCurrentRequest().path("/{id}").buildAndExpand(instance.id()).toUri();
 
         return ResponseEntity.created(location).build();
+    }
+
+    @PutMapping(value = "/{storageId}/items/{itemId}", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+    ResponseEntity<StorageItemResponse> restockItem(@PathVariable Long storageId,
+                                                    @PathVariable Long itemId,
+                                                    @Valid @RequestBody StorageItemUpdateRequest request) {
+
+        return ResponseEntity.ok(service.updateInstance(storageId, itemId, request));
     }
 }

@@ -2,17 +2,19 @@ package dev.mmatokovic.pantrio.app.storage;
 
 import dev.mmatokovic.pantrio.domain.instance.Instance;
 import dev.mmatokovic.pantrio.domain.instance.InstanceRepository;
-import dev.mmatokovic.pantrio.domain.item.Item;
 import dev.mmatokovic.pantrio.domain.item.ItemRepository;
 import dev.mmatokovic.pantrio.domain.storage.Storage;
 import dev.mmatokovic.pantrio.domain.storage.StorageItemRequest;
 import dev.mmatokovic.pantrio.domain.storage.StorageItemResponse;
+import dev.mmatokovic.pantrio.domain.storage.StorageItemUpdateRequest;
 import dev.mmatokovic.pantrio.domain.storage.StorageRepository;
 import dev.mmatokovic.pantrio.domain.storage.StorageRequest;
 import dev.mmatokovic.pantrio.domain.storage.StorageResponse;
 import dev.mmatokovic.pantrio.infra.exception.ConflictException;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
+import org.jspecify.annotations.NonNull;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -35,14 +37,14 @@ public class StorageServiceImpl implements StorageService {
 
     @Override
     public StorageResponse getStorage(Long id) {
-        Storage storage = repo.findById(id)
+        return repo.findById(id)
+            .map(mapper::toResponse)
             .orElseThrow(() -> new EntityNotFoundException("Storage " + id + " not found"));
-        return mapper.toResponse(storage);
     }
 
     @Override
     @Transactional
-    public StorageResponse createStorage(StorageRequest request) {
+    public StorageResponse createStorage(@NonNull StorageRequest request) {
         if (repo.existsByName(request.name())) {
             throw new ConflictException("Storage with name '" + request.name() + "' already exists");
         }
@@ -50,7 +52,7 @@ public class StorageServiceImpl implements StorageService {
     }
 
     @Override
-    public void updateStorage(Long id, StorageRequest request) {
+    public void updateStorage(Long id, @NonNull StorageRequest request) {
         Storage storage = repo.findById(id)
             .orElseThrow(() -> new EntityNotFoundException("Storage " + id + " not found"));
         storage.setName(request.name());
@@ -60,28 +62,34 @@ public class StorageServiceImpl implements StorageService {
     }
 
     @Override
+    @Transactional
     public void deleteStorage(Long id) {
-        Storage storage = repo.findById(id)
-            .orElseThrow(() -> new EntityNotFoundException("Storage " + id + " not found"));
-        repo.delete(storage);
+        repo.delete(repo.findById(id)
+            .orElseThrow(() -> new EntityNotFoundException("Storage " + id + " not found")));
     }
 
     @Override
+    @Transactional
     public StorageItemResponse addInstance(Long storageId, StorageItemRequest request) {
-        Storage storage = repo.findById(storageId)
-            .orElseThrow(() -> new EntityNotFoundException("Storage " + storageId + " not found"));
-
-        Item item = itemRepository.findById(request.itemId())
-            .orElseThrow(() -> new EntityNotFoundException("Item " + request.itemId() + " not found"));
-
-        if (instanceRepository.existsByStorageAndItem(storage, item)) {
+        try {
+            Instance instance = mapper.toInstance(request);
+            instance.setStorage(repo.getReferenceById(storageId));
+            instance.setItem(itemRepository.getReferenceById(request.itemId()));
+            return mapper.toItemResponse(instanceRepository.save(instance));
+        } catch (EntityNotFoundException e) {
+            throw new EntityNotFoundException("Storage " + storageId + " or Item " + request.itemId() + " not found");
+        } catch (DataIntegrityViolationException e) {
             throw new ConflictException("Item " + request.itemId() + " already exists in storage " + storageId);
         }
+    }
 
-        Instance instance = mapper.toInstance(request);
-        instance.setStorage(storage);
-        instance.setItem(item);
-
+    @Override
+    @Transactional
+    public StorageItemResponse updateInstance(Long storageId, Long itemId, @NonNull StorageItemUpdateRequest request) {
+        Instance instance = instanceRepository.findByStorageIdAndItemId(storageId, itemId)
+            .orElseThrow(() -> new EntityNotFoundException("Item " + itemId + " not found in storage " + storageId));
+        instance.setQuantity(request.quantity());
+        instance.setExpiryDate(request.expiryDate());
         return mapper.toItemResponse(instanceRepository.save(instance));
     }
 }

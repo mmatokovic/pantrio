@@ -2,6 +2,7 @@ package dev.mmatokovic.pantrio.app.storage;
 
 import dev.mmatokovic.pantrio.domain.storage.StorageItemRequest;
 import dev.mmatokovic.pantrio.domain.storage.StorageItemResponse;
+import dev.mmatokovic.pantrio.domain.storage.StorageItemUpdateRequest;
 import dev.mmatokovic.pantrio.domain.storage.StorageRequest;
 import dev.mmatokovic.pantrio.domain.storage.StorageResponse;
 import org.springframework.data.domain.Pageable;
@@ -57,4 +58,14 @@ public interface StorageService {
      * @return the newly added storage item with its assigned identifiers and details
      */
     StorageItemResponse addInstance(Long storageId, StorageItemRequest request);
+
+    /**
+     * Updates an existing item within a storage.
+     *
+     * @param storageId the unique identifier of the storage
+     * @param itemId    the unique identifier of the item to update
+     * @param request   the updated item details
+     * @return the updated storage item {@link StorageItemResponse}
+     */
+    StorageItemResponse updateInstance(Long storageId, Long itemId, StorageItemUpdateRequest request);
 }

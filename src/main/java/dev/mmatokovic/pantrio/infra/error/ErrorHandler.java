@@ -28,12 +28,21 @@ import java.util.List;
 
 /**
  * Gracefully handles exception occurred during REST API call execution
- * Use ResponseEntity in @ExceptionHandler methods.
- * Use super.handleExceptionInternal() only in @Override
  */
 @Slf4j(topic = "error.logger")
 @RestControllerAdvice
 public class ErrorHandler extends ResponseEntityExceptionHandler {
+
+    private ErrorResponse buildErrorResponse(Exception ex, String message, HttpStatusCode status) {
+        return buildErrorResponse(ex, message, status, null);
+    }
+
+    private ErrorResponse buildErrorResponse(Exception ex, String message, HttpStatusCode status, List<ErrorResponse.ErrorInfo> errors) {
+        if (status.is5xxServerError()) {
+            log.error(ex.getMessage(), ex);
+        }
+        return new ErrorResponse(status.value(), message, errors);
+    }
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleGlobalException(Exception ex) {
@@ -101,16 +110,20 @@ public class ErrorHandler extends ResponseEntityExceptionHandler {
     }
 
     @Override
-    protected @Nullable ResponseEntity<Object> handleHttpRequestMethodNotSupported(
-        @NonNull HttpRequestMethodNotSupportedException ex, @NonNull HttpHeaders headers, @NonNull HttpStatusCode status, @NonNull WebRequest request) {
+    protected @Nullable ResponseEntity<Object> handleHttpRequestMethodNotSupported(@NonNull HttpRequestMethodNotSupportedException ex,
+                                                                                   @NonNull HttpHeaders headers,
+                                                                                   @NonNull HttpStatusCode status,
+                                                                                   @NonNull WebRequest request) {
         final var error = buildErrorResponse(ex, "HTTP method not allowed: " + ex.getMethod(), HttpStatus.METHOD_NOT_ALLOWED);
 
         return handleExceptionInternal(ex, error, headers, status, request);
     }
 
     @Override
-    protected @Nullable ResponseEntity<Object> handleMissingServletRequestParameter(
-        @NonNull MissingServletRequestParameterException ex, @NonNull HttpHeaders headers, @NonNull HttpStatusCode status, @NonNull WebRequest request) {
+    protected @Nullable ResponseEntity<Object> handleMissingServletRequestParameter(@NonNull MissingServletRequestParameterException ex,
+                                                                                    @NonNull HttpHeaders headers,
+                                                                                    @NonNull HttpStatusCode status,
+                                                                                    @NonNull WebRequest request) {
 
         List<ErrorResponse.ErrorInfo> errors = List.of(
             new ErrorResponse.ErrorInfo(ex.getParameterName(), "Parameter is required")
@@ -122,14 +135,20 @@ public class ErrorHandler extends ResponseEntityExceptionHandler {
     }
 
     @Override
-    protected ResponseEntity<Object> handleNoHandlerFoundException(@NonNull NoHandlerFoundException ex, @NonNull HttpHeaders headers, @NonNull HttpStatusCode status, @NonNull WebRequest request) {
+    protected ResponseEntity<Object> handleNoHandlerFoundException(@NonNull NoHandlerFoundException ex,
+                                                                   @NonNull HttpHeaders headers,
+                                                                   @NonNull HttpStatusCode status,
+                                                                   @NonNull WebRequest request) {
         final var error = buildErrorResponse(ex, ex.getMessage() != null ? ex.getMessage() : "Resource not found", HttpStatus.NOT_FOUND);
 
         return handleExceptionInternal(ex, error, headers, status, request);
     }
 
     @Override
-    protected ResponseEntity<Object> handleMethodArgumentNotValid(@NonNull MethodArgumentNotValidException ex, @NonNull HttpHeaders headers, @NonNull HttpStatusCode status, @NonNull WebRequest request) {
+    protected ResponseEntity<Object> handleMethodArgumentNotValid(@NonNull MethodArgumentNotValidException ex,
+                                                                  @NonNull HttpHeaders headers,
+                                                                  @NonNull HttpStatusCode status,
+                                                                  @NonNull WebRequest request) {
 
         List<ErrorResponse.ErrorInfo> errors = ex.getBindingResult().getFieldErrors()
             .stream()
@@ -139,17 +158,6 @@ public class ErrorHandler extends ResponseEntityExceptionHandler {
         final var error = buildErrorResponse(ex, "Validation failed", HttpStatus.UNPROCESSABLE_CONTENT, errors);
 
         return handleExceptionInternal(ex, error, headers, status, request);
-    }
-
-    private ErrorResponse buildErrorResponse(Exception ex, String message, HttpStatusCode status) {
-        return buildErrorResponse(ex, message, status, null);
-    }
-
-    private ErrorResponse buildErrorResponse(Exception ex, String message, HttpStatusCode status, List<ErrorResponse.ErrorInfo> errors) {
-        if (status.is5xxServerError()) {
-            log.error(ex.getMessage(), ex);
-        }
-        return new ErrorResponse(status.value(), message, errors);
     }
 
     @Override

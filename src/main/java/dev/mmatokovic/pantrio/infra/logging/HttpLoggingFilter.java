@@ -97,12 +97,12 @@ final class HttpLoggingFilter extends OncePerRequestFilter {
         }
     }
 
-    private String getUniqueIdentifier(ContentCachingRequestWrapper request) {
+    private String getUniqueIdentifier(@NonNull ContentCachingRequestWrapper request) {
         final var requestIdFromHeader = request.getHeader(REQUEST_ID_HEADER_KEY);
         return StringUtils.isEmpty(requestIdFromHeader) ? UUID.randomUUID().toString() : requestIdFromHeader;
     }
 
-    private String getRequestUri(ContentCachingRequestWrapper request) {
+    private String getRequestUri(@NonNull ContentCachingRequestWrapper request) {
         final var base = request.getRequestURI();
         final var params = request.getParameterMap();
 
@@ -118,16 +118,16 @@ final class HttpLoggingFilter extends OncePerRequestFilter {
         return base.concat(sb.toString());
     }
 
-    private String getSource(ContentCachingRequestWrapper request) {
+    private String getSource(@NonNull ContentCachingRequestWrapper request) {
         final var lbHeader = request.getHeader(LOAD_BALANCER_HEADER_KEY);
         return StringUtils.isEmpty(lbHeader) ? request.getRemoteAddr() : lbHeader;
     }
 
-    private boolean isAuthRequest(String requestUri) {
+    private boolean isAuthRequest(@NonNull String requestUri) {
         return requestUri.contains(AUTH_URL);
     }
 
-    private String maskSensitiveData(String body, Pattern pattern) {
+    private String maskSensitiveData(String body, @NonNull Pattern pattern) {
         final var matcher = pattern.matcher(body);
         if (matcher.find()) {
             return matcher.replaceAll("$1********$3");
@@ -141,7 +141,7 @@ final class HttpLoggingFilter extends OncePerRequestFilter {
                             String requestUri,
                             String source,
                             String target,
-                            ContentCachingRequestWrapper requestWrapper) {
+                            @NonNull ContentCachingRequestWrapper requestWrapper) {
         final var requestSb = new StringBuilder(INITIAL_SB_SIZE);
         requestSb
             .append("HTTP ").append(httpMethod).append(" request :: ")
@@ -168,7 +168,7 @@ final class HttpLoggingFilter extends OncePerRequestFilter {
         log.info(requestSb.toString());
     }
 
-    private void logResponse(ContentCachingResponseWrapper responseWrapper,
+    private void logResponse(@NonNull ContentCachingResponseWrapper responseWrapper,
                              String httpMethod,
                              String requestId,
                              String requestUri,
