@@ -17,12 +17,12 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
-import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.HttpServerErrorException;
 import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.servlet.NoHandlerFoundException;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import java.util.List;
 
@@ -58,17 +58,9 @@ public class ErrorHandler extends ResponseEntityExceptionHandler {
         return ResponseEntity.badRequest().body(error);
     }
 
-    @ExceptionHandler(NoSuchElementFoundException.class)
-    public ResponseEntity<ErrorResponse> handleNoSuchElementFoundException(NoSuchElementFoundException ex) {
+    @ExceptionHandler({NoSuchElementFoundException.class, EntityNotFoundException.class})
+    public ResponseEntity<ErrorResponse> handleNotFound(Exception ex) {
         final var error = buildErrorResponse(ex, ex.getMessage() != null ? ex.getMessage() : "Resource not found", HttpStatus.NOT_FOUND);
-
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
-    }
-
-    @ExceptionHandler(EntityNotFoundException.class)
-    public ResponseEntity<ErrorResponse> handleEntityNotFoundException(EntityNotFoundException ex) {
-        final var error = buildErrorResponse(ex, ex.getMessage() != null ? ex.getMessage() : "Resource not found", HttpStatus.NOT_FOUND);
-
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
     }
 
@@ -97,12 +89,6 @@ public class ErrorHandler extends ResponseEntityExceptionHandler {
         return ResponseEntity.status(HttpStatus.BAD_GATEWAY).body(error);
     }
 
-    @ExceptionHandler(HttpClientErrorException.class)
-    public ResponseEntity<ErrorResponse> handleUpstreamClientError(HttpClientErrorException ex) {
-        final var error = buildErrorResponse(ex, "Invalid request to external service", HttpStatus.BAD_GATEWAY);
-        return ResponseEntity.status(HttpStatus.BAD_GATEWAY).body(error);
-    }
-
     @ExceptionHandler(ResourceAccessException.class)
     public ResponseEntity<ErrorResponse> handleResourceAccessError(ResourceAccessException ex) {
         final var error = buildErrorResponse(ex, "External service is unreachable", HttpStatus.SERVICE_UNAVAILABLE);
@@ -114,7 +100,7 @@ public class ErrorHandler extends ResponseEntityExceptionHandler {
                                                                                    @NonNull HttpHeaders headers,
                                                                                    @NonNull HttpStatusCode status,
                                                                                    @NonNull WebRequest request) {
-        final var error = buildErrorResponse(ex, "HTTP method not allowed: " + ex.getMethod(), HttpStatus.METHOD_NOT_ALLOWED);
+        final var error = buildErrorResponse(ex, "HTTP method not allowed: " + ex.getMethod(), status);
 
         return handleExceptionInternal(ex, error, headers, status, request);
     }
@@ -135,16 +121,6 @@ public class ErrorHandler extends ResponseEntityExceptionHandler {
     }
 
     @Override
-    protected ResponseEntity<Object> handleNoHandlerFoundException(@NonNull NoHandlerFoundException ex,
-                                                                   @NonNull HttpHeaders headers,
-                                                                   @NonNull HttpStatusCode status,
-                                                                   @NonNull WebRequest request) {
-        final var error = buildErrorResponse(ex, ex.getMessage() != null ? ex.getMessage() : "Resource not found", HttpStatus.NOT_FOUND);
-
-        return handleExceptionInternal(ex, error, headers, status, request);
-    }
-
-    @Override
     protected ResponseEntity<Object> handleMethodArgumentNotValid(@NonNull MethodArgumentNotValidException ex,
                                                                   @NonNull HttpHeaders headers,
                                                                   @NonNull HttpStatusCode status,
@@ -155,7 +131,27 @@ public class ErrorHandler extends ResponseEntityExceptionHandler {
             .map(fieldError -> new ErrorResponse.ErrorInfo(fieldError.getField(), fieldError.getDefaultMessage()))
             .toList();
 
-        final var error = buildErrorResponse(ex, "Validation failed", HttpStatus.UNPROCESSABLE_CONTENT, errors);
+        final var error = buildErrorResponse(ex, "Validation failed", status, errors);
+
+        return handleExceptionInternal(ex, error, headers, status, request);
+    }
+
+    @Override
+    protected ResponseEntity<Object> handleNoHandlerFoundException(@NonNull NoHandlerFoundException ex,
+                                                                   @NonNull HttpHeaders headers,
+                                                                   @NonNull HttpStatusCode status,
+                                                                   @NonNull WebRequest request) {
+        final var error = buildErrorResponse(ex, ex.getMessage() != null ? ex.getMessage() : "Resource not found", status);
+
+        return handleExceptionInternal(ex, error, headers, status, request);
+    }
+
+    @Override
+    protected @Nullable ResponseEntity<Object> handleNoResourceFoundException(@NonNull NoResourceFoundException ex,
+                                                                              @NonNull HttpHeaders headers,
+                                                                              @NonNull HttpStatusCode status,
+                                                                              @NonNull WebRequest request) {
+        final var error = buildErrorResponse(ex, "Not Found", status);
 
         return handleExceptionInternal(ex, error, headers, status, request);
     }
@@ -167,8 +163,8 @@ public class ErrorHandler extends ResponseEntityExceptionHandler {
                                                           @NonNull HttpStatusCode status,
                                                           @NonNull WebRequest request) {
 
-        if (body == null) {
-            body = buildErrorResponse(ex, "An unexpected error occurred", status);
+        if (!(body instanceof ErrorResponse)) {
+            body = buildErrorResponse(ex,"An unexpected error occurred", status);
         }
 
         return super.handleExceptionInternal(ex, body, headers, status, request);

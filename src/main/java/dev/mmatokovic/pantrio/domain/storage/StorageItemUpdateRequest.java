@@ -9,4 +9,4 @@ public record StorageItemUpdateRequest(
     @NotNull @Min(1)
     Integer quantity,
     LocalDate expiryDate
-) {}
+) { }
