@@ -2,7 +2,7 @@ package dev.mmatokovic.pantrio.infra.openfoodfacts;
 
 import dev.mmatokovic.pantrio.domain.product.Product;
 import dev.mmatokovic.pantrio.domain.product.ProductRepository;
-import dev.mmatokovic.pantrio.infra.error.NoSuchElementFoundException;
+import dev.mmatokovic.pantrio.infra.exception.NoSuchElementFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -29,6 +29,7 @@ public class OpenFoodFactsAdapter implements ProductRepository {
         maxDelay = 3500,
         maxRetries = 2 // 1 initial + 2 defined retries
     )
+
     @ConcurrencyLimit(5)
     @Override
     public Product getProductByBarcode(String barcode) {
@@ -39,7 +40,7 @@ public class OpenFoodFactsAdapter implements ProductRepository {
             .retrieve()
             .onStatus(
                 status -> status == HttpStatus.NOT_FOUND,
-                (_, _) -> {
+                (req, res) -> {
                     throw new NoSuchElementFoundException("Product " + barcode + " not found");
                 })
             .body(OpenFoodFactsProductResponse.class);

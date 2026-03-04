@@ -11,7 +11,7 @@ import org.springframework.resilience.annotation.EnableResilientMethods;
 @SpringBootApplication
 public class PantrioApplication {
 
-    static void main(String[] args) {
+    public static void main(String[] args) {
         SpringApplication.run(PantrioApplication.class, args);
     }
 }

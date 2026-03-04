@@ -1,15 +1,31 @@
 package dev.mmatokovic.pantrio.infra.logging;
 
-import org.apache.commons.lang3.StringUtils;
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.InvalidMediaTypeException;
 import org.springframework.http.MediaType;
 
+import java.nio.charset.StandardCharsets;
+
 public final class HttpLoggingUtils {
 
     public static final String LOG_ITEM_DELIMITER = ", ";
+    public static final int INITIAL_SB_SIZE = 512;
+    public static final ObjectMapper MAPPER = new ObjectMapper();
 
-    private HttpLoggingUtils() { }
+    static {
+        final var javaTimeModule = new JavaTimeModule();
+        MAPPER.registerModule(javaTimeModule);
+        MAPPER.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
+        MAPPER.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+    }
+
+    private HttpLoggingUtils() {
+        throw new AssertionError("Utility class!");
+    }
 
     public static boolean shouldLogRequestBody(String httpMethod, String contentType) {
         try {
@@ -42,11 +58,13 @@ public final class HttpLoggingUtils {
         return MediaType.APPLICATION_JSON.isCompatibleWith(mediaType) || MediaType.TEXT_PLAIN.isCompatibleWith(mediaType);
     }
 
-    /**
-     * Trims, normalizes trailing whitespaces into single one and removes new lines.
-     */
-    public static String normalizeBody(String originalBody) {
-        return StringUtils.normalizeSpace(originalBody.replace("\n", "").replace("\r", ""));
-    }
+    public static String normalizeBody(byte[] rawBody) {
+        try {
+            Object json = MAPPER.readValue(rawBody, Object.class);
 
+            return MAPPER.writeValueAsString(json);
+        } catch (Exception e) {
+            return new String(rawBody, StandardCharsets.UTF_8);
+        }
+    }
 }

@@ -1,4 +1,4 @@
-package dev.mmatokovic.pantrio.infra.error;
+package dev.mmatokovic.pantrio.infra.exception;
 
 public class NoSuchElementFoundException extends RuntimeException {
 

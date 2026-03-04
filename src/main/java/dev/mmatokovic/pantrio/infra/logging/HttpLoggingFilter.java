@@ -1,14 +1,18 @@
 package dev.mmatokovic.pantrio.infra.logging;
 
+import io.opentelemetry.api.trace.Span;
+import io.opentelemetry.api.trace.SpanContext;
+import io.opentelemetry.api.trace.propagation.W3CTraceContextPropagator;
+import io.opentelemetry.context.Context;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.jspecify.annotations.NonNull;
 import org.slf4j.MDC;
-import org.springframework.core.annotation.Order;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 import org.springframework.util.CollectionUtils;
@@ -17,7 +21,6 @@ import org.springframework.web.util.ContentCachingRequestWrapper;
 import org.springframework.web.util.ContentCachingResponseWrapper;
 
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -25,12 +28,12 @@ import java.util.List;
 import java.util.UUID;
 import java.util.regex.Pattern;
 
+import static dev.mmatokovic.pantrio.infra.logging.HttpLoggingUtils.INITIAL_SB_SIZE;
 import static dev.mmatokovic.pantrio.infra.logging.HttpLoggingUtils.LOG_ITEM_DELIMITER;
 
 @Slf4j(topic = "audit.logger")
 @Component
-@Order(2)
-class HttpLoggingFilter extends OncePerRequestFilter {
+final class HttpLoggingFilter extends OncePerRequestFilter {
 
     private static final String REQUEST_ID_HEADER_KEY = "X-Request-Id";
     private static final String LOAD_BALANCER_HEADER_KEY = "X-Forwarded-For";
@@ -65,19 +68,28 @@ class HttpLoggingFilter extends OncePerRequestFilter {
         final var startTime = Instant.now();
         final var shouldLogRequestResponse = IGNORED_APIS.stream().noneMatch(requestUri::contains);
         final var auth = SecurityContextHolder.getContext().getAuthentication();
+        final var propagator = W3CTraceContextPropagator.getInstance();
 
+        SpanContext spanContext = Span.current().getSpanContext();
+        if (spanContext.isValid()) {
+            propagator.inject(Context.current(), response, HttpServletResponse::addHeader);
+            propagator.fields().forEach(field -> {
+                String value = response.getHeader(field);
+                if (value != null) {
+                    MDC.put(field, value);
+                }
+            });
+        }
         MDC.put("requestId", requestId);
         MDC.put("authUser", auth != null ? auth.getName() : "anonymous");
 
         try {
+            chain.doFilter(requestWrapper, responseWrapper);
+        } finally {
             if (shouldLogRequestResponse) {
                 logRequest(httpMethod, requestId, requestUri, source, target, requestWrapper);
-            }
-            chain.doFilter(requestWrapper, responseWrapper);
-            if (shouldLogRequestResponse) {
                 logResponse(responseWrapper, httpMethod, requestId, requestUri, source, target, startTime);
             }
-        } finally {
             responseWrapper.copyBodyToResponse();
             MDC.clear();
         }
@@ -128,7 +140,7 @@ class HttpLoggingFilter extends OncePerRequestFilter {
                             String source,
                             String target,
                             ContentCachingRequestWrapper requestWrapper) {
-        final var requestSb = new StringBuilder();
+        final var requestSb = new StringBuilder(INITIAL_SB_SIZE);
         requestSb
             .append("HTTP ").append(httpMethod).append(" request :: ")
             .append("Request ID: ").append(requestId)
@@ -137,16 +149,17 @@ class HttpLoggingFilter extends OncePerRequestFilter {
             .append(LOG_ITEM_DELIMITER).append("Target: ").append(target);
 
         if (HttpLoggingUtils.shouldLogRequestBody(httpMethod, requestWrapper.getContentType())) {
-            final var requestBody = new String(requestWrapper.getContentAsByteArray(), StandardCharsets.UTF_8);
-            if (StringUtils.isBlank(requestBody)) {
+            byte[] requestContent = requestWrapper.getContentAsByteArray();
+            if (ArrayUtils.isEmpty(requestContent)) {
                 requestSb.append(LOG_ITEM_DELIMITER).append("Request body is empty");
             } else {
-                var normalizedRequestBody = HttpLoggingUtils.normalizeBody(requestBody);
+                var normalizedRequestBody = HttpLoggingUtils.normalizeBody(requestContent);
 
                 if (isAuthRequest(requestUri)) {
                     normalizedRequestBody = maskSensitiveData(normalizedRequestBody, PASSWORD_PATTERN);
                 }
                 requestSb.append(LOG_ITEM_DELIMITER).append("Request body: ").append(normalizedRequestBody);
+
             }
         }
 
@@ -163,7 +176,7 @@ class HttpLoggingFilter extends OncePerRequestFilter {
         final var duration = Duration.between(startTime, Instant.now()).toMillis();
         final var responseStatus = responseWrapper.getStatus();
 
-        final var responseSb = new StringBuilder();
+        final var responseSb = new StringBuilder(INITIAL_SB_SIZE);
         responseSb
             .append("HTTP ").append(httpMethod).append(" response :: ")
             .append("Request ID: ").append(requestId).append(LOG_ITEM_DELIMITER)
@@ -171,23 +184,21 @@ class HttpLoggingFilter extends OncePerRequestFilter {
             .append("Source: ").append(source).append(LOG_ITEM_DELIMITER)
             .append("Target: ").append(target).append(LOG_ITEM_DELIMITER)
             .append("Duration: ").append(duration).append("ms").append(LOG_ITEM_DELIMITER)
-            .append("Response status: ").append(responseStatus).append(LOG_ITEM_DELIMITER);
+            .append("Response status: ").append(responseStatus);
 
-        final var responseBody = new String(responseWrapper.getContentAsByteArray(), StandardCharsets.UTF_8);
         if (HttpLoggingUtils.shouldLogResponseBody(responseWrapper.getContentType())) {
-            if (StringUtils.isBlank(responseBody)) {
-                // this will be also empty when exception occurs
-                responseSb.append("Response body is empty");
+            final var responseContent = responseWrapper.getContentAsByteArray();
+            if (ArrayUtils.isEmpty(responseContent)) {
+                responseSb.append(LOG_ITEM_DELIMITER).append("Response body is empty");
             } else {
-                var normalizedResponseBody = HttpLoggingUtils.normalizeBody(responseBody);
+                var normalizedResponseBody = HttpLoggingUtils.normalizeBody(responseContent);
 
                 if (isAuthRequest(requestUri)) {
                     for (var pattern : SENSITIVE_DATA_PATTERNS) {
                         normalizedResponseBody = maskSensitiveData(normalizedResponseBody, pattern);
                     }
                 }
-
-                responseSb.append("Response body: ").append(normalizedResponseBody);
+                responseSb.append(LOG_ITEM_DELIMITER).append("Response body: ").append(normalizedResponseBody);
             }
         }
 

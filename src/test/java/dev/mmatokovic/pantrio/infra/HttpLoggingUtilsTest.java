@@ -52,6 +52,6 @@ class HttpLoggingUtilsTest {
 
     @Test
     void shouldReturnNormalizedString() {
-        assertThat(HttpLoggingUtils.normalizeBody("  test   test2 \n \r   test3    ")).isEqualTo("test test2 test3");
+        assertThat(HttpLoggingUtils.normalizeBody("  test   test2 \n \r   test3    ".getBytes())).isEqualTo("test test2 test3");
     }
 }

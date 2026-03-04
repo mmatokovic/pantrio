@@ -10,12 +10,14 @@ import dev.mmatokovic.pantrio.domain.storage.StorageItemResponse;
 import dev.mmatokovic.pantrio.domain.storage.StorageRepository;
 import dev.mmatokovic.pantrio.domain.storage.StorageRequest;
 import dev.mmatokovic.pantrio.domain.storage.StorageResponse;
+import dev.mmatokovic.pantrio.infra.exception.ConflictException;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -71,20 +73,17 @@ public class StorageServiceImpl implements StorageService {
         Item item = itemRepository.findById(request.itemId())
             .orElseThrow(() -> new EntityNotFoundException("Item " + request.itemId() + " not found"));
 
-        Instance instance = instanceRepository.findByStorageAndItem(storage, item)
-            .map(existing -> {
-                existing.setQuantity(request.quantity());
-                existing.setExpiryDate(request.expiryDate());
-                return existing;
-            })
-            .orElseGet(() -> {
-                Instance newInstance = mapper.toInstance(request);
-                newInstance.setStorage(storage);
-                newInstance.setItem(item);
-                return newInstance;
-            });
+        Optional<Instance> existingInstance = instanceRepository.findByStorageAndItem(storage, item);
 
-        Instance saved = instanceRepository.save(instance);
+        if (existingInstance.isPresent()) {
+            throw new ConflictException("Instance of item " + request.itemId() + " already exists in storage " + storageId);
+        }
+
+        Instance newInstance = mapper.toInstance(request);
+        newInstance.setStorage(storage);
+        newInstance.setItem(item);
+
+        Instance saved = instanceRepository.save(newInstance);
 
         return mapper.toItemResponse(saved);
     }

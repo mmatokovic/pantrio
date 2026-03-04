@@ -1,5 +1,7 @@
 package dev.mmatokovic.pantrio.infra.error;
 
+import dev.mmatokovic.pantrio.infra.exception.ConflictException;
+import dev.mmatokovic.pantrio.infra.exception.NoSuchElementFoundException;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.validation.ConstraintViolationException;
 import lombok.extern.slf4j.Slf4j;
@@ -16,13 +18,18 @@ import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.client.HttpServerErrorException;
-import org.springframework.web.client.UnknownHttpStatusCodeException;
+import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.servlet.NoHandlerFoundException;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 
 import java.util.List;
 
+/**
+ * Gracefully handles exception occurred during REST API call execution
+ * Use ResponseEntity in @ExceptionHandler methods.
+ * Use super.handleExceptionInternal() only in @Override
+ */
 @Slf4j(topic = "error.logger")
 @RestControllerAdvice
 public class ErrorHandler extends ResponseEntityExceptionHandler {
@@ -38,7 +45,7 @@ public class ErrorHandler extends ResponseEntityExceptionHandler {
 
     @ExceptionHandler(DataIntegrityViolationException.class)
     public ResponseEntity<ErrorResponse> handleDataIntegrityViolation(DataIntegrityViolationException ex) {
-        final var error = buildErrorResponse(ex, "Data integrity violation", HttpStatus.BAD_REQUEST);
+        final var error = buildErrorResponse(ex, "Malformed request", HttpStatus.BAD_REQUEST);
 
         return ResponseEntity.badRequest().body(error);
     }
@@ -57,6 +64,13 @@ public class ErrorHandler extends ResponseEntityExceptionHandler {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
     }
 
+    @ExceptionHandler(ConflictException.class)
+    public ResponseEntity<ErrorResponse> handleConflictException(ConflictException ex) {
+        final var error = buildErrorResponse(ex, ex.getMessage() != null ? ex.getMessage() : "Duplicate resource", HttpStatus.CONFLICT);
+
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(error);
+    }
+
     @ExceptionHandler(ConstraintViolationException.class)
     public ResponseEntity<ErrorResponse> handleConstraintViolationException(ConstraintViolationException ex) {
         List<ErrorResponse.ErrorInfo> violations = ex.getConstraintViolations()
@@ -69,12 +83,20 @@ public class ErrorHandler extends ResponseEntityExceptionHandler {
         return ResponseEntity.unprocessableContent().body(error);
     }
 
-    @ExceptionHandler({UnknownHttpStatusCodeException.class, HttpServerErrorException.class})
-    public ResponseEntity<ErrorResponse> handleUnknownStatus(Exception ex) {
+    @ExceptionHandler(HttpServerErrorException.class)
+    public ResponseEntity<ErrorResponse> handleUnknownStatus(HttpServerErrorException ex) {
 
         final var error = buildErrorResponse(ex, "Unexpected external service error", HttpStatus.BAD_GATEWAY);
 
         return ResponseEntity.status(HttpStatus.BAD_GATEWAY).body(error);
+    }
+
+    @ExceptionHandler(ResourceAccessException.class)
+    public ResponseEntity<ErrorResponse> handleUnknownStatus(ResourceAccessException ex) {
+
+        final var error = buildErrorResponse(ex, "Unexpected external service error", HttpStatus.SERVICE_UNAVAILABLE);
+
+        return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(error);
     }
 
     @Override

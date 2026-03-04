@@ -13,7 +13,7 @@ import static com.github.tomakehurst.wiremock.stubbing.Scenario.STARTED;
 
 import dev.mmatokovic.pantrio.BaseIntegrationTest;
 import dev.mmatokovic.pantrio.domain.product.Product;
-import dev.mmatokovic.pantrio.infra.error.NoSuchElementFoundException;
+import dev.mmatokovic.pantrio.infra.exception.NoSuchElementFoundException;
 import dev.mmatokovic.pantrio.infra.openfoodfacts.OpenFoodFactsAdapter;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;

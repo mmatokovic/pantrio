@@ -2,7 +2,6 @@ package dev.mmatokovic.pantrio.infra.logging;
 
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.ArrayUtils;
-import org.apache.commons.lang3.StringUtils;
 import org.jspecify.annotations.NonNull;
 import org.slf4j.MDC;
 import org.springframework.http.HttpHeaders;
@@ -18,7 +17,6 @@ import org.springframework.stereotype.Component;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -29,7 +27,7 @@ import static dev.mmatokovic.pantrio.infra.logging.HttpLoggingUtils.LOG_ITEM_DEL
 
 @Slf4j(topic = "audit.logger")
 @Component
-public class RestClientRequestLogger implements ClientHttpRequestInterceptor {
+public final class RestClientRequestLogger implements ClientHttpRequestInterceptor {
 
     private static final List<String> IGNORABLE_URIS = new ArrayList<>();
 
@@ -64,7 +62,7 @@ public class RestClientRequestLogger implements ClientHttpRequestInterceptor {
         return new BufferingClientHttpResponseWrapper(response, responseBody);
     }
 
-    private static void logRequest(byte[] body, String requestId, String requestUri, HttpMethod httpMethod, HttpHeaders headers) {
+    private static void logRequest(byte[] requestContent, String requestId, String requestUri, HttpMethod httpMethod, HttpHeaders headers) {
         final var requestSb = new StringBuilder();
         requestSb
             .append("EXTERNAL HTTP ").append(httpMethod.name()).append(" request :: ")
@@ -73,11 +71,10 @@ public class RestClientRequestLogger implements ClientHttpRequestInterceptor {
             .append("Request URI: ").append(requestUri);
 
         if (HttpLoggingUtils.shouldLogRequestBody(httpMethod.name(), headers.getContentType())) {
-            final var requestBody = new String(body, StandardCharsets.UTF_8);
-            if (StringUtils.isEmpty(requestBody)) {
+            if (ArrayUtils.isEmpty(requestContent)) {
                 requestSb.append(LOG_ITEM_DELIMITER).append("Request body is empty");
             } else {
-                requestSb.append(LOG_ITEM_DELIMITER).append("Request body: ").append(HttpLoggingUtils.normalizeBody(requestBody));
+                requestSb.append(LOG_ITEM_DELIMITER).append("Request body: ").append(HttpLoggingUtils.normalizeBody(requestContent));
             }
         }
 
@@ -85,7 +82,7 @@ public class RestClientRequestLogger implements ClientHttpRequestInterceptor {
     }
 
     private static void logResponse(int responseStatus,
-                                    byte[] responseBody,
+                                    byte[] responseContent,
                                     MediaType contentType,
                                     String requestId,
                                     String requestUri,
@@ -101,12 +98,10 @@ public class RestClientRequestLogger implements ClientHttpRequestInterceptor {
             .append("Response status: ").append(responseStatus).append(LOG_ITEM_DELIMITER);
 
         if (HttpLoggingUtils.shouldLogResponseBody(contentType)) {
-            if (ArrayUtils.isEmpty(responseBody)) {
+            if (ArrayUtils.isEmpty(responseContent)) {
                 responseSb.append("Response body is empty");
             } else {
-                final var stringifyBody = new String(responseBody, StandardCharsets.UTF_8);
-                final var normalizedResponseBody = HttpLoggingUtils.normalizeBody(stringifyBody);
-                responseSb.append("Response body: ").append(normalizedResponseBody);
+                responseSb.append("Response body: ").append(HttpLoggingUtils.normalizeBody(responseContent));
             }
         }
 
