@@ -9,6 +9,7 @@ import lombok.RequiredArgsConstructor;
 import org.jspecify.annotations.NonNull;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -20,11 +21,13 @@ public class ItemServiceImpl implements ItemService {
     private final ItemMapper mapper;
 
     @Override
+    @Transactional(readOnly = true)
     public List<ItemResponse> listItems(Pageable pageable) {
         return mapper.toResponseList(repo.findAll(pageable).getContent());
     }
 
     @Override
+    @Transactional(readOnly = true)
     public ItemResponse getItem(Long id) {
         Item item = repo.findById(id)
             .orElseThrow(() -> new EntityNotFoundException("Item " + id + " not found"));
@@ -32,30 +35,29 @@ public class ItemServiceImpl implements ItemService {
     }
 
     @Override
+    @Transactional
     public ItemResponse createItem(ItemRequest request) {
-        Item item = mapper.toEntity(request);
-        Item saved = repo.save(item);
-        return mapper.toResponse(saved);
+        return mapper.toResponse(repo.save(mapper.toEntity(request)));
     }
 
     @Override
+    @Transactional
     public ItemResponse updateItem(Long id, @NonNull ItemRequest request) {
         Item item = repo.findById(id)
             .orElseThrow(() -> new EntityNotFoundException("Item " + id + " not found"));
         item.setName(request.name());
         item.setRemarks(request.remarks());
         item.setBarcode(request.barcode());
-        item.setUnit(request.unit().name().toLowerCase());
+        item.setUnit(request.unit());
         item.setPictureUrl(request.pictureUrl());
         item.setDisabled(request.disabled());
-        Item updated = repo.save(item);
-        return mapper.toResponse(updated);
+        return mapper.toResponse(repo.save(item));
     }
 
     @Override
+    @Transactional
     public void deleteItem(Long id) {
-        Item item = repo.findById(id)
-            .orElseThrow(() -> new EntityNotFoundException("Item " + id + " not found"));
-        repo.delete(item);
+        repo.delete(repo.findById(id)
+            .orElseThrow(() -> new EntityNotFoundException("Item " + id + " not found")));
     }
 }

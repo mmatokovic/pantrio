@@ -47,15 +47,25 @@ public class ErrorHandler extends ResponseEntityExceptionHandler {
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleGlobalException(Exception ex) {
         final var error = buildErrorResponse(ex, "Something went wrong", HttpStatus.INTERNAL_SERVER_ERROR);
-
         return ResponseEntity.internalServerError().body(error);
     }
 
     @ExceptionHandler(DataIntegrityViolationException.class)
     public ResponseEntity<ErrorResponse> handleDataIntegrityViolation(DataIntegrityViolationException ex) {
-        final var error = buildErrorResponse(ex, "Malformed request", HttpStatus.BAD_REQUEST);
+        String message = "Data integrity violation";
+        if (ex.getCause() instanceof org.hibernate.exception.ConstraintViolationException cve) {
+            String constraint = cve.getConstraintName();
+            if (constraint != null) {
+                message = switch (constraint.toLowerCase()) {
+                    case "pantrio.idx_items_barcode" -> "Item with same barcode already exists";
+                    case "pantrio.idx_storage_name" -> "Storage with this name already exists";
+                    default -> "Data integrity violation";
+                };
+            }
+        }
 
-        return ResponseEntity.badRequest().body(error);
+        final var error = buildErrorResponse(ex, message, HttpStatus.CONFLICT);
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(error);
     }
 
     @ExceptionHandler({NoSuchElementFoundException.class, EntityNotFoundException.class})
@@ -67,7 +77,6 @@ public class ErrorHandler extends ResponseEntityExceptionHandler {
     @ExceptionHandler(ConflictException.class)
     public ResponseEntity<ErrorResponse> handleConflictException(ConflictException ex) {
         final var error = buildErrorResponse(ex, ex.getMessage() != null ? ex.getMessage() : "Duplicate resource", HttpStatus.CONFLICT);
-
         return ResponseEntity.status(HttpStatus.CONFLICT).body(error);
     }
 
@@ -79,7 +88,6 @@ public class ErrorHandler extends ResponseEntityExceptionHandler {
             .toList();
 
         final var error = buildErrorResponse(ex, "Validation failed", HttpStatus.UNPROCESSABLE_CONTENT, violations);
-
         return ResponseEntity.unprocessableContent().body(error);
     }
 
@@ -101,7 +109,6 @@ public class ErrorHandler extends ResponseEntityExceptionHandler {
                                                                                    @NonNull HttpStatusCode status,
                                                                                    @NonNull WebRequest request) {
         final var error = buildErrorResponse(ex, "HTTP method not allowed: " + ex.getMethod(), status);
-
         return handleExceptionInternal(ex, error, headers, status, request);
     }
 
@@ -110,13 +117,11 @@ public class ErrorHandler extends ResponseEntityExceptionHandler {
                                                                                     @NonNull HttpHeaders headers,
                                                                                     @NonNull HttpStatusCode status,
                                                                                     @NonNull WebRequest request) {
-
         List<ErrorResponse.ErrorInfo> errors = List.of(
             new ErrorResponse.ErrorInfo(ex.getParameterName(), "Parameter is required")
         );
 
         final var error = buildErrorResponse(ex, "Missing request parameter", status, errors);
-
         return handleExceptionInternal(ex, error, headers, status, request);
     }
 
@@ -125,14 +130,12 @@ public class ErrorHandler extends ResponseEntityExceptionHandler {
                                                                   @NonNull HttpHeaders headers,
                                                                   @NonNull HttpStatusCode status,
                                                                   @NonNull WebRequest request) {
-
         List<ErrorResponse.ErrorInfo> errors = ex.getBindingResult().getFieldErrors()
             .stream()
             .map(fieldError -> new ErrorResponse.ErrorInfo(fieldError.getField(), fieldError.getDefaultMessage()))
             .toList();
 
         final var error = buildErrorResponse(ex, "Validation failed", status, errors);
-
         return handleExceptionInternal(ex, error, headers, status, request);
     }
 
@@ -142,7 +145,6 @@ public class ErrorHandler extends ResponseEntityExceptionHandler {
                                                                    @NonNull HttpStatusCode status,
                                                                    @NonNull WebRequest request) {
         final var error = buildErrorResponse(ex, ex.getMessage() != null ? ex.getMessage() : "Resource not found", status);
-
         return handleExceptionInternal(ex, error, headers, status, request);
     }
 
@@ -152,7 +154,6 @@ public class ErrorHandler extends ResponseEntityExceptionHandler {
                                                                               @NonNull HttpStatusCode status,
                                                                               @NonNull WebRequest request) {
         final var error = buildErrorResponse(ex, "Not Found", status);
-
         return handleExceptionInternal(ex, error, headers, status, request);
     }
 
@@ -162,9 +163,8 @@ public class ErrorHandler extends ResponseEntityExceptionHandler {
                                                           @NonNull HttpHeaders headers,
                                                           @NonNull HttpStatusCode status,
                                                           @NonNull WebRequest request) {
-
         if (!(body instanceof ErrorResponse)) {
-            body = buildErrorResponse(ex,"An unexpected error occurred", status);
+            body = buildErrorResponse(ex, "An unexpected error occurred", status);
         }
 
         return super.handleExceptionInternal(ex, body, headers, status, request);

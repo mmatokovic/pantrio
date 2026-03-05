@@ -31,11 +31,13 @@ public class StorageServiceImpl implements StorageService {
     private final ItemRepository itemRepository;
 
     @Override
+    @Transactional(readOnly = true)
     public List<StorageResponse> listStorages(Pageable pageable) {
         return mapper.toResponseList(repo.findAll(pageable).getContent());
     }
 
     @Override
+    @Transactional(readOnly = true)
     public StorageResponse getStorage(Long id) {
         return repo.findById(id)
             .map(mapper::toResponse)
@@ -45,20 +47,18 @@ public class StorageServiceImpl implements StorageService {
     @Override
     @Transactional
     public StorageResponse createStorage(@NonNull StorageRequest request) {
-        if (repo.existsByName(request.name())) {
-            throw new ConflictException("Storage with name '" + request.name() + "' already exists");
-        }
         return mapper.toResponse(repo.save(mapper.toEntity(request)));
     }
 
     @Override
-    public void updateStorage(Long id, @NonNull StorageRequest request) {
+    @Transactional
+    public StorageResponse updateStorage(Long id, @NonNull StorageRequest request) {
         Storage storage = repo.findById(id)
             .orElseThrow(() -> new EntityNotFoundException("Storage " + id + " not found"));
         storage.setName(request.name());
         storage.setDescription(request.description());
         storage.setDisabled(request.disabled());
-        mapper.toResponse(repo.save(storage));
+        return mapper.toResponse(repo.save(storage));
     }
 
     @Override

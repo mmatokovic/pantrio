@@ -36,5 +36,8 @@
                 <constraints nullable="false"/>
             </column>
         </createTable>
+        <createIndex indexName="idx_items_barcode" tableName="items" unique="true">
+            <column name="barcode"/>
+        </createIndex>
     </changeSet>
 </databaseChangeLog>

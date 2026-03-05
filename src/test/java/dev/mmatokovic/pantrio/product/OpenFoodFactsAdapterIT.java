@@ -1,4 +1,4 @@
-package dev.mmatokovic.pantrio.infra;
+package dev.mmatokovic.pantrio.product;
 
 import com.github.tomakehurst.wiremock.junit5.WireMockTest;
 

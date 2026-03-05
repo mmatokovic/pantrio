@@ -41,7 +41,6 @@ public class ItemController {
     ResponseEntity<ItemResponse> create(@Valid @RequestBody ItemRequest request) {
         ItemResponse item = service.createItem(request);
         URI location = ServletUriComponentsBuilder.fromCurrentRequest().path("/{id}").buildAndExpand(item.id()).toUri();
-
         return ResponseEntity.created(location).build();
     }
 
@@ -51,16 +50,15 @@ public class ItemController {
     }
 
     @PutMapping(value = "/{id}", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
-    ResponseEntity<ItemResponse> update(@PathVariable Long id, @RequestBody ItemRequest request) {
+    ResponseEntity<ItemResponse> update(@PathVariable Long id,
+                                        @RequestBody ItemRequest request) {
         service.updateItem(id, request);
-
         return ResponseEntity.noContent().build();
     }
 
     @DeleteMapping("/{id}")
     ResponseEntity<Void> delete(@PathVariable Long id) {
         service.deleteItem(id);
-
         return ResponseEntity.noContent().build();
     }
 }

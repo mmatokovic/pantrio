@@ -1,5 +1,6 @@
-package dev.mmatokovic.pantrio.api;
+package dev.mmatokovic.pantrio.product;
 
+import dev.mmatokovic.pantrio.api.ProductController;
 import dev.mmatokovic.pantrio.app.product.ProductService;
 import dev.mmatokovic.pantrio.domain.product.ProductResponse;
 import org.junit.jupiter.api.BeforeEach;

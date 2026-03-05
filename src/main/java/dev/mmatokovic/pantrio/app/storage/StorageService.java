@@ -41,7 +41,7 @@ public interface StorageService {
      * @param id      the unique identifier of the storage to update
      * @param request updated storage data
      */
-    void updateStorage(Long id, StorageRequest request);
+    StorageResponse updateStorage(Long id, StorageRequest request);
 
     /**
      * Deletes a storage identified by its unique identifier.

@@ -1,17 +1,19 @@
-package dev.mmatokovic.pantrio.app;
+package dev.mmatokovic.pantrio.item;
 
+import dev.mmatokovic.pantrio.app.item.ItemMapper;
+import dev.mmatokovic.pantrio.app.item.ItemServiceImpl;
 import dev.mmatokovic.pantrio.domain.item.Item;
 import dev.mmatokovic.pantrio.domain.item.ItemRepository;
-import dev.mmatokovic.pantrio.app.item.ItemServiceImpl;
-import dev.mmatokovic.pantrio.app.item.ItemMapper;
 import dev.mmatokovic.pantrio.domain.item.ItemRequest;
 import dev.mmatokovic.pantrio.domain.item.ItemResponse;
+import dev.mmatokovic.pantrio.domain.item.UnitEnum;
 import jakarta.persistence.EntityNotFoundException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
@@ -26,6 +28,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.assertj.core.api.Assertions.assertThat;
 
+@ExtendWith(MockitoExtension.class)
 class ItemServiceImplTest {
 
     @Mock
@@ -43,9 +46,8 @@ class ItemServiceImplTest {
 
     @BeforeEach
     void setUp() {
-        MockitoAnnotations.openMocks(this);
-        item = Item.builder().id(1L).name("item").remarks("description").barcode("8000500179864").unit("pcs").pictureUrl("pic.png").disabled(false).build();
-        request = new ItemRequest("item", "description", "8000500179864", ItemRequest.UnitEnum.PCS, "pic.png", false);
+        item = Item.builder().id(1L).name("item").remarks("description").barcode("8000500179864").unit(UnitEnum.PCS).pictureUrl("pic.png").disabled(false).build();
+        request = new ItemRequest("item", "description", "8000500179864", UnitEnum.PCS, "pic.png", false);
         response = new ItemResponse(1L, "item", "remarks", "8000500179864", "pcs", "pic.png", false);
     }
 
@@ -63,7 +65,7 @@ class ItemServiceImplTest {
     }
 
     @Test
-    void should_return_item_response_when_item_exists() {
+    void should_return_item_response_when_exists() {
         when(repo.findById(1L)).thenReturn(Optional.empty());
 
         assertThatExceptionOfType(EntityNotFoundException.class)

@@ -1,4 +1,4 @@
-package dev.mmatokovic.pantrio.infra;
+package dev.mmatokovic.pantrio.logging;
 
 import dev.mmatokovic.pantrio.infra.logging.HttpLoggingUtils;
 import org.junit.jupiter.api.Test;

@@ -57,14 +57,12 @@ public class StorageController {
     ResponseEntity<StorageResponse> update(@PathVariable Long id,
                                            @Valid @RequestBody StorageRequest request) {
         service.updateStorage(id, request);
-
         return ResponseEntity.noContent().build();
     }
 
     @DeleteMapping("/{id}")
     ResponseEntity<Void> delete(@PathVariable Long id) {
         service.deleteStorage(id);
-
         return ResponseEntity.noContent().build();
     }
 
@@ -73,7 +71,6 @@ public class StorageController {
                                                 @Valid @RequestBody StorageItemRequest request) {
         StorageItemResponse instance = service.addInstance(storageId, request);
         URI location = ServletUriComponentsBuilder.fromCurrentRequest().path("/{id}").buildAndExpand(instance.id()).toUri();
-
         return ResponseEntity.created(location).build();
     }
 
@@ -81,7 +78,6 @@ public class StorageController {
     ResponseEntity<StorageItemResponse> restockItem(@PathVariable Long storageId,
                                                     @PathVariable Long itemId,
                                                     @Valid @RequestBody StorageItemUpdateRequest request) {
-
         return ResponseEntity.ok(service.updateInstance(storageId, itemId, request));
     }
 }

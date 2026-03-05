@@ -1,4 +1,4 @@
-package dev.mmatokovic.pantrio.api;
+package dev.mmatokovic.pantrio.item;
 
 
 import dev.mmatokovic.pantrio.BaseIntegrationTest;

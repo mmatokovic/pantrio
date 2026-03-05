@@ -2,6 +2,8 @@ package dev.mmatokovic.pantrio.domain.item;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -32,7 +34,9 @@ public class Item {
     private Long id;
     private String name;
     private String remarks;
-    private String unit;
+    @Enumerated(EnumType.STRING)
+    private UnitEnum unit;
+    @Column(unique = true)
     private String barcode;
     private String pictureUrl;
 
