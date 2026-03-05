@@ -1,6 +1,8 @@
 target/**
 !target/*.war
 !target/*.jar
+**/target/**
+!**/target/*.jar
 
 *.env
 
@@ -24,11 +26,13 @@ tmp/
 *.bak
 *.swp
 .DS_Store
+Thumbs.db
 
 surefire-reports/
 failsafe-reports/
 test-output/
 
+.gitattributes
 .editorconfig
 checkstyle.xml
 Jenkinsfile*

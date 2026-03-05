@@ -1,9 +1,6 @@
 package dev.mmatokovic.pantrio.infra.logging;
 
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import dev.mmatokovic.pantrio.infra.jackson.ObjectMapperUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.InvalidMediaTypeException;
@@ -15,14 +12,6 @@ public final class HttpLoggingUtils {
 
     public static final String LOG_ITEM_DELIMITER = ", ";
     public static final int INITIAL_SB_SIZE = 512;
-    public static final ObjectMapper MAPPER = new ObjectMapper();
-
-    static {
-        final var javaTimeModule = new JavaTimeModule();
-        MAPPER.registerModule(javaTimeModule);
-        MAPPER.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
-        MAPPER.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
-    }
 
     private HttpLoggingUtils() {
         throw new AssertionError("Utility class!");
@@ -61,8 +50,8 @@ public final class HttpLoggingUtils {
 
     public static String normalizeBody(byte[] rawBody) {
         try {
-            Object json = MAPPER.readValue(rawBody, Object.class);
-            String jsonString = MAPPER.writeValueAsString(json);
+            Object json = ObjectMapperUtils.readValue(rawBody, Object.class);
+            String jsonString = ObjectMapperUtils.writeJson(json);
 
             return StringUtils.normalizeSpace(jsonString.replace("\n", "").replace("\r", ""));
         } catch (Exception e) {
