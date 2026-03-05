@@ -47,7 +47,7 @@ class StorageServiceImplTest {
     void setUp() {
         storage = Storage.builder().id(1L).name("Fridge").build();
         storageRequest = new StorageRequest("Fridge", null, false);
-        storageResponse = new StorageResponse(1L, "Fridge", null, false);
+        storageResponse = new StorageResponse(1L, "Fridge", null, false, null, null);
     }
 
     @Test
@@ -88,7 +88,7 @@ class StorageServiceImplTest {
     @Test
     void should_update_existing_storage_fields_and_return_updated_response() {
         Storage updatedStorage = Storage.builder().id(1L).name("Updated Fridge").build();
-        StorageResponse updatedResponse = new StorageResponse(1L, "Updated Fridge", null, false);
+        StorageResponse updatedResponse = new StorageResponse(1L, "Updated Fridge", null, false, null, null);
 
         when(storageRepository.findById(1L)).thenReturn(Optional.of(storage));
         when(storageRepository.save(any(Storage.class))).thenReturn(updatedStorage);

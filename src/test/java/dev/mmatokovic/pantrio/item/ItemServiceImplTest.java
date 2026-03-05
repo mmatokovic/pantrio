@@ -48,7 +48,7 @@ class ItemServiceImplTest {
     void setUp() {
         item = Item.builder().id(1L).name("item").remarks("description").barcode("8000500179864").unit(UnitEnum.PCS).pictureUrl("pic.png").disabled(false).build();
         request = new ItemRequest("item", "description", "8000500179864", UnitEnum.PCS, "pic.png", false);
-        response = new ItemResponse(1L, "item", "remarks", "8000500179864", "pcs", "pic.png", false);
+        response = new ItemResponse(1L, "item", "remarks", "8000500179864", "pcs", "pic.png", false, null, null);
     }
 
     @Test

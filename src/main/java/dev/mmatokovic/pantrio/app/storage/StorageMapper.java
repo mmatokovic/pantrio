@@ -1,5 +1,6 @@
 package dev.mmatokovic.pantrio.app.storage;
 
+import dev.mmatokovic.pantrio.app.item.ItemMapper;
 import dev.mmatokovic.pantrio.domain.instance.Instance;
 import dev.mmatokovic.pantrio.domain.storage.Storage;
 import dev.mmatokovic.pantrio.domain.storage.StorageItemRequest;
@@ -11,7 +12,7 @@ import org.mapstruct.Mapping;
 
 import java.util.List;
 
-@Mapper(componentModel = "spring")
+@Mapper(componentModel = "spring", uses = ItemMapper.class)
 public interface StorageMapper {
 
     StorageResponse toResponse(Storage storage);
@@ -32,7 +33,9 @@ public interface StorageMapper {
     @Mapping(target = "updatedAt", ignore = true)
     Instance toInstance(StorageItemRequest request);
 
-    @Mapping(source = "item.id", target = "itemId")
-    @Mapping(source = "storage.id", target = "storageId")
+    @Mapping(source = "item", target = "item")
+    @Mapping(source = "storage", target = "storage")
     StorageItemResponse toItemResponse(Instance instance);
+
+    List<StorageItemResponse> toItemResponseList(List<Instance> instances);
 }

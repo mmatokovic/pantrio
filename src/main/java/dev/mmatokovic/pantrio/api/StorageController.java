@@ -74,10 +74,28 @@ public class StorageController {
         return ResponseEntity.created(location).build();
     }
 
+    @GetMapping(value = "/{storageId}/items", produces = MediaType.APPLICATION_JSON_VALUE)
+    ResponseEntity<List<StorageItemResponse>> getStock(@PathVariable Long storageId) {
+        return ResponseEntity.ok(service.listStock(storageId));
+    }
+
+    @GetMapping(value = "/{storageId}/items/{itemId}", produces = MediaType.APPLICATION_JSON_VALUE)
+    ResponseEntity<StorageItemResponse> showItem(@PathVariable Long storageId,
+                                                 @PathVariable Long itemId) {
+        return ResponseEntity.ok(service.getItem(storageId, itemId));
+    }
+
     @PutMapping(value = "/{storageId}/items/{itemId}", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
     ResponseEntity<StorageItemResponse> restockItem(@PathVariable Long storageId,
                                                     @PathVariable Long itemId,
                                                     @Valid @RequestBody StorageItemUpdateRequest request) {
         return ResponseEntity.ok(service.updateInstance(storageId, itemId, request));
+    }
+
+    @DeleteMapping("/{storageId}/items/{itemId}")
+    ResponseEntity<Void> consumeItem(@PathVariable Long storageId,
+                                      @PathVariable Long itemId) {
+        service.deleteInstance(storageId, itemId);
+        return ResponseEntity.noContent().build();
     }
 }

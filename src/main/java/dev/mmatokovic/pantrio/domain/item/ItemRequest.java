@@ -2,7 +2,6 @@ package dev.mmatokovic.pantrio.domain.item;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import org.hibernate.validator.constraints.URL;
 
@@ -18,6 +17,5 @@ public record ItemRequest(
     @URL
     @JsonProperty("picture_url")
     String pictureUrl,
-    @NotNull
     Boolean disabled
 ) { }

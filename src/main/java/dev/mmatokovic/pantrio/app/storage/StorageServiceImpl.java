@@ -14,7 +14,6 @@ import dev.mmatokovic.pantrio.infra.exception.ConflictException;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.jspecify.annotations.NonNull;
-import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -45,8 +44,10 @@ public class StorageServiceImpl implements StorageService {
     }
 
     @Override
-    @Transactional
     public StorageResponse createStorage(@NonNull StorageRequest request) {
+        if (repo.existsByName(request.name())) {
+            throw new ConflictException("Storage with name " + request.name() + " already exists");
+        }
         return mapper.toResponse(repo.save(mapper.toEntity(request)));
     }
 
@@ -71,16 +72,10 @@ public class StorageServiceImpl implements StorageService {
     @Override
     @Transactional
     public StorageItemResponse addInstance(Long storageId, StorageItemRequest request) {
-        try {
-            Instance instance = mapper.toInstance(request);
-            instance.setStorage(repo.getReferenceById(storageId));
-            instance.setItem(itemRepository.getReferenceById(request.itemId()));
-            return mapper.toItemResponse(instanceRepository.save(instance));
-        } catch (EntityNotFoundException e) {
-            throw new EntityNotFoundException("Storage " + storageId + " or Item " + request.itemId() + " not found");
-        } catch (DataIntegrityViolationException e) {
-            throw new ConflictException("Item " + request.itemId() + " already exists in storage " + storageId);
-        }
+        Instance instance = mapper.toInstance(request);
+        instance.setStorage(repo.getReferenceById(storageId));
+        instance.setItem(itemRepository.getReferenceById(request.itemId()));
+        return mapper.toItemResponse(instanceRepository.save(instance));
     }
 
     @Override
@@ -91,5 +86,30 @@ public class StorageServiceImpl implements StorageService {
         instance.setQuantity(request.quantity());
         instance.setExpiryDate(request.expiryDate());
         return mapper.toItemResponse(instanceRepository.save(instance));
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<StorageItemResponse> listStock(Long storageId) {
+        if (!repo.existsById(storageId)) {
+            throw new EntityNotFoundException("Storage " + storageId + " not found");
+        }
+        return mapper.toItemResponseList(instanceRepository.findAllByStorageId(storageId));
+
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public StorageItemResponse getItem(Long storageId, Long itemId) {
+        return instanceRepository.findByStorageIdAndItemId(storageId, itemId)
+            .map(mapper::toItemResponse)
+            .orElseThrow(() -> new EntityNotFoundException("Item " + itemId + " not found in storage " + storageId));
+    }
+
+    @Override
+    @Transactional
+    public void deleteInstance(Long storageId, Long itemId) {
+        instanceRepository.delete(instanceRepository.findByStorageIdAndItemId(storageId, itemId)
+            .orElseThrow(() -> new EntityNotFoundException("Item " + itemId + " not found in storage " + storageId)));
     }
 }

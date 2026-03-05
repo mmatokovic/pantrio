@@ -59,7 +59,10 @@ public class ErrorHandler extends ResponseEntityExceptionHandler {
                 message = switch (constraint.toLowerCase()) {
                     case "pantrio.idx_items_barcode" -> "Item with same barcode already exists";
                     case "pantrio.idx_storage_name" -> "Storage with this name already exists";
-                    default -> "Data integrity violation";
+                    case "pantrio.fk_item_instance_storage" -> "Referenced storage does not exist";
+                    case "pantrio.fk_item_instance_item" -> "Referenced item does not exist";
+                    case "pantrio.uk_item_instance_storage_item" -> "Item instance with same storage and item already exists";
+                    default -> "Data constraint violation " + cve.getKind().name().toLowerCase();
                 };
             }
         }
@@ -144,7 +147,7 @@ public class ErrorHandler extends ResponseEntityExceptionHandler {
                                                                    @NonNull HttpHeaders headers,
                                                                    @NonNull HttpStatusCode status,
                                                                    @NonNull WebRequest request) {
-        final var error = buildErrorResponse(ex, ex.getMessage() != null ? ex.getMessage() : "Resource not found", status);
+        final var error = buildErrorResponse(ex, "No handler found for " + ex.getHttpMethod() + " " + ex.getRequestURL(), status);
         return handleExceptionInternal(ex, error, headers, status, request);
     }
 
@@ -153,7 +156,7 @@ public class ErrorHandler extends ResponseEntityExceptionHandler {
                                                                               @NonNull HttpHeaders headers,
                                                                               @NonNull HttpStatusCode status,
                                                                               @NonNull WebRequest request) {
-        final var error = buildErrorResponse(ex, "Not Found", status);
+        final var error = buildErrorResponse(ex, "No resource found at " + ex.getResourcePath(), status);
         return handleExceptionInternal(ex, error, headers, status, request);
     }
 
