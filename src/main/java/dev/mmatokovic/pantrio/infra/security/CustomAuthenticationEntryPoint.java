@@ -1,7 +1,6 @@
 package dev.mmatokovic.pantrio.infra.security;
 
-import dev.mmatokovic.pantrio.infra.error.ErrorResponse;
-import dev.mmatokovic.pantrio.infra.jackson.ObjectMapperUtils;
+import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.jspecify.annotations.NonNull;
@@ -16,18 +15,10 @@ public class CustomAuthenticationEntryPoint implements AuthenticationEntryPoint 
     @Override
     public void commence(@NonNull HttpServletRequest request,
                          @NonNull HttpServletResponse response,
-                         @NonNull AuthenticationException authException) throws IOException {
+                         @NonNull AuthenticationException authException) throws IOException, ServletException {
 
         response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);
-
-        ErrorResponse errorResponse = new ErrorResponse(
-            HttpServletResponse.SC_UNAUTHORIZED,
-            "Authentication failed",
-            null);
-
-        String json = ObjectMapperUtils.writeJson(errorResponse);
-        response.getWriter().write(json);
     }
 
 }

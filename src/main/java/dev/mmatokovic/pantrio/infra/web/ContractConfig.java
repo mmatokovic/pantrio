@@ -10,7 +10,11 @@ public class ContractConfig {
 
     @Bean
     public FilterRegistrationBean<ShallowEtagHeaderFilter> etagFilter() {
-        FilterRegistrationBean<ShallowEtagHeaderFilter> filter = new FilterRegistrationBean<>(new ShallowEtagHeaderFilter());
+        ShallowEtagHeaderFilter etagFilter = new ShallowEtagHeaderFilter();
+        // ETag that start with "W/..." allows Tomcat gzip compression to work
+        etagFilter.setWriteWeakETag(true);
+
+        FilterRegistrationBean<ShallowEtagHeaderFilter> filter = new FilterRegistrationBean<>(etagFilter);
         filter.addUrlPatterns("/*");
         return filter;
     }
