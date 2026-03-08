@@ -1,5 +1,6 @@
 package dev.mmatokovic.pantrio.infra.jackson;
 
+import org.jspecify.annotations.NonNull;
 import tools.jackson.core.JsonParser;
 import tools.jackson.databind.DeserializationContext;
 import tools.jackson.databind.deser.std.StdDeserializer;
@@ -20,7 +21,7 @@ public class TimestampDateDeserializer extends StdDeserializer<LocalDate> {
     }
 
     @Override
-    public LocalDate deserialize(JsonParser jp, DeserializationContext ctxt) {
+    public LocalDate deserialize(@NonNull JsonParser jp, DeserializationContext ctxt) {
         String dateString = jp.readValueAs(String.class);
         try {
             ZonedDateTime zonedDateTime = ZonedDateTime.parse(dateString, DateTimeFormatter.ISO_DATE_TIME);
@@ -31,5 +32,3 @@ public class TimestampDateDeserializer extends StdDeserializer<LocalDate> {
         }
     }
 }
-
-

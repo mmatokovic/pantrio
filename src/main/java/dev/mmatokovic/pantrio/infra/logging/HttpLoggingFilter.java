@@ -145,10 +145,10 @@ final class HttpLoggingFilter extends OncePerRequestFilter {
         final var requestSb = new StringBuilder(INITIAL_SB_SIZE);
         requestSb
             .append("HTTP ").append(httpMethod).append(" request :: ")
-            .append("Request ID: ").append(requestId)
-            .append(LOG_ITEM_DELIMITER).append("Request URI: ").append(requestUri)
-            .append(LOG_ITEM_DELIMITER).append("Source: ").append(source)
-            .append(LOG_ITEM_DELIMITER).append("Target: ").append(target);
+            .append("Request ID: ").append(requestId).append(LOG_ITEM_DELIMITER)
+            .append("Request URI: ").append(requestUri).append(LOG_ITEM_DELIMITER)
+            .append("Source: ").append(source).append(LOG_ITEM_DELIMITER)
+            .append("Target: ").append(target);
 
         if (HttpLoggingUtils.shouldLogRequestBody(httpMethod, requestWrapper.getContentType())) {
             byte[] requestContent = requestWrapper.getContentAsByteArray();

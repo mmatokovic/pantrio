@@ -12,6 +12,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingServletRequestParameterException;
@@ -37,9 +38,11 @@ public class ErrorHandler extends ResponseEntityExceptionHandler {
         return buildErrorResponse(ex, message, status, null);
     }
 
-    private ErrorResponse buildErrorResponse(Exception ex, String message, HttpStatusCode status, List<ErrorResponse.ErrorInfo> errors) {
+    private ErrorResponse buildErrorResponse(Exception ex, String message, @NonNull HttpStatusCode status, List<ErrorResponse.ErrorInfo> errors) {
         if (status.is5xxServerError()) {
             log.error(ex.getMessage(), ex);
+        } else if (log.isDebugEnabled()) {
+            log.debug("[{}] {}", status.value(), message, ex);
         }
         return new ErrorResponse(status.value(), message, errors);
     }
@@ -51,7 +54,7 @@ public class ErrorHandler extends ResponseEntityExceptionHandler {
     }
 
     @ExceptionHandler(DataIntegrityViolationException.class)
-    public ResponseEntity<ErrorResponse> handleDataIntegrityViolation(DataIntegrityViolationException ex) {
+    public ResponseEntity<ErrorResponse> handleDataIntegrityViolation(@NonNull DataIntegrityViolationException ex) {
         String message = "Data integrity violation";
         if (ex.getCause() instanceof org.hibernate.exception.ConstraintViolationException cve) {
             String constraint = cve.getConstraintName();
@@ -84,7 +87,7 @@ public class ErrorHandler extends ResponseEntityExceptionHandler {
     }
 
     @ExceptionHandler(ConstraintViolationException.class)
-    public ResponseEntity<ErrorResponse> handleConstraintViolationException(ConstraintViolationException ex) {
+    public ResponseEntity<ErrorResponse> handleConstraintViolationException(@NonNull ConstraintViolationException ex) {
         List<ErrorResponse.ErrorInfo> violations = ex.getConstraintViolations()
             .stream()
             .map(cv -> new ErrorResponse.ErrorInfo(cv.getPropertyPath().toString(), cv.getMessage()))
@@ -104,6 +107,15 @@ public class ErrorHandler extends ResponseEntityExceptionHandler {
     public ResponseEntity<ErrorResponse> handleResourceAccessError(ResourceAccessException ex) {
         final var error = buildErrorResponse(ex, "External service is unreachable", HttpStatus.SERVICE_UNAVAILABLE);
         return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(error);
+    }
+
+    @Override
+    protected @Nullable ResponseEntity<Object> handleHttpMessageNotReadable(@NonNull HttpMessageNotReadableException ex,
+                                                                            @NonNull HttpHeaders headers,
+                                                                            @NonNull HttpStatusCode status,
+                                                                            @NonNull WebRequest request) {
+        final var error = buildErrorResponse(ex, "Failed to read request", status);
+        return handleExceptionInternal(ex, error, headers, status, request);
     }
 
     @Override

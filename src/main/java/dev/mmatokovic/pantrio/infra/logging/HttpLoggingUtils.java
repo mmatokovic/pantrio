@@ -1,10 +1,10 @@
 package dev.mmatokovic.pantrio.infra.logging;
 
 import dev.mmatokovic.pantrio.infra.jackson.ObjectMapperUtils;
-import org.apache.commons.lang3.StringUtils;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.InvalidMediaTypeException;
 import org.springframework.http.MediaType;
+import tools.jackson.databind.JsonNode;
 
 import java.nio.charset.StandardCharsets;
 
@@ -50,14 +50,10 @@ public final class HttpLoggingUtils {
 
     public static String normalizeBody(byte[] rawBody) {
         try {
-            Object json = ObjectMapperUtils.readValue(rawBody, Object.class);
-            String jsonString = ObjectMapperUtils.writeJson(json);
-
-            return StringUtils.normalizeSpace(jsonString.replace("\n", "").replace("\r", ""));
+            JsonNode node = ObjectMapperUtils.readValue(rawBody, JsonNode.class);
+            return ObjectMapperUtils.writeJson(node);
         } catch (Exception e) {
-            String text = new String(rawBody, StandardCharsets.UTF_8);
-
-            return StringUtils.normalizeSpace(text.replace("\n", "").replace("\r", ""));
+            return new String(rawBody, StandardCharsets.UTF_8).trim();
         }
     }
 }

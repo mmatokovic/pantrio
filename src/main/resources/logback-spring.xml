@@ -33,3 +33,7 @@
         </root>
     </springProfile>
 </configuration>
+
+<logger name="hr.crosig.dzs.logger.DzsAppLoggerService" level="INFO" additivity="true"/>
+
+    %clr(%X{Slf4jMDCFilter.UUID}){yellow}

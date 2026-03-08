@@ -1,29 +1,29 @@
-<div class="space-y-4" th:fragment="list">
-  <details class="group relative overflow-hidden rounded border border-gray-300 shadow-sm" th:each="s : ${storages}">
-    <summary class="flex items-center justify-between gap-2 p-3 text-gray-700 transition-colors hover:text-gray-900 [&amp;::-webkit-details-marker]:hidden">
-      <span class="text-sm font-medium" th:text="${s.name}">Storage Name</span>
-      <span class="transition-transform group-open:-rotate-180">
-        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-4">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5"></path>
-        </svg>
-      </span>
-    </summary>
-    <div class="divide-y divide-gray-300 border-t border-gray-300 bg-white">
-      <div class="flex items-center justify-between px-3 py-2">
-        <span class="text-sm text-gray-700" th:text="${s.description}"> Description </span>
-        <button type="button" class="text-sm text-gray-700 underline transition-colors hover:text-gray-900">
-          Edit
-        </button>
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+<div th:fragment="list" id="storage-list" class="mb-6">
+  <div th:if="${storages.isEmpty()}" class="text-center text-gray-400 py-4 text-sm">
+    No storages yet. Press + to add one.
+  </div>
+  <ul th:unless="${storages.isEmpty()}" class="flex flex-col gap-2">
+    <li th:each="storage : ${storages}"
+        class="flex items-center justify-between px-4 py-3 rounded-xl border border-gray-200 bg-gray-50">
+      <div>
+        <p class="text-sm font-medium text-gray-900" th:text="${storage.name}">Fridge</p>
+        <p class="text-xs text-gray-500" th:text="${storage.description}">Kitchen</p>
       </div>
-      <fieldset class="p-3">
-        <legend class="sr-only">Checkboxes</legend>
-        <div class="flex flex-col items-start gap-3" hx-target="this" hx-swap="outerHTML">
-          <label for="Option1" class="inline-flex items-center gap-3">
-            <input type="checkbox" class="size-5 rounded border-gray-300 shadow-sm dark:border-gray-600 dark:bg-gray-900 dark:ring-offset-gray-900 dark:checked:bg-blue-600" id="Option1">
-            <span class="text-sm font-medium text-gray-700 dark:text-gray-200"> Name </span>
-          </label>
-        </div>
-      </fieldset>
-    </div>
-  </details>
+      <button
+        th:attr="hx-delete='/htmx/storages/' + ${storage.id}"
+        hx-target="closest li"
+        hx-swap="outerHTML"
+        hx-confirm="Delete this storage?"
+        class="text-red-400 hover:text-red-600">
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+        </svg>
+      </button>
+    </li>
+  </ul>
 </div>
+</body>
+</html>

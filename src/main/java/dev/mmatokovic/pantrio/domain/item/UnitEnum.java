@@ -5,7 +5,7 @@ import com.fasterxml.jackson.annotation.JsonValue;
 public enum UnitEnum {
     PCS("pcs"),
     G("g"),
-    KL("kl"),
+    KG("kg"),
     L("l"),
     ML("ml");
 
