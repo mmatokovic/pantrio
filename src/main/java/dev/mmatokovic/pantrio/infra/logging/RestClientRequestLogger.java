@@ -36,7 +36,9 @@ public final class RestClientRequestLogger implements ClientHttpRequestIntercept
     }
 
     @Override
-    public @NonNull ClientHttpResponse intercept(@NonNull HttpRequest request, byte @NonNull [] body, @NonNull ClientHttpRequestExecution execution)
+    public @NonNull ClientHttpResponse intercept(@NonNull HttpRequest request,
+                                                 byte @NonNull [] body,
+                                                 @NonNull ClientHttpRequestExecution execution)
         throws IOException {
         final var httpMethod = request.getMethod();
         final var requestUri = request.getURI().toString();
@@ -62,7 +64,11 @@ public final class RestClientRequestLogger implements ClientHttpRequestIntercept
         return new BufferingClientHttpResponseWrapper(response, responseBody);
     }
 
-    private static void logRequest(byte[] requestContent, String requestId, String requestUri, @NonNull HttpMethod httpMethod, HttpHeaders headers) {
+    private static void logRequest(byte[] requestContent,
+                                   String requestId,
+                                   String requestUri,
+                                   @NonNull HttpMethod httpMethod,
+                                   HttpHeaders headers) {
         final var requestSb = new StringBuilder();
         requestSb
             .append("EXTERNAL HTTP ").append(httpMethod.name()).append(" request :: ")

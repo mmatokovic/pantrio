@@ -15,10 +15,10 @@ import org.jspecify.annotations.NonNull;
 import org.slf4j.MDC;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
-import org.springframework.util.CollectionUtils;
 import org.springframework.web.filter.OncePerRequestFilter;
 import org.springframework.web.util.ContentCachingRequestWrapper;
 import org.springframework.web.util.ContentCachingResponseWrapper;
+import org.springframework.web.util.UriComponentsBuilder;
 
 import java.io.IOException;
 import java.time.Duration;
@@ -103,19 +103,9 @@ final class HttpLoggingFilter extends OncePerRequestFilter {
     }
 
     private String getRequestUri(@NonNull ContentCachingRequestWrapper request) {
-        final var base = request.getRequestURI();
-        final var params = request.getParameterMap();
-
-        if (CollectionUtils.isEmpty(params)) {
-            return base;
-        }
-
-        final var sb = new StringBuilder();
-        sb.append("?");
-        params.forEach((key, value) -> sb.append(key).append("=").append(value[0]).append("&"));
-        sb.deleteCharAt(sb.length() - 1);
-
-        return base.concat(sb.toString());
+        UriComponentsBuilder builder = UriComponentsBuilder.fromPath(request.getRequestURI());
+        request.getParameterMap().forEach((key, value) -> builder.queryParam(key, value[0]));
+        return builder.toUriString();
     }
 
     private String getSource(@NonNull ContentCachingRequestWrapper request) {

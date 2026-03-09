@@ -51,7 +51,8 @@ class HttpLoggingUtilsTest {
     }
 
     @Test
-    void shouldReturnNormalizedString() {
-        assertThat(HttpLoggingUtils.normalizeBody("  test   test2 \n \r   test3    ".getBytes())).isEqualTo("test test2 test3");
+    void shouldNormalizeJsonBody() {
+        assertThat(HttpLoggingUtils.normalizeBody("{  \"key\"  :   \"value\"  }".getBytes()))
+            .isEqualTo("{\"key\":\"value\"}");
     }
 }

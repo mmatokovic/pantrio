@@ -6,7 +6,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.web.filter.ShallowEtagHeaderFilter;
 
 @Configuration
-public class ContractConfig {
+public class FilterConfig {
 
     @Bean
     public FilterRegistrationBean<ShallowEtagHeaderFilter> etagFilter() {

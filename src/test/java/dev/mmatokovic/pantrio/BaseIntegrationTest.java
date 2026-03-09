@@ -15,7 +15,7 @@ import static org.springframework.boot.test.context.SpringBootTest.WebEnvironmen
 @AutoConfigureRestTestClient
 @SpringBootTest(webEnvironment = RANDOM_PORT)
 @Import({
-    BaseIntegrationTest.TestContainersConfig.class,
+    BaseIntegrationTest.TestContainersConfig.class
 })
 @EnableWireMock
 public abstract class BaseIntegrationTest {
