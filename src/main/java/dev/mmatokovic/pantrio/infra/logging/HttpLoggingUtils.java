@@ -50,8 +50,8 @@ public final class HttpLoggingUtils {
 
     public static String normalizeBody(byte[] rawBody) {
         try {
-            JsonNode node = ObjectMapperUtils.readValue(rawBody, JsonNode.class);
-            return ObjectMapperUtils.writeJson(node);
+            JsonNode root = ObjectMapperUtils.readTree(rawBody);
+            return ObjectMapperUtils.writeJson(root);
         } catch (Exception e) {
             return new String(rawBody, StandardCharsets.UTF_8).trim();
         }

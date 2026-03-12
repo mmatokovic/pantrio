@@ -1,5 +1,6 @@
 package dev.mmatokovic.pantrio.infra.jackson;
 
+import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
 
 /**
@@ -13,6 +14,7 @@ public final class ObjectMapperUtils {
         throw new AssertionError("Utility class!");
     }
 
+    @SuppressWarnings("unused")
     public static <T> T readValue(byte[] value, Class<T> valueType) {
         return MAPPER.readValue(value, valueType);
     }
@@ -24,5 +26,9 @@ public final class ObjectMapperUtils {
 
     public static String writeJson(Object value) {
         return MAPPER.writeValueAsString(value);
+    }
+
+    public static JsonNode readTree(final byte[] object) {
+        return MAPPER.readTree(object);
     }
 }
