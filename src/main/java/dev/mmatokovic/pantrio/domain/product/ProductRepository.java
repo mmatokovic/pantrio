@@ -1,5 +1,7 @@
 package dev.mmatokovic.pantrio.domain.product;
 
+import java.io.InputStream;
+
 public interface ProductRepository {
 
     /**
@@ -9,4 +11,7 @@ public interface ProductRepository {
      * @return {@link Product} details
      */
     Product getProductByBarcode(String code);
+
+    @SuppressWarnings("unused")
+    InputStream fetchImage(String imageUrl);
 }

@@ -30,7 +30,7 @@ class AnnotationRule {
         .should().beAnnotatedWith(Controller.class);
 
     @ArchTest
-    public static final ArchRule junit4TestAnnotationRule = ArchRuleDefinition.noMethods()
+    public static final ArchRule junit5TestAnnotationRule = ArchRuleDefinition.noMethods()
         .should().beAnnotatedWith(org.junit.Test.class);
 
     @ArchTest

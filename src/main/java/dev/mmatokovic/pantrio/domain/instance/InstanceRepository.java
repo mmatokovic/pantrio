@@ -8,6 +8,7 @@ import java.util.Optional;
 
 @Repository
 public interface InstanceRepository extends JpaRepository<Instance, Long> {
+
     List<Instance> findAllByStorageId(Long storageId);
 
     Optional<Instance> findByStorageIdAndItemId(Long storageId, Long itemId);

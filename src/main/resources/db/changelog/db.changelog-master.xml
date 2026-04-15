@@ -3,9 +3,11 @@
     xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
     xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
-            https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.8.xsd">
+                        https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.8.xsd">
 
-    <include file="create-items-table.xml" relativeToChangelogFile="true"/>
-    <include file="create-storage-table.xml" relativeToChangelogFile="true"/>
-    <include file="create-item-instance-table.xml" relativeToChangelogFile="true"/>
+    <include file="liquibase.items.init.xml" relativeToChangelogFile="true"/>
+    <include file="liquibase.storage.init.xml" relativeToChangelogFile="true"/>
+    <include file="liquibase.item-instance.init.xml" relativeToChangelogFile="true"/>
+    <include file="liquibase.spring.batch.init.xml" relativeToChangelogFile="true"/>
+    <include file="liquibase.quartz.init.xml" relativeToChangelogFile="true"/>
 </databaseChangeLog>

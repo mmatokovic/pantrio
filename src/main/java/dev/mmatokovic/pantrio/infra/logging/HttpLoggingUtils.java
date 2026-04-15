@@ -56,4 +56,13 @@ public final class HttpLoggingUtils {
             return new String(rawBody, StandardCharsets.UTF_8).trim();
         }
     }
+
+    public static boolean isBinaryContent(MediaType contentType) {
+        if (contentType == null) {
+            return false;
+        }
+        return contentType.equals(MediaType.APPLICATION_OCTET_STREAM)
+            || contentType.equals(MediaType.APPLICATION_PDF)
+            || contentType.getType().equals("image");
+    }
 }

@@ -45,12 +45,7 @@ public class ItemServiceImpl implements ItemService {
     public ItemResponse updateItem(Long id, @NonNull ItemRequest request) {
         Item item = repo.findById(id)
             .orElseThrow(() -> new EntityNotFoundException("Item " + id + " not found"));
-        item.setName(request.name());
-        item.setRemarks(request.remarks());
-        item.setBarcode(request.barcode());
-        item.setUnit(request.unit());
-        item.setPictureUrl(request.pictureUrl());
-        item.setDisabled(request.disabled());
+        mapper.updateItemFromRequest(request, item);
         return mapper.toResponse(repo.save(item));
     }
 

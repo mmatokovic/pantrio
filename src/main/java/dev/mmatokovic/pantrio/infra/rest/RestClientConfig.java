@@ -27,7 +27,7 @@ public class RestClientConfig {
     }
 
     @Bean
-    RestClient openFoodFactsRestClient() {
+    RestClient openFoodFactsClient() {
         return RestClient.builder()
             .baseUrl(properties.host())
             .requestFactory(customFactory())
@@ -37,11 +37,21 @@ public class RestClientConfig {
             .build();
     }
 
-    ClientHttpRequestFactory customFactory() {
+    @Bean
+    RestClient openFoodFactsImageClient() {
+        return RestClient.builder()
+            .baseUrl(properties.imageHost())
+            .requestFactory(customFactory())
+            .defaultHeader(HttpHeaders.USER_AGENT, userAgent)
+            .defaultStatusHandler(new RestClientErrorHandler())
+            .requestInterceptor(new RestClientRequestLogger())
+            .build();
+    }
+
+    private ClientHttpRequestFactory customFactory() {
         SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
         factory.setReadTimeout(Duration.ofSeconds(5));
         factory.setConnectTimeout(Duration.ofSeconds(10));
-
         return factory;
     }
 }

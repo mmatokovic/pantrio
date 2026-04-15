@@ -57,6 +57,16 @@ public final class RestClientRequestLogger implements ClientHttpRequestIntercept
 
         final ClientHttpResponse response = execution.execute(request, body);
 
+        final var contentType = response.getHeaders().getContentType();
+        final var contentLength = response.getHeaders().getContentLength();
+        final boolean isBinary = HttpLoggingUtils.isBinaryContent(contentType);
+        final boolean isLarge = contentLength > 1024 * 1024;
+
+        if (isBinary || isLarge) {
+            logResponse(response.getStatusCode().value(), new byte[0], contentType, requestId, requestUri, httpMethod, startTime);
+            return response;
+        }
+
         final byte[] responseBody = response.getBody().readAllBytes();
         logResponse(response.getStatusCode().value(), responseBody, response.getHeaders().getContentType(), requestId, requestUri, httpMethod,
             startTime);

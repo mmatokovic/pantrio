@@ -18,13 +18,7 @@ public class OpenAPIConfig {
     @Bean
     public OpenAPI defineOpenAPI() {
         return new OpenAPI()
-            .components(new Components().addSecuritySchemes(
-                "basicScheme",
-                new SecurityScheme()
-                    .type(SecurityScheme.Type.HTTP)
-                    .scheme("basic")))
-            .info(new Info()
-                .title(buildProperties.getName())
-                .version(buildProperties.getVersion()));
+            .components(new Components().addSecuritySchemes("basicScheme", new SecurityScheme().type(SecurityScheme.Type.HTTP).scheme("basic")))
+            .info(new Info().title(buildProperties.getName()).version(buildProperties.getVersion()));
     }
 }

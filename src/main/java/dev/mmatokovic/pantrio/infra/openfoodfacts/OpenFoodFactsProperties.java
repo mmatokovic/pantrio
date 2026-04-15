@@ -4,5 +4,6 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 
 @ConfigurationProperties(prefix = "openfoodfacts")
 public record OpenFoodFactsProperties(
-    String host
+    String host,
+    String imageHost
 ) { }
