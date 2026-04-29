@@ -1,5 +1,6 @@
 package dev.mmatokovic.pantrio.domain.item;
 
+import dev.mmatokovic.pantrio.infra.validation.Barcode;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import org.hibernate.validator.constraints.URL;
@@ -10,7 +11,7 @@ public record ItemRequest(
     String name,
     @Size(max = 500)
     String remarks,
-    @Size(max = 13)
+    @Barcode
     String barcode,
     UnitEnum unit,
     @URL
