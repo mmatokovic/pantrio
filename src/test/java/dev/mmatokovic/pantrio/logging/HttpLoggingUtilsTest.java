@@ -3,9 +3,7 @@ package dev.mmatokovic.pantrio.logging;
 import dev.mmatokovic.pantrio.infra.logging.HttpLoggingUtils;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.ValueSource;
-import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -13,46 +11,113 @@ import static org.assertj.core.api.Assertions.assertThat;
 class HttpLoggingUtilsTest {
 
     @ParameterizedTest
-    @CsvSource({"POST,application/json", "PUT,application/json", "PATCH,application/json", "POST,text/plain", "PUT,text/plain", "PATCH,text/plain"})
-    void shouldReturnTrue_whenLogRequestBody_withValidHttpMethod_andValidContentType(String httpMethod, String contentType) {
-        assertThat(HttpLoggingUtils.shouldLogRequestBody(httpMethod, contentType)).isTrue();
-    }
-
-    @ParameterizedTest
-    @ValueSource(strings = {"GET", "DELETE"})
-    void shouldReturnFalse_whenLogRequestBody_withInvalidHttpMethod_andValidContentType(String httpMethod) {
-        assertThat(HttpLoggingUtils.shouldLogRequestBody(httpMethod, MediaType.APPLICATION_JSON)).isFalse();
-    }
-
-    @Test
-    void shouldReturnFalse_whenLogRequestBody_withValidHttpMethod_andInvalidContentType() {
-        assertThat(HttpLoggingUtils.shouldLogRequestBody(HttpMethod.POST.name(), MediaType.MULTIPART_FORM_DATA)).isFalse();
-    }
-
-    @Test
-    void shouldReturnFalse_whenLogRequestBody_forUnparsableMediaType() {
-        assertThat(HttpLoggingUtils.shouldLogRequestBody(HttpMethod.POST.name(), "application/unparsable")).isFalse();
-    }
-
-    @ParameterizedTest
     @ValueSource(strings = {"application/json", "text/plain"})
-    void shouldReturnTrue_whenLogResponseBody_withValidContentType(String contentType) {
-        assertThat(HttpLoggingUtils.shouldLogResponseBody(contentType)).isTrue();
+    void isLoggableContent_returnsTrueForLoggableContentTypes(String contentType) {
+        assertThat(HttpLoggingUtils.isLoggableContent(contentType)).isTrue();
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"multipart/form-data", "application/octet-stream", "image/png"})
+    void isLoggableContent_returnsFalseForNonLoggableContentTypes(String contentType) {
+        assertThat(HttpLoggingUtils.isLoggableContent(contentType)).isFalse();
     }
 
     @Test
-    void shouldReturnFalse_whenLogResponseBody_withInvalidContentType() {
-        assertThat(HttpLoggingUtils.shouldLogResponseBody(MediaType.APPLICATION_OCTET_STREAM)).isFalse();
+    void isLoggableContent_returnsFalseForNull() {
+        assertThat(HttpLoggingUtils.isLoggableContent((String) null)).isFalse();
     }
 
     @Test
-    void shouldReturnFalse_whenLogResponseBody_forUnparsableMediaType() {
-        assertThat(HttpLoggingUtils.shouldLogResponseBody("application/unparsable")).isFalse();
+    void isLoggableContent_returnsFalseForUnparsableMediaType() {
+        assertThat(HttpLoggingUtils.isLoggableContent("not/a/valid/type")).isFalse();
     }
 
     @Test
-    void shouldNormalizeJsonBody() {
-        assertThat(HttpLoggingUtils.normalizeBody("{  \"key\"  :   \"value\"  }".getBytes()))
+    void isLoggableContent_returnsTrueForApplicationJson() {
+        assertThat(HttpLoggingUtils.isLoggableContent(MediaType.APPLICATION_JSON)).isTrue();
+    }
+
+    @Test
+    void isLoggableContent_returnsTrueForTextPlain() {
+        assertThat(HttpLoggingUtils.isLoggableContent(MediaType.TEXT_PLAIN)).isTrue();
+    }
+
+    @Test
+    void isLoggableContent_returnsFalseForNullMediaType() {
+        assertThat(HttpLoggingUtils.isLoggableContent((MediaType) null)).isFalse();
+    }
+
+    @Test
+    void isLoggableContent_returnsFalseForOctetStream() {
+        assertThat(HttpLoggingUtils.isLoggableContent(MediaType.APPLICATION_OCTET_STREAM)).isFalse();
+    }
+
+    @Test
+    void isBinaryContent_returnsTrueForOctetStream() {
+        assertThat(HttpLoggingUtils.isBinaryContent(MediaType.APPLICATION_OCTET_STREAM)).isTrue();
+    }
+
+    @Test
+    void isBinaryContent_returnsTrueForPdf() {
+        assertThat(HttpLoggingUtils.isBinaryContent(MediaType.APPLICATION_PDF)).isTrue();
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"image/png", "image/jpeg", "video/mp4", "audio/mpeg"})
+    void isBinaryContent_returnsTrueForMediaTypes(String contentType) {
+        assertThat(HttpLoggingUtils.isBinaryContent(MediaType.parseMediaType(contentType))).isTrue();
+    }
+
+    @Test
+    void isBinaryContent_returnsFalseForNull() {
+        assertThat(HttpLoggingUtils.isBinaryContent(null)).isFalse();
+    }
+
+    @Test
+    void isBinaryContent_returnsFalseForApplicationJson() {
+        assertThat(HttpLoggingUtils.isBinaryContent(MediaType.APPLICATION_JSON)).isFalse();
+    }
+
+    @Test
+    void extractLoggableBody_returnsNullForNonLoggableContentType() {
+        assertThat(HttpLoggingUtils.extractLoggableBody("image/png", "{}".getBytes())).isNull();
+    }
+
+    @Test
+    void extractLoggableBody_returnsNullForNullContentType() {
+        assertThat(HttpLoggingUtils.extractLoggableBody((String) null, "{}".getBytes())).isNull();
+    }
+
+    @Test
+    void extractLoggableBody_returnsEmptyMarkerForEmptyContent() {
+        assertThat(HttpLoggingUtils.extractLoggableBody("application/json", new byte[0])).isEqualTo("[empty]");
+    }
+
+    @Test
+    void extractLoggableBody_normalizesValidJson() {
+        assertThat(HttpLoggingUtils.extractLoggableBody("application/json", "{  \"key\"  :  \"value\"  }".getBytes()))
+            .isEqualTo("{\"key\":\"value\"}");
+    }
+
+    @Test
+    void extractLoggableBody_returnsRawTextForNonJsonBody() {
+        assertThat(HttpLoggingUtils.extractLoggableBody("text/plain", "hello world".getBytes()))
+            .isEqualTo("hello world");
+    }
+
+    @Test
+    void extractLoggableBody_returnsNullForNonLoggableMediaType() {
+        assertThat(HttpLoggingUtils.extractLoggableBody(MediaType.APPLICATION_OCTET_STREAM, "{}".getBytes())).isNull();
+    }
+
+    @Test
+    void extractLoggableBody_returnsNullForNullMediaType() {
+        assertThat(HttpLoggingUtils.extractLoggableBody((MediaType) null, "{}".getBytes())).isNull();
+    }
+
+    @Test
+    void extractLoggableBody_normalizesJsonForMediaTypeOverload() {
+        assertThat(HttpLoggingUtils.extractLoggableBody(MediaType.APPLICATION_JSON, "{  \"key\"  :  \"value\"  }".getBytes()))
             .isEqualTo("{\"key\":\"value\"}");
     }
 }

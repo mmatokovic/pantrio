@@ -14,11 +14,13 @@ import org.springframework.batch.core.step.builder.StepBuilder;
 import org.springframework.batch.infrastructure.item.ItemProcessor;
 import org.springframework.batch.infrastructure.item.ItemReader;
 import org.springframework.batch.infrastructure.item.ItemWriter;
-import org.springframework.batch.infrastructure.item.data.builder.RepositoryItemReaderBuilder;
+import org.springframework.batch.infrastructure.item.database.Order;
+import org.springframework.batch.infrastructure.item.database.builder.JdbcPagingItemReaderBuilder;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.data.domain.Sort;
+import org.springframework.jdbc.core.BeanPropertyRowMapper;
 
+import javax.sql.DataSource;
 import java.util.Map;
 
 import static dev.mmatokovic.pantrio.infra.job.QuartzConfig.JOB_NAME;
@@ -32,13 +34,16 @@ public class BatchConfig {
     private final JobRepository jobRepository;
 
     @Bean
-    public ItemReader<Item> reader(ItemRepository itemRepository) {
-        return new RepositoryItemReaderBuilder<Item>()
+    public ItemReader<Item> reader(DataSource dataSource) throws Exception {
+        return new JdbcPagingItemReaderBuilder<Item>()
             .name("itemReader")
-            .repository(itemRepository)
-            .methodName("findByBarcodeIsNotNullAndPictureUrlIsNull")
+            .dataSource(dataSource)
+            .selectClause("SELECT *")
+            .fromClause("FROM items")
+            .whereClause("WHERE barcode IS NOT NULL AND picture_url IS NULL")
+            .sortKeys(Map.of("id", Order.ASCENDING))
             .pageSize(100)
-            .sorts(Map.of("id", Sort.Direction.ASC))
+            .rowMapper(new BeanPropertyRowMapper<>(Item.class))
             .build();
     }
 

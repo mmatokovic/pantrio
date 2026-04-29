@@ -1,7 +1,8 @@
 package dev.mmatokovic.pantrio.infra.rest;
 
-import dev.mmatokovic.pantrio.infra.openfoodfacts.OpenFoodFactsProperties;
 import dev.mmatokovic.pantrio.infra.logging.RestClientRequestLogger;
+import dev.mmatokovic.pantrio.infra.openfoodfacts.OpenFoodFactsProperties;
+import io.micrometer.observation.ObservationRegistry;
 import org.springframework.boot.info.BuildProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -17,13 +18,20 @@ public class RestClientConfig {
 
     private final OpenFoodFactsProperties properties;
     private final String userAgent;
+    private final ObservationRegistry observationRegistry;
+    private final RestClientRequestLogger requestLogger;
 
-    public RestClientConfig(OpenFoodFactsProperties properties, BuildProperties buildProperties) {
+    public RestClientConfig(OpenFoodFactsProperties properties,
+                            BuildProperties buildProperties,
+                            ObservationRegistry observationRegistry,
+                            RestClientRequestLogger requestLogger) {
         this.properties = properties;
         this.userAgent = "%s/%s".formatted(
             buildProperties.getName(),
             buildProperties.getVersion()
         );
+        this.observationRegistry = observationRegistry;
+        this.requestLogger = requestLogger;
     }
 
     @Bean
@@ -33,7 +41,8 @@ public class RestClientConfig {
             .requestFactory(customFactory())
             .defaultHeader(HttpHeaders.USER_AGENT, userAgent)
             .defaultStatusHandler(new RestClientErrorHandler())
-            .requestInterceptor(new RestClientRequestLogger())
+            .observationRegistry(observationRegistry)
+            .requestInterceptor(requestLogger)
             .build();
     }
 
@@ -44,7 +53,8 @@ public class RestClientConfig {
             .requestFactory(customFactory())
             .defaultHeader(HttpHeaders.USER_AGENT, userAgent)
             .defaultStatusHandler(new RestClientErrorHandler())
-            .requestInterceptor(new RestClientRequestLogger())
+            .observationRegistry(observationRegistry)
+            .requestInterceptor(requestLogger)
             .build();
     }
 

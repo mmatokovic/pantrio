@@ -1,68 +1,80 @@
 package dev.mmatokovic.pantrio.infra.logging;
 
 import dev.mmatokovic.pantrio.infra.jackson.ObjectMapperUtils;
-import org.springframework.http.HttpMethod;
+import jakarta.annotation.Nullable;
 import org.springframework.http.InvalidMediaTypeException;
 import org.springframework.http.MediaType;
 import tools.jackson.databind.JsonNode;
 
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
+import java.util.Set;
 
 public final class HttpLoggingUtils {
 
-    public static final String LOG_ITEM_DELIMITER = ", ";
-    public static final int INITIAL_SB_SIZE = 512;
+    public static final int MAX_BODY_BYTES = 1024 * 1024; // 1 MB
+    private static final int MAX_LOG_BYTES = 8 * 1024; // 8 KB
+    private static final Set<String> BINARY_TYPES = Set.of("image", "video", "audio");
 
     private HttpLoggingUtils() {
         throw new AssertionError("Utility class!");
     }
 
-    public static boolean shouldLogRequestBody(String httpMethod, String contentType) {
+    public static String extractLoggableBody(@Nullable String contentType, byte[] content) {
+        if (!isLoggableContent(contentType)) {
+            return null;
+        }
+        return extractBody(content);
+    }
+
+    public static String extractLoggableBody(@Nullable MediaType contentType, byte[] content) {
+        if (!isLoggableContent(contentType)) {
+            return null;
+        }
+        return extractBody(content);
+    }
+
+    public static boolean isLoggableContent(@Nullable String rawContentType) {
+        if (rawContentType == null) {
+            return false;
+        }
         try {
-            return shouldLogRequestBody(httpMethod, MediaType.parseMediaType(contentType));
+            return isLoggableContent(MediaType.parseMediaType(rawContentType));
         } catch (InvalidMediaTypeException e) {
             return false;
         }
     }
 
-    public static boolean shouldLogRequestBody(String httpMethod, MediaType mediaType) {
-        final var isValidHttpMethod = !HttpMethod.GET.matches(httpMethod) && !HttpMethod.DELETE.matches(httpMethod);
-        final var isValidContentType = isContentTypeForLogging(mediaType);
-
-        return isValidHttpMethod && isValidContentType;
-    }
-
-    public static boolean shouldLogResponseBody(String contentType) {
-        try {
-            return shouldLogResponseBody(MediaType.parseMediaType(contentType));
-        } catch (InvalidMediaTypeException e) {
+    public static boolean isLoggableContent(@Nullable MediaType mediaType) {
+        if (mediaType == null) {
             return false;
         }
+        return MediaType.APPLICATION_JSON.isCompatibleWith(mediaType)
+            || MediaType.TEXT_PLAIN.isCompatibleWith(mediaType);
     }
 
-    public static boolean shouldLogResponseBody(MediaType mediaType) {
-        return isContentTypeForLogging(mediaType);
-    }
-
-    private static boolean isContentTypeForLogging(MediaType mediaType) {
-        return MediaType.APPLICATION_JSON.isCompatibleWith(mediaType) || MediaType.TEXT_PLAIN.isCompatibleWith(mediaType);
-    }
-
-    public static String normalizeBody(byte[] rawBody) {
-        try {
-            JsonNode root = ObjectMapperUtils.readTree(rawBody);
-            return ObjectMapperUtils.writeJson(root);
-        } catch (Exception e) {
-            return new String(rawBody, StandardCharsets.UTF_8).trim();
-        }
-    }
-
-    public static boolean isBinaryContent(MediaType contentType) {
+    public static boolean isBinaryContent(@Nullable MediaType contentType) {
         if (contentType == null) {
             return false;
         }
         return contentType.equals(MediaType.APPLICATION_OCTET_STREAM)
             || contentType.equals(MediaType.APPLICATION_PDF)
-            || contentType.getType().equals("image");
+            || BINARY_TYPES.contains(contentType.getType());
+    }
+
+    private static String extractBody(byte[] raw) {
+        if (raw == null || raw.length == 0) {
+            return "[empty]";
+        }
+        boolean truncated = raw.length > MAX_LOG_BYTES;
+        byte[] slice = truncated ? Arrays.copyOf(raw, MAX_LOG_BYTES) : raw;
+        String body;
+        try {
+            JsonNode root = ObjectMapperUtils.readTree(slice);
+            body = ObjectMapperUtils.writeJson(root);
+        } catch (Exception e) {
+            body = new String(slice, StandardCharsets.UTF_8).trim();
+        }
+        return body;
     }
 }

@@ -1,11 +1,8 @@
 package dev.mmatokovic.pantrio.infra.logging;
 
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.ArrayUtils;
 import org.jspecify.annotations.NonNull;
-import org.slf4j.MDC;
 import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpRequest;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.MediaType;
@@ -17,122 +14,88 @@ import org.springframework.stereotype.Component;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.time.Duration;
 import java.time.Instant;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
-import static dev.mmatokovic.pantrio.infra.logging.HttpLoggingUtils.LOG_ITEM_DELIMITER;
+import static dev.mmatokovic.pantrio.infra.logging.HttpLoggingUtils.MAX_BODY_BYTES;
 
 @Slf4j(topic = "audit.logger")
 @Component
 public final class RestClientRequestLogger implements ClientHttpRequestInterceptor {
 
-    private static final List<String> IGNORABLE_URIS = new ArrayList<>();
-
-    static {
-        IGNORABLE_URIS.add("/actuator");
-    }
+    private static final String REQUEST_ID_HEADER = "X-Request-Id";
+    private static final List<String> IGNORED_PREFIXES = List.of("/actuator");
 
     @Override
     public @NonNull ClientHttpResponse intercept(@NonNull HttpRequest request,
                                                  byte @NonNull [] body,
                                                  @NonNull ClientHttpRequestExecution execution)
         throws IOException {
-        final var httpMethod = request.getMethod();
-        final var requestUri = request.getURI().toString();
-        final var requestId = UUID.randomUUID().toString();
-        final var startTime = Instant.now();
 
-        String traceparent = MDC.get("traceparent");
-        request.getHeaders().set("traceparent", traceparent);
-
-        final var shouldIgnoreLogging = IGNORABLE_URIS.stream().anyMatch(requestUri::contains);
-        if (shouldIgnoreLogging) {
+        final var uri = request.getURI().toString();
+        final var path = request.getURI().getPath();
+        if (IGNORED_PREFIXES.stream().anyMatch(path::startsWith)) {
             return execution.execute(request, body);
         }
 
-        logRequest(body, requestId, requestUri, httpMethod, request.getHeaders());
+        final var ctx = new LogContext(UUID.randomUUID().toString(), request.getMethod().name(), uri, request.getURI().getHost(), Instant.now());
+        request.getHeaders().set(REQUEST_ID_HEADER, ctx.requestId());
 
-        final ClientHttpResponse response = execution.execute(request, body);
+        logRequest(ctx, request.getHeaders().getContentType(), body);
 
+        final var response = execution.execute(request, body);
         final var contentType = response.getHeaders().getContentType();
         final var contentLength = response.getHeaders().getContentLength();
-        final boolean isBinary = HttpLoggingUtils.isBinaryContent(contentType);
-        final boolean isLarge = contentLength > 1024 * 1024;
 
-        if (isBinary || isLarge) {
-            logResponse(response.getStatusCode().value(), new byte[0], contentType, requestId, requestUri, httpMethod, startTime);
+        if (HttpLoggingUtils.isBinaryContent(contentType) || contentLength > MAX_BODY_BYTES) {
+            logResponse(ctx, response.getStatusCode().value(), contentType, new byte[0], contentLength);
             return response;
         }
 
-        final byte[] responseBody = response.getBody().readAllBytes();
-        logResponse(response.getStatusCode().value(), responseBody, response.getHeaders().getContentType(), requestId, requestUri, httpMethod,
-            startTime);
+        final var responseBody = response.getBody().readNBytes(MAX_BODY_BYTES);
+        logResponse(ctx, response.getStatusCode().value(), contentType, responseBody, responseBody.length);
 
         return new BufferingClientHttpResponseWrapper(response, responseBody);
     }
 
-    private static void logRequest(byte[] requestContent,
-                                   String requestId,
-                                   String requestUri,
-                                   @NonNull HttpMethod httpMethod,
-                                   HttpHeaders headers) {
-        final var requestSb = new StringBuilder();
-        requestSb
-            .append("EXTERNAL HTTP ").append(httpMethod.name()).append(" request :: ")
-            .append("Request ID: ").append(requestId).append(LOG_ITEM_DELIMITER)
-            .append("Headers: ").append(headers).append(LOG_ITEM_DELIMITER)
-            .append("Request URI: ").append(requestUri);
-
-        if (HttpLoggingUtils.shouldLogRequestBody(httpMethod.name(), headers.getContentType())) {
-            if (ArrayUtils.isEmpty(requestContent)) {
-                requestSb.append(LOG_ITEM_DELIMITER).append("Request body is empty");
-            } else {
-                requestSb.append(LOG_ITEM_DELIMITER).append("Request body: ").append(HttpLoggingUtils.normalizeBody(requestContent));
-            }
-        }
-
-        log.info(requestSb.toString());
+    private static void logRequest(LogContext ctx, MediaType contentType, byte[] body) {
+        log.atInfo()
+            .addKeyValue("event.action", "request")
+            .addKeyValue("http.request.method", ctx.method())
+            .addKeyValue("url.full", ctx.uri())
+            .addKeyValue("server.address", ctx.source())
+            .addKeyValue("http.request.body.bytes", body.length)
+            .addKeyValue("http.request.body.content", HttpLoggingUtils.extractLoggableBody(contentType, body))
+            .log(">>> EXTERNAL {} {}", ctx.method(), ctx.uri());
     }
 
-    private static void logResponse(int responseStatus,
-                                    byte[] responseContent,
-                                    MediaType contentType,
-                                    String requestId,
-                                    String requestUri,
-                                    @NonNull HttpMethod httpMethod,
-                                    Instant startTime) {
-        final var duration = Duration.between(startTime, Instant.now()).toMillis();
-        final var responseSb = new StringBuilder();
-        responseSb
-            .append("EXTERNAL HTTP ").append(httpMethod.name()).append(" response :: ")
-            .append("Request ID: ").append(requestId).append(LOG_ITEM_DELIMITER)
-            .append("Request URI: ").append(requestUri).append(LOG_ITEM_DELIMITER)
-            .append("Duration: ").append(duration).append("ms").append(LOG_ITEM_DELIMITER)
-            .append("Response status: ").append(responseStatus).append(LOG_ITEM_DELIMITER);
-
-        if (HttpLoggingUtils.shouldLogResponseBody(contentType)) {
-            if (ArrayUtils.isEmpty(responseContent)) {
-                responseSb.append("Response body is empty");
-            } else {
-                responseSb.append("Response body: ").append(HttpLoggingUtils.normalizeBody(responseContent));
-            }
-        }
-
-        log.info(responseSb.toString());
+    private static void logResponse(LogContext ctx, int status,
+                                    MediaType contentType, byte[] body, long responseBytes) {
+        log.atInfo()
+            .addKeyValue("event.action", "response")
+            .addKeyValue("http.request.method", ctx.method())
+            .addKeyValue("url.full", ctx.uri())
+            .addKeyValue("server.address", ctx.source())
+            .addKeyValue("http.response.status_code", status)
+            .addKeyValue("event.duration", ctx.elapsedMs())
+            .addKeyValue("http.response.body.bytes", responseBytes)
+            .addKeyValue("http.response.body.content", HttpLoggingUtils.extractLoggableBody(contentType, body))
+            .log("<<< EXTERNAL {} {} {}", ctx.method(), ctx.uri(), status);
     }
 
-    private record BufferingClientHttpResponseWrapper(ClientHttpResponse response, byte[] body) implements ClientHttpResponse {
+    private record BufferingClientHttpResponseWrapper(
+        ClientHttpResponse response,
+        byte[] body
+    ) implements ClientHttpResponse {
 
         @Override
-        public  @NonNull InputStream getBody() {
+        public @NonNull InputStream getBody() {
             return new ByteArrayInputStream(body);
         }
 
         @Override
-        public  @NonNull HttpStatusCode getStatusCode() throws IOException {
+        public @NonNull HttpStatusCode getStatusCode() throws IOException {
             return response.getStatusCode();
         }
 
@@ -142,14 +105,13 @@ public final class RestClientRequestLogger implements ClientHttpRequestIntercept
         }
 
         @Override
-        public  void close() {
-            response.close();
-        }
-
-        @Override
         public @NonNull HttpHeaders getHeaders() {
             return response.getHeaders();
         }
 
+        @Override
+        public void close() {
+            response.close();
+        }
     }
 }

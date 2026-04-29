@@ -1,19 +1,13 @@
 package dev.mmatokovic.pantrio.infra.logging;
 
-import io.opentelemetry.api.trace.Span;
-import io.opentelemetry.api.trace.SpanContext;
-import io.opentelemetry.api.trace.propagation.W3CTraceContextPropagator;
-import io.opentelemetry.context.Context;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.jspecify.annotations.NonNull;
 import org.slf4j.MDC;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 import org.springframework.web.util.ContentCachingRequestWrapper;
@@ -21,15 +15,11 @@ import org.springframework.web.util.ContentCachingResponseWrapper;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import java.io.IOException;
-import java.time.Duration;
 import java.time.Instant;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
-import java.util.regex.Pattern;
 
-import static dev.mmatokovic.pantrio.infra.logging.HttpLoggingUtils.INITIAL_SB_SIZE;
-import static dev.mmatokovic.pantrio.infra.logging.HttpLoggingUtils.LOG_ITEM_DELIMITER;
+import static dev.mmatokovic.pantrio.infra.logging.HttpLoggingUtils.MAX_BODY_BYTES;
 
 @Slf4j(topic = "audit.logger")
 @Component
@@ -37,164 +27,92 @@ final class HttpLoggingFilter extends OncePerRequestFilter {
 
     private static final String REQUEST_ID_HEADER_KEY = "X-Request-Id";
     private static final String LOAD_BALANCER_HEADER_KEY = "X-Forwarded-For";
-    private static final String AUTH_URL = "/auth/";
-    private static final List<Pattern> SENSITIVE_DATA_PATTERNS = new ArrayList<>(3);
-    private static final Pattern PASSWORD_PATTERN = Pattern.compile("(\"password\"\\s*:\\s*\")([^\"]*)(\")");
-    private static final Pattern ACCESS_TOKEN_PATTERN = Pattern.compile("(\"accessToken\"\\s*:\\s*\")([^\"]*)(\")");
-    private static final Pattern REFRESH_TOKEN_PATTERN = Pattern.compile("(\"refreshToken\"\\s*:\\s*\")([^\"]*)(\")");
-    private static final List<String> IGNORED_APIS = new ArrayList<>();
-
-    static {
-        SENSITIVE_DATA_PATTERNS.add(PASSWORD_PATTERN);
-        SENSITIVE_DATA_PATTERNS.add(ACCESS_TOKEN_PATTERN);
-        SENSITIVE_DATA_PATTERNS.add(REFRESH_TOKEN_PATTERN);
-
-        IGNORED_APIS.add("/v3/api-docs");
-        IGNORED_APIS.add("/swagger-ui");
-        IGNORED_APIS.add("/actuator");
-    }
+    private static final List<String> IGNORED_APIS = List.of(
+        "/v3/api-docs",
+        "/swagger-ui",
+        "/actuator"
+    );
 
     @Override
     protected void doFilterInternal(@NonNull HttpServletRequest request,
                                     @NonNull HttpServletResponse response,
-                                    @NonNull FilterChain chain) throws ServletException, IOException {
-        final var requestWrapper = new ContentCachingRequestWrapper(request, 1024 * 1024);
-        final var responseWrapper = new ContentCachingResponseWrapper(response);
-        final var requestId = getUniqueIdentifier(requestWrapper);
-        final var httpMethod = request.getMethod();
-        final var requestUri = getRequestUri(requestWrapper);
-        final var source = getSource(requestWrapper);
-        final var target = request.getServerName();
-        final var startTime = Instant.now();
-        final var shouldLogRequestResponse = IGNORED_APIS.stream().noneMatch(requestUri::contains);
-        final var auth = SecurityContextHolder.getContext().getAuthentication();
-        final var propagator = W3CTraceContextPropagator.getInstance();
+                                    @NonNull FilterChain chain)
+        throws ServletException, IOException {
 
-        SpanContext spanContext = Span.current().getSpanContext();
-        if (spanContext.isValid()) {
-            propagator.inject(Context.current(), response, HttpServletResponse::addHeader);
-            propagator.fields().forEach(field -> {
-                String value = response.getHeader(field);
-                if (value != null) {
-                    MDC.put(field, value);
-                }
-            });
+        if (isIgnored(request.getRequestURI())) {
+            chain.doFilter(request, response);
+            return;
         }
-        MDC.put("requestId", requestId);
-        MDC.put("authUser", auth != null ? auth.getName() : "anonymous");
+
+        final var req = new ContentCachingRequestWrapper(request, MAX_BODY_BYTES);
+        final var res = new ContentCachingResponseWrapper(response);
+        final var ctx = buildContext(req);
+
+        MDC.put("requestId", ctx.requestId());
+        response.addHeader(REQUEST_ID_HEADER_KEY, ctx.requestId());
 
         try {
-            chain.doFilter(requestWrapper, responseWrapper);
-
-            if (shouldLogRequestResponse) {
-                logRequest(httpMethod, requestId, requestUri, source, target, requestWrapper);
-                logResponse(responseWrapper, httpMethod, requestId, requestUri, source, target, startTime);
-            }
-
+            chain.doFilter(req, res);
         } finally {
-            responseWrapper.copyBodyToResponse();
+            logRequest(ctx, req);
+            logResponse(ctx, res);
+            res.copyBodyToResponse();
             MDC.clear();
         }
     }
 
-    private String getUniqueIdentifier(@NonNull ContentCachingRequestWrapper request) {
-        final var requestIdFromHeader = request.getHeader(REQUEST_ID_HEADER_KEY);
-        return StringUtils.isEmpty(requestIdFromHeader) ? UUID.randomUUID().toString() : requestIdFromHeader;
+    private static void logRequest(LogContext ctx, ContentCachingRequestWrapper req) {
+        var body = req.getContentAsByteArray();
+        log.atInfo()
+            .addKeyValue("event.action", "request")
+            .addKeyValue("http.request.method", ctx.method())
+            .addKeyValue("url.path", ctx.uri())
+            .addKeyValue("client.ip", ctx.source())
+            .addKeyValue("http.request.body.bytes", body.length)
+            .addKeyValue("http.request.body.content", HttpLoggingUtils.extractLoggableBody(req.getContentType(), body))
+            .log(">>> {} {}", ctx.method(), ctx.uri());
     }
 
-    private String getRequestUri(@NonNull ContentCachingRequestWrapper request) {
-        UriComponentsBuilder builder = UriComponentsBuilder.fromPath(request.getRequestURI());
-        request.getParameterMap().forEach((key, value) -> builder.queryParam(key, value[0]));
+    private static void logResponse(LogContext ctx, ContentCachingResponseWrapper res) {
+        var body = res.getContentAsByteArray();
+        log.atInfo()
+            .addKeyValue("event.action", "response")
+            .addKeyValue("http.request.method", ctx.method())
+            .addKeyValue("url.path", ctx.uri())
+            .addKeyValue("http.response.status_code", res.getStatus())
+            .addKeyValue("event.duration", ctx.elapsedMs())
+            .addKeyValue("http.response.body.bytes", body.length)
+            .addKeyValue("http.response.body.content", HttpLoggingUtils.extractLoggableBody(res.getContentType(), body))
+            .log("<<< {} {} {}", ctx.method(), ctx.uri(), res.getStatus());
+    }
+
+    private static LogContext buildContext(HttpServletRequest req) {
+        return new LogContext(
+            resolveRequestId(req),
+            req.getMethod(),
+            buildUri(req),
+            resolveSource(req),
+            Instant.now()
+        );
+    }
+
+    private static boolean isIgnored(String uri) {
+        return IGNORED_APIS.stream().anyMatch(uri::startsWith);
+    }
+
+    private static String resolveRequestId(HttpServletRequest req) {
+        var fromHeader = req.getHeader(REQUEST_ID_HEADER_KEY);
+        return StringUtils.isNotBlank(fromHeader) ? fromHeader : UUID.randomUUID().toString();
+    }
+
+    private static String resolveSource(HttpServletRequest req) {
+        var forwarded = req.getHeader(LOAD_BALANCER_HEADER_KEY);
+        return StringUtils.isNotBlank(forwarded) ? forwarded : req.getRemoteAddr();
+    }
+
+    private static String buildUri(HttpServletRequest req) {
+        var builder = UriComponentsBuilder.fromPath(req.getRequestURI());
+        req.getParameterMap().forEach((k, v) -> builder.queryParam(k, (Object[]) v));
         return builder.toUriString();
     }
-
-    private String getSource(@NonNull ContentCachingRequestWrapper request) {
-        final var lbHeader = request.getHeader(LOAD_BALANCER_HEADER_KEY);
-        return StringUtils.isEmpty(lbHeader) ? request.getRemoteAddr() : lbHeader;
-    }
-
-    private boolean isAuthRequest(@NonNull String requestUri) {
-        return requestUri.contains(AUTH_URL);
-    }
-
-    private String maskSensitiveData(String body, @NonNull Pattern pattern) {
-        final var matcher = pattern.matcher(body);
-        if (matcher.find()) {
-            return matcher.replaceAll("$1********$3");
-        }
-
-        return body;
-    }
-
-    private void logRequest(String httpMethod,
-                            String requestId,
-                            String requestUri,
-                            String source,
-                            String target,
-                            @NonNull ContentCachingRequestWrapper requestWrapper) {
-        final var requestSb = new StringBuilder(INITIAL_SB_SIZE);
-        requestSb
-            .append("HTTP ").append(httpMethod).append(" request :: ")
-            .append("Request ID: ").append(requestId).append(LOG_ITEM_DELIMITER)
-            .append("Request URI: ").append(requestUri).append(LOG_ITEM_DELIMITER)
-            .append("Source: ").append(source).append(LOG_ITEM_DELIMITER)
-            .append("Target: ").append(target);
-
-        if (HttpLoggingUtils.shouldLogRequestBody(httpMethod, requestWrapper.getContentType())) {
-            byte[] requestContent = requestWrapper.getContentAsByteArray();
-            if (ArrayUtils.isEmpty(requestContent)) {
-                requestSb.append(LOG_ITEM_DELIMITER).append("Request body is empty");
-            } else {
-                var normalizedRequestBody = HttpLoggingUtils.normalizeBody(requestContent);
-
-                if (isAuthRequest(requestUri)) {
-                    normalizedRequestBody = maskSensitiveData(normalizedRequestBody, PASSWORD_PATTERN);
-                }
-                requestSb.append(LOG_ITEM_DELIMITER).append("Request body: ").append(normalizedRequestBody);
-
-            }
-        }
-
-        log.info(requestSb.toString());
-    }
-
-    private void logResponse(@NonNull ContentCachingResponseWrapper responseWrapper,
-                             String httpMethod,
-                             String requestId,
-                             String requestUri,
-                             String source,
-                             String target,
-                             Instant startTime) {
-        final var duration = Duration.between(startTime, Instant.now()).toMillis();
-        final var responseStatus = responseWrapper.getStatus();
-
-        final var responseSb = new StringBuilder(INITIAL_SB_SIZE);
-        responseSb
-            .append("HTTP ").append(httpMethod).append(" response :: ")
-            .append("Request ID: ").append(requestId).append(LOG_ITEM_DELIMITER)
-            .append("Request URI: ").append(requestUri).append(LOG_ITEM_DELIMITER)
-            .append("Source: ").append(source).append(LOG_ITEM_DELIMITER)
-            .append("Target: ").append(target).append(LOG_ITEM_DELIMITER)
-            .append("Duration: ").append(duration).append("ms").append(LOG_ITEM_DELIMITER)
-            .append("Response status: ").append(responseStatus);
-
-        if (HttpLoggingUtils.shouldLogResponseBody(responseWrapper.getContentType())) {
-            final var responseContent = responseWrapper.getContentAsByteArray();
-            if (ArrayUtils.isEmpty(responseContent)) {
-                responseSb.append(LOG_ITEM_DELIMITER).append("Response body is empty");
-            } else {
-                var normalizedResponseBody = HttpLoggingUtils.normalizeBody(responseContent);
-
-                if (isAuthRequest(requestUri)) {
-                    for (var pattern : SENSITIVE_DATA_PATTERNS) {
-                        normalizedResponseBody = maskSensitiveData(normalizedResponseBody, pattern);
-                    }
-                }
-                responseSb.append(LOG_ITEM_DELIMITER).append("Response body: ").append(normalizedResponseBody);
-            }
-        }
-
-        log.info(responseSb.toString());
-    }
-
 }
