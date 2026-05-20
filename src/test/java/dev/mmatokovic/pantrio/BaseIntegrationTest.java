@@ -13,7 +13,10 @@ import org.wiremock.spring.EnableWireMock;
 import static org.springframework.boot.test.context.SpringBootTest.WebEnvironment.RANDOM_PORT;
 
 @AutoConfigureRestTestClient
-@SpringBootTest(webEnvironment = RANDOM_PORT)
+@SpringBootTest(webEnvironment = RANDOM_PORT, properties = {
+    "security.user.password=userpwd",
+    "security.prometheus.password=prometheus"
+})
 @Import({
     BaseIntegrationTest.TestContainersConfig.class
 })

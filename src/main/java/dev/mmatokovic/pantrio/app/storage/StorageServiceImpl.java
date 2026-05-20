@@ -2,6 +2,7 @@ package dev.mmatokovic.pantrio.app.storage;
 
 import dev.mmatokovic.pantrio.domain.instance.Instance;
 import dev.mmatokovic.pantrio.domain.instance.InstanceRepository;
+import dev.mmatokovic.pantrio.domain.item.Item;
 import dev.mmatokovic.pantrio.domain.item.ItemRepository;
 import dev.mmatokovic.pantrio.domain.storage.Storage;
 import dev.mmatokovic.pantrio.domain.storage.StorageItemRequest;
@@ -44,6 +45,7 @@ public class StorageServiceImpl implements StorageService {
     }
 
     @Override
+    @Transactional
     public StorageResponse createStorage(@NonNull StorageRequest request) {
         if (storageRepo.existsByName(request.name())) {
             throw new ConflictException("Storage with name " + request.name() + " already exists");
@@ -72,9 +74,13 @@ public class StorageServiceImpl implements StorageService {
     @Override
     @Transactional
     public StorageItemResponse addInstance(Long storageId, StorageItemRequest request) {
+        Storage storage = storageRepo.findById(storageId)
+            .orElseThrow(() -> new EntityNotFoundException("Storage " + storageId + " not found"));
+        Item item = itemRepo.findById(request.itemId())
+            .orElseThrow(() -> new EntityNotFoundException("Item " + request.itemId() + " not found"));
         Instance instance = mapper.toInstance(request);
-        instance.setStorage(storageRepo.getReferenceById(storageId));
-        instance.setItem(itemRepo.getReferenceById(request.itemId()));
+        instance.setStorage(storage);
+        instance.setItem(item);
         return mapper.toItemResponse(instanceRepo.save(instance));
     }
 

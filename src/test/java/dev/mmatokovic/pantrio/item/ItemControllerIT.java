@@ -14,7 +14,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
 
 @WithMockUser(roles = "USER")
-class   ItemControllerIT extends BaseIntegrationTest {
+class ItemControllerIT extends BaseIntegrationTest {
 
     @Autowired
     RestTestClient rest;
@@ -24,7 +24,8 @@ class   ItemControllerIT extends BaseIntegrationTest {
 
     @BeforeEach
     void setUp() {
-        jdbcTemplate.execute("TRUNCATE TABLE PANTRIO_TEST.ITEMS CASCADE");
+        jdbcTemplate.execute("DELETE FROM ITEM_INSTANCE");
+        jdbcTemplate.execute("DELETE FROM ITEMS");
     }
 
     @Test
@@ -49,5 +50,142 @@ class   ItemControllerIT extends BaseIntegrationTest {
             .extracting(ItemResponse::name)
             .isEqualTo("string");
     }
-}
 
+    @Test
+    void should_return_404_when_item_not_found() {
+        rest.get()
+            .uri("/items/{id}", 999)
+            .headers(h -> h.setBasicAuth("user", "userpwd"))
+            .accept(APPLICATION_JSON)
+            .exchange()
+            .expectStatus().isNotFound();
+    }
+
+    @Test
+    void should_return_list_of_items() {
+        jdbcTemplate.update("INSERT INTO items (id, name) VALUES (1, 'Apple')");
+        jdbcTemplate.update("INSERT INTO items (id, name) VALUES (2, 'Bread')");
+
+        ItemResponse[] items = rest.get()
+            .uri("/items")
+            .headers(h -> h.setBasicAuth("user", "userpwd"))
+            .accept(APPLICATION_JSON)
+            .exchange()
+            .expectStatus().isOk()
+            .expectBody(ItemResponse[].class)
+            .returnResult()
+            .getResponseBody();
+
+        assertThat(items).hasSize(2);
+    }
+
+    @Test
+    void should_create_item_and_return_201_with_body() {
+        String body = """
+            {"name":"Milk","barcode":"8000500179864","unit":"pcs","disabled":false}
+            """;
+
+        ItemResponse created = rest.post()
+            .uri("/items")
+            .headers(h -> h.setBasicAuth("user", "userpwd"))
+            .contentType(APPLICATION_JSON)
+            .body(body)
+            .exchange()
+            .expectStatus().isCreated()
+            .expectBody(ItemResponse.class)
+            .returnResult()
+            .getResponseBody();
+
+        assertThat(created)
+            .isNotNull()
+            .satisfies(r -> {
+                assertThat(r.id()).isNotNull();
+                assertThat(r.name()).isEqualTo("Milk");
+                assertThat(r.barcode()).isEqualTo("8000500179864");
+            });
+    }
+
+    @Test
+    void should_return_400_when_creating_item_with_blank_name() {
+        String body = """
+            {"name":"","disabled":false}
+            """;
+
+        rest.post()
+            .uri("/items")
+            .headers(h -> h.setBasicAuth("user", "userpwd"))
+            .contentType(APPLICATION_JSON)
+            .body(body)
+            .exchange()
+            .expectStatus().isBadRequest();
+    }
+
+    @Test
+    void should_update_item_and_return_200_with_body() {
+        jdbcTemplate.update("INSERT INTO items (id, name) VALUES (1, 'OldName')");
+
+        String body = """
+            {"name":"NewName","disabled":false}
+            """;
+
+        ItemResponse updated = rest.put()
+            .uri("/items/{id}", 1)
+            .headers(h -> h.setBasicAuth("user", "userpwd"))
+            .contentType(APPLICATION_JSON)
+            .body(body)
+            .exchange()
+            .expectStatus().isOk()
+            .expectBody(ItemResponse.class)
+            .returnResult()
+            .getResponseBody();
+
+        assertThat(updated)
+            .isNotNull()
+            .extracting(ItemResponse::name)
+            .isEqualTo("NewName");
+    }
+
+    @Test
+    void should_return_400_when_updating_item_with_blank_name() {
+        jdbcTemplate.update("INSERT INTO items (id, name) VALUES (1, 'OldName')");
+
+        String body = """
+            {"name":"","disabled":false}
+            """;
+
+        rest.put()
+            .uri("/items/{id}", 1)
+            .headers(h -> h.setBasicAuth("user", "userpwd"))
+            .contentType(APPLICATION_JSON)
+            .body(body)
+            .exchange()
+            .expectStatus().isBadRequest();
+    }
+
+    @Test
+    void should_delete_item_and_return_204() {
+        jdbcTemplate.update("INSERT INTO items (id, name) VALUES (1, 'ToDelete')");
+
+        rest.delete()
+            .uri("/items/{id}", 1)
+            .headers(h -> h.setBasicAuth("user", "userpwd"))
+            .exchange()
+            .expectStatus().isNoContent();
+
+        rest.get()
+            .uri("/items/{id}", 1)
+            .headers(h -> h.setBasicAuth("user", "userpwd"))
+            .accept(APPLICATION_JSON)
+            .exchange()
+            .expectStatus().isNotFound();
+    }
+
+    @Test
+    void should_return_401_when_not_authenticated() {
+        rest.get()
+            .uri("/items")
+            .accept(APPLICATION_JSON)
+            .exchange()
+            .expectStatus().isUnauthorized();
+    }
+}

@@ -2,7 +2,7 @@ package dev.mmatokovic.pantrio.api;
 
 import dev.mmatokovic.pantrio.app.product.ProductService;
 import dev.mmatokovic.pantrio.domain.product.ProductResponse;
-import dev.mmatokovic.pantrio.infra.validation.Barcode;
+import dev.mmatokovic.pantrio.domain.validation.Barcode;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;

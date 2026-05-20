@@ -45,7 +45,7 @@ public class StorageController {
         StorageResponse storage = service.createStorage(request);
         URI location = ServletUriComponentsBuilder.fromCurrentRequest().path("/{id}").buildAndExpand(storage.id()).toUri();
 
-        return ResponseEntity.created(location).build();
+        return ResponseEntity.created(location).body(storage);
     }
 
     @GetMapping(value = "/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
@@ -56,8 +56,7 @@ public class StorageController {
     @PutMapping(value = "/{id}", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
     ResponseEntity<StorageResponse> update(@PathVariable Long id,
                                            @Valid @RequestBody StorageRequest request) {
-        service.updateStorage(id, request);
-        return ResponseEntity.noContent().build();
+        return ResponseEntity.ok(service.updateStorage(id, request));
     }
 
     @DeleteMapping("/{id}")
@@ -71,7 +70,7 @@ public class StorageController {
                                                 @Valid @RequestBody StorageItemRequest request) {
         StorageItemResponse instance = service.addInstance(storageId, request);
         URI location = ServletUriComponentsBuilder.fromCurrentRequest().path("/{id}").buildAndExpand(instance.id()).toUri();
-        return ResponseEntity.created(location).build();
+        return ResponseEntity.created(location).body(instance);
     }
 
     @GetMapping(value = "/{storageId}/items", produces = MediaType.APPLICATION_JSON_VALUE)

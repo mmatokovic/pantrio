@@ -1,4 +1,4 @@
-package dev.mmatokovic.pantrio.infra.validation;
+package dev.mmatokovic.pantrio.domain.validation;
 
 import jakarta.validation.ConstraintValidator;
 import jakarta.validation.ConstraintValidatorContext;

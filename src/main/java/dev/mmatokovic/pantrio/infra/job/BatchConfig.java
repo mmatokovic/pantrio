@@ -6,6 +6,7 @@ import dev.mmatokovic.pantrio.domain.item.UnitEnum;
 import dev.mmatokovic.pantrio.domain.product.Product;
 import dev.mmatokovic.pantrio.domain.product.ProductRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.batch.core.job.Job;
 import org.springframework.batch.core.job.builder.JobBuilder;
 import org.springframework.batch.core.repository.JobRepository;
@@ -25,6 +26,7 @@ import java.util.Map;
 
 import static dev.mmatokovic.pantrio.infra.job.QuartzConfig.JOB_NAME;
 
+@Slf4j
 @Configuration
 @RequiredArgsConstructor
 public class BatchConfig {
@@ -85,6 +87,7 @@ public class BatchConfig {
 
     private Item enrichItem(Item item, ProductRepository productRepository) {
         if (item.getBarcode() == null) {
+            log.warn("Item id={} has no barcode, skipping enrichment", item.getId());
             return null;
         }
 
@@ -93,7 +96,11 @@ public class BatchConfig {
         item.setName(product.productName());
         item.setPictureUrl(product.imageUrl());
         if (product.unit() != null) {
-            item.setUnit(UnitEnum.valueOf(product.unit().toUpperCase()));
+            try {
+                item.setUnit(UnitEnum.valueOf(product.unit().toUpperCase()));
+            } catch (IllegalArgumentException e) {
+                log.warn("Unknown unit '{}' for barcode '{}', skipping unit enrichment", product.unit(), item.getBarcode());
+            }
         }
 
         return item;

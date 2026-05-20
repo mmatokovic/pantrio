@@ -1,6 +1,6 @@
 package dev.mmatokovic.pantrio.domain.item;
 
-import dev.mmatokovic.pantrio.infra.validation.Barcode;
+import dev.mmatokovic.pantrio.domain.validation.Barcode;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import org.hibernate.validator.constraints.URL;

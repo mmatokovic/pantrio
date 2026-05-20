@@ -9,6 +9,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.client.ClientHttpRequestFactory;
 import org.springframework.http.client.SimpleClientHttpRequestFactory;
+import org.springframework.web.client.DefaultResponseErrorHandler;
 import org.springframework.web.client.RestClient;
 
 import java.time.Duration;
@@ -40,7 +41,7 @@ public class RestClientConfig {
             .baseUrl(properties.host())
             .requestFactory(customFactory())
             .defaultHeader(HttpHeaders.USER_AGENT, userAgent)
-            .defaultStatusHandler(new RestClientErrorHandler())
+            .defaultStatusHandler(new DefaultResponseErrorHandler())
             .observationRegistry(observationRegistry)
             .requestInterceptor(requestLogger)
             .build();
@@ -52,7 +53,7 @@ public class RestClientConfig {
             .baseUrl(properties.imageHost())
             .requestFactory(customFactory())
             .defaultHeader(HttpHeaders.USER_AGENT, userAgent)
-            .defaultStatusHandler(new RestClientErrorHandler())
+            .defaultStatusHandler(new DefaultResponseErrorHandler())
             .observationRegistry(observationRegistry)
             .requestInterceptor(requestLogger)
             .build();
