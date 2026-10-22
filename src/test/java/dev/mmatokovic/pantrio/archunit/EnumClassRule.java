@@ -13,7 +13,6 @@ class EnumClassRule {
     @ArchTest
     public static final ArchRule privateFinalFieldsRule = ArchRuleDefinition.fields()
         .that().areDeclaredInClassesThat().areEnums().and().areNotStatic()
-        .should().bePrivate().andShould().beFinal()
-        .allowEmptyShould(true);
+        .should().bePrivate().andShould().beFinal();
 
 }

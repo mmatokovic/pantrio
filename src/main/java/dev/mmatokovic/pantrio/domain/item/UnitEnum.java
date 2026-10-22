@@ -22,6 +22,6 @@ public enum UnitEnum {
 
     @Override
     public String toString() {
-        return this.getValue();
+        return value;
     }
 }

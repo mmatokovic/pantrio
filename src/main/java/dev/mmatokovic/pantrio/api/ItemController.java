@@ -30,34 +30,34 @@ import java.util.List;
 @RequiredArgsConstructor
 public class ItemController {
 
-    private final ItemService service;
+    private final ItemService itemService;
 
     @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
-    ResponseEntity<List<ItemResponse>> index(@ParameterObject @PageableDefault final Pageable pageable) {
-        return ResponseEntity.ok(service.listItems(pageable));
+    public ResponseEntity<List<ItemResponse>> index(@ParameterObject @PageableDefault Pageable pageable) {
+        return ResponseEntity.ok(itemService.listItems(pageable));
     }
 
     @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
-    ResponseEntity<ItemResponse> create(@Valid @RequestBody ItemRequest request) {
-        ItemResponse item = service.createItem(request);
+    public ResponseEntity<ItemResponse> create(@Valid @RequestBody ItemRequest request) {
+        ItemResponse item = itemService.createItem(request);
         URI location = ServletUriComponentsBuilder.fromCurrentRequest().path("/{id}").buildAndExpand(item.id()).toUri();
         return ResponseEntity.created(location).body(item);
     }
 
     @GetMapping(value = "/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
-    ResponseEntity<ItemResponse> show(@PathVariable Long id) {
-        return ResponseEntity.ok(service.getItem(id));
+    public ResponseEntity<ItemResponse> show(@PathVariable Long id) {
+        return ResponseEntity.ok(itemService.getItem(id));
     }
 
     @PutMapping(value = "/{id}", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
-    ResponseEntity<ItemResponse> update(@PathVariable Long id,
-                                        @Valid @RequestBody ItemRequest request) {
-        return ResponseEntity.ok(service.updateItem(id, request));
+    public ResponseEntity<ItemResponse> update(@PathVariable Long id,
+                                               @Valid @RequestBody ItemRequest request) {
+        return ResponseEntity.ok(itemService.updateItem(id, request));
     }
 
     @DeleteMapping("/{id}")
-    ResponseEntity<Void> delete(@PathVariable Long id) {
-        service.deleteItem(id);
+    public ResponseEntity<Void> delete(@PathVariable Long id) {
+        itemService.deleteItem(id);
         return ResponseEntity.noContent().build();
     }
 }

@@ -33,7 +33,7 @@ public class JobManagementController extends BaseJobManagementController {
     }
 
     @GetMapping("/{barcode}")
-    ResponseEntity<Void> sendDocumentToDms(@PathVariable String barcode) {
+    public ResponseEntity<Void> sendDocumentToDms(@PathVariable String barcode) {
 
         productService.findProductByBarcode(barcode);
         return ResponseEntity.ok().build();

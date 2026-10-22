@@ -33,68 +33,68 @@ import java.util.List;
 @RequiredArgsConstructor
 public class StorageController {
 
-    private final StorageService service;
+    private final StorageService storageService;
 
     @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
-    ResponseEntity<List<StorageResponse>> index(@ParameterObject @PageableDefault final Pageable pageable) {
-        return ResponseEntity.ok(service.listStorages(pageable));
+    public ResponseEntity<List<StorageResponse>> index(@ParameterObject @PageableDefault Pageable pageable) {
+        return ResponseEntity.ok(storageService.listStorages(pageable));
     }
 
     @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
-    ResponseEntity<StorageResponse> create(@Valid @RequestBody StorageRequest request) {
-        StorageResponse storage = service.createStorage(request);
+    public ResponseEntity<StorageResponse> create(@Valid @RequestBody StorageRequest request) {
+        StorageResponse storage = storageService.createStorage(request);
         URI location = ServletUriComponentsBuilder.fromCurrentRequest().path("/{id}").buildAndExpand(storage.id()).toUri();
 
         return ResponseEntity.created(location).body(storage);
     }
 
     @GetMapping(value = "/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
-    ResponseEntity<StorageResponse> show(@PathVariable Long id) {
-        return ResponseEntity.ok(service.getStorage(id));
+    public ResponseEntity<StorageResponse> show(@PathVariable Long id) {
+        return ResponseEntity.ok(storageService.getStorage(id));
     }
 
     @PutMapping(value = "/{id}", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
-    ResponseEntity<StorageResponse> update(@PathVariable Long id,
-                                           @Valid @RequestBody StorageRequest request) {
-        return ResponseEntity.ok(service.updateStorage(id, request));
+    public ResponseEntity<StorageResponse> update(@PathVariable Long id,
+                                                  @Valid @RequestBody StorageRequest request) {
+        return ResponseEntity.ok(storageService.updateStorage(id, request));
     }
 
     @DeleteMapping("/{id}")
-    ResponseEntity<Void> delete(@PathVariable Long id) {
-        service.deleteStorage(id);
+    public ResponseEntity<Void> delete(@PathVariable Long id) {
+        storageService.deleteStorage(id);
         return ResponseEntity.noContent().build();
     }
 
     @PostMapping(value = "/{storageId}/items", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
-    ResponseEntity<StorageItemResponse> addItem(@PathVariable Long storageId,
-                                                @Valid @RequestBody StorageItemRequest request) {
-        StorageItemResponse instance = service.addInstance(storageId, request);
+    public ResponseEntity<StorageItemResponse> addItem(@PathVariable Long storageId,
+                                                       @Valid @RequestBody StorageItemRequest request) {
+        StorageItemResponse instance = storageService.addInstance(storageId, request);
         URI location = ServletUriComponentsBuilder.fromCurrentRequest().path("/{id}").buildAndExpand(instance.id()).toUri();
         return ResponseEntity.created(location).body(instance);
     }
 
     @GetMapping(value = "/{storageId}/items", produces = MediaType.APPLICATION_JSON_VALUE)
-    ResponseEntity<List<StorageItemResponse>> getStock(@PathVariable Long storageId) {
-        return ResponseEntity.ok(service.listStock(storageId));
+    public ResponseEntity<List<StorageItemResponse>> getStock(@PathVariable Long storageId) {
+        return ResponseEntity.ok(storageService.listStock(storageId));
     }
 
     @GetMapping(value = "/{storageId}/items/{itemId}", produces = MediaType.APPLICATION_JSON_VALUE)
-    ResponseEntity<StorageItemResponse> showItem(@PathVariable Long storageId,
-                                                 @PathVariable Long itemId) {
-        return ResponseEntity.ok(service.getItem(storageId, itemId));
+    public ResponseEntity<StorageItemResponse> showItem(@PathVariable Long storageId,
+                                                        @PathVariable Long itemId) {
+        return ResponseEntity.ok(storageService.getItem(storageId, itemId));
     }
 
     @PutMapping(value = "/{storageId}/items/{itemId}", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
-    ResponseEntity<StorageItemResponse> restockItem(@PathVariable Long storageId,
-                                                    @PathVariable Long itemId,
-                                                    @Valid @RequestBody StorageItemUpdateRequest request) {
-        return ResponseEntity.ok(service.updateInstance(storageId, itemId, request));
+    public ResponseEntity<StorageItemResponse> restockItem(@PathVariable Long storageId,
+                                                           @PathVariable Long itemId,
+                                                           @Valid @RequestBody StorageItemUpdateRequest request) {
+        return ResponseEntity.ok(storageService.updateInstance(storageId, itemId, request));
     }
 
     @DeleteMapping("/{storageId}/items/{itemId}")
-    ResponseEntity<Void> consumeItem(@PathVariable Long storageId,
-                                      @PathVariable Long itemId) {
-        service.deleteInstance(storageId, itemId);
+    public ResponseEntity<Void> consumeItem(@PathVariable Long storageId,
+                                             @PathVariable Long itemId) {
+        storageService.deleteInstance(storageId, itemId);
         return ResponseEntity.noContent().build();
     }
 }

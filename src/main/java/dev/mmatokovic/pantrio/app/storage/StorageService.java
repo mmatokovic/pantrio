@@ -11,86 +11,23 @@ import java.util.List;
 
 public interface StorageService {
 
-    /**
-     * Returns a paginated list of storages.
-     *
-     * @param pageable pagination and sorting information
-     * @return a list of storages for the requested page
-     */
     List<StorageResponse> listStorages(Pageable pageable);
 
-    /**
-     * Retrieves a single storage by its unique identifier.
-     *
-     * @param id the unique identifier of the storage
-     * @return the requested storage
-     */
     StorageResponse getStorage(Long id);
 
-    /**
-     * Creates a new storage using the provided request data.
-     *
-     * @param request data required to create a new storage
-     * @return the newly created storage
-     */
     StorageResponse createStorage(StorageRequest request);
 
-    /**
-     * Updates an existing storage identified by its unique identifier.
-     *
-     * @param id      the unique identifier of the storage to update
-     * @param request updated storage data
-     */
     StorageResponse updateStorage(Long id, StorageRequest request);
 
-    /**
-     * Deletes a storage identified by its unique identifier.
-     *
-     * @param id the unique identifier of the storage to delete
-     */
     void deleteStorage(Long id);
 
-    /**
-     * Adds a new item instance to an existing storage.
-     *
-     * @param storageId the unique identifier of the storage to which the item will be added
-     * @param request   the details of the item instance to add
-     * @return the newly added storage item with its assigned identifiers and details
-     */
     StorageItemResponse addInstance(Long storageId, StorageItemRequest request);
 
-    /**
-     * Updates an existing item within a storage.
-     *
-     * @param storageId the unique identifier of the storage
-     * @param itemId    the unique identifier of the item to update
-     * @param request   the updated item details
-     * @return the updated storage item {@link StorageItemResponse}
-     */
     StorageItemResponse updateInstance(Long storageId, Long itemId, StorageItemUpdateRequest request);
 
-    /**
-     * Retrieves a list of all item instances within a specific storage.
-     *
-     * @param storageId the unique identifier of the storage
-     * @return a list of item instances contained in the specified storage
-     */
     List<StorageItemResponse> listStock(Long storageId);
 
-    /**
-     * Retrieves a specific item instance from a storage by its unique identifier.
-     *
-     * @param storageId the unique identifier of the storage
-     * @param itemId    the unique identifier of the item to retrieve
-     * @return the requested storage item with its details
-     */
     StorageItemResponse getItem(Long storageId, Long itemId);
 
-    /**
-    * Deletes an item instance from a storage.
-    *
-    * @param storageId the unique identifier of the storage
-    * @param itemId    the unique identifier of the item to delete
-    */
     void deleteInstance(Long storageId, Long itemId);
 }

@@ -1,7 +1,6 @@
 package dev.mmatokovic.pantrio.infra.security;
 
 import jakarta.servlet.DispatcherType;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -9,7 +8,6 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.core.userdetails.User;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -17,24 +15,16 @@ import org.springframework.security.provisioning.InMemoryUserDetailsManager;
 import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.security.web.SecurityFilterChain;
 
-@Configuration
+@Configuration(proxyBeanMethods = false)
 @EnableWebSecurity
 public class SecurityConfig {
 
-    @Value("${security.user.password}")
-    private String userPassword;
-
-    @Value("${security.prometheus.password}")
-    private String prometheusPassword;
-
     @Bean
-    public SecurityFilterChain filterChain(HttpSecurity http) {
+    SecurityFilterChain filterChain(HttpSecurity http, AuthenticationEntryPoint authenticationEntryPoint) {
         return http
             .csrf(AbstractHttpConfigurer::disable)
             .cors(AbstractHttpConfigurer::disable)
-            .sessionManagement(session ->
-                session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
-            )
+            .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(authz -> {
                 authz.dispatcherTypeMatchers(DispatcherType.ERROR).permitAll();
                 authz.requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll();
@@ -42,35 +32,33 @@ public class SecurityConfig {
                 authz.requestMatchers("/actuator/prometheus").hasRole("METRICS");
                 authz.anyRequest().authenticated();
             })
-            .httpBasic(httpBasic ->
-                httpBasic.authenticationEntryPoint(authenticationEntryPoint())
-            )
+            .httpBasic(httpBasic -> httpBasic.authenticationEntryPoint(authenticationEntryPoint))
             .logout(AbstractHttpConfigurer::disable)
             .build();
     }
 
     @Bean
-    public AuthenticationEntryPoint authenticationEntryPoint() {
+    AuthenticationEntryPoint authenticationEntryPoint() {
         return new CustomAuthenticationEntryPoint();
     }
 
     @Bean
-    public UserDetailsService userDetailsService() {
-        UserDetails admin = User.builder()
-            .username("user").password(passwordEncoder().encode(userPassword))
+    UserDetailsService userDetailsService(SecurityUsersProperties securityUsersProperties, PasswordEncoder passwordEncoder) {
+        var admin = User.builder()
+            .username("user")
+            .password(passwordEncoder.encode(securityUsersProperties.user().password()))
             .roles("ADMIN")
             .build();
-
-        UserDetails prometheus = User.builder()
-            .username("prometheus").password(passwordEncoder().encode(prometheusPassword))
+        var prometheus = User.builder()
+            .username("prometheus")
+            .password(passwordEncoder.encode(securityUsersProperties.prometheus().password()))
             .roles("METRICS")
             .build();
-
         return new InMemoryUserDetailsManager(prometheus, admin);
     }
 
     @Bean
-    public PasswordEncoder passwordEncoder() {
+    PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
 }

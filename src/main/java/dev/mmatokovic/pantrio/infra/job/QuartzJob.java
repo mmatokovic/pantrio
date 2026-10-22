@@ -1,63 +1,48 @@
 package dev.mmatokovic.pantrio.infra.job;
 
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.jspecify.annotations.NonNull;
 import org.quartz.DisallowConcurrentExecution;
 import org.quartz.JobExecutionContext;
 import org.quartz.JobExecutionException;
 import org.springframework.batch.core.job.Job;
-import org.springframework.batch.core.job.parameters.JobParameters;
 import org.springframework.batch.core.job.parameters.JobParametersBuilder;
 import org.springframework.batch.core.launch.JobOperator;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.quartz.QuartzJobBean;
 import org.springframework.stereotype.Component;
+
+import java.time.Clock;
 
 @Slf4j
 @Component
 @DisallowConcurrentExecution
+@RequiredArgsConstructor
 public class QuartzJob extends QuartzJobBean {
 
     private final Job generateItemEnrichmentJob;
     private final JobOperator jobOperator;
-    private final boolean enabled;
-
-    public QuartzJob(
-        Job generateItemEnrichmentJob,
-        JobOperator jobOperator,
-        @Value("${batch.job.enabled}") boolean enabled
-    ) {
-        this.generateItemEnrichmentJob = generateItemEnrichmentJob;
-        this.jobOperator = jobOperator;
-        this.enabled = enabled;
-    }
+    private final BatchJobProperties batchJobProperties;
+    private final Clock clock;
 
     @Override
     protected void executeInternal(@NonNull JobExecutionContext context) throws JobExecutionException {
-        final var jobName = generateItemEnrichmentJob.getName();
-
-        if (!enabled) {
-            log.info("Job {} is marked as disabled! Skipping execution...", jobName);
+        var jobName = generateItemEnrichmentJob.getName();
+        if (!batchJobProperties.enabled()) {
+            log.atInfo().addKeyValue("job", jobName).log("Job is disabled, skipping execution");
             return;
         }
 
-        long runId = System.currentTimeMillis();
-
-        log.info("Starting job {} with job run ID={}", jobName, runId);
-
+        var runId = clock.millis();
         try {
-            JobParameters params = new JobParametersBuilder()
+            var jobParameters = new JobParametersBuilder()
                 .addLong("run.id", runId)
                 .toJobParameters();
-
-            jobOperator.start(generateItemEnrichmentJob, params);
-
-            log.info("Triggered job {} with job run ID={}", jobName, runId);
-
+            jobOperator.start(generateItemEnrichmentJob, jobParameters);
+            log.atInfo().addKeyValue("job", jobName).addKeyValue("run_id", runId).log("Job started");
         } catch (Exception e) {
-            log.error("Exiting job {} failed with job run ID={}", jobName, runId, e);
+            log.atError().addKeyValue("job", jobName).addKeyValue("run_id", runId).setCause(e).log("Job start failed");
             throw new JobExecutionException(e);
         }
     }
-
 }

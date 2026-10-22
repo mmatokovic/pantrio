@@ -1,22 +1,23 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository. What the service
+is, how to run it and its endpoints are in README.md.
 
 ## Commands
 
-Always use the Maven wrapper, not a local Maven installation. All examples below use `./mvnw` (works in bash on Windows too); use `mvnw.cmd` only when running from cmd.exe or PowerShell:
+Always use the Maven wrapper, not a local Maven installation. All examples below use `./mvnw` (works in bash on Windows too); use `mvnw.cmd` only when running from cmd.exe or PowerShell. The build needs JDK 25 (the enforcer plugin fails on anything older):
 
 ```bash
-# Build
-./mvnw clean package
+# Build: checkstyle (compile phase), Error Prone, unit + ArchUnit tests, integration tests
+./mvnw clean verify
 
-# Run unit tests (pattern: **/*Test.java)
+# Run unit + ArchUnit tests (patterns: **/*Should.java, **/*Rule.java)
 ./mvnw test
 
-# Run a single test class
-./mvnw test -Dtest=ItemServiceImplTest
+# Run a single unit test class
+./mvnw test -Dtest=ItemServiceImplShould
 
-# Run integration tests (pattern: **/*IT.java)
+# Run integration tests (pattern: **/*IT.java) — needs Docker for the Oracle Testcontainer
 ./mvnw verify
 
 # Run a single integration test class
@@ -39,6 +40,8 @@ Always use the Maven wrapper, not a local Maven installation. All examples below
 ./mvnw clean verify springdoc-openapi:generate
 ```
 
+Always run `./mvnw clean verify` before saying something works. If `clean` fails with "Failed to delete … target", the IDE holds `target/` open — ask the user to close it or delete `target/`; don't work around it.
+
 ## Local development
 
 Start all infrastructure services via Docker Compose:
@@ -48,46 +51,60 @@ cd docker
 docker-compose -f compose.yaml up
 ```
 
-This brings up Oracle DB, Keycloak (auth), Zipkin, Prometheus, Grafana, and the OpenTelemetry collector. The app itself is started separately by the IDE or Maven.
+This brings up Oracle DB, Keycloak (auth), Zipkin, Prometheus, Grafana, and the OpenTelemetry collector. The app itself is started separately by the IDE or Maven, with the `local` profile (console-only logging).
 
 For Testcontainers reuse (faster integration tests locally), add `testcontainers.reuse.enable=true` to `~/.testcontainers.properties`.
 
-The primary config file is `src/main/resources/application.properties`. Key property prefixes: `spring.datasource.*`, `security.user.*`, `security.prometheus.*`, `openfoodfacts.*`, `spring.quartz.*`, `spring.batch.*`.
+The primary config file is `src/main/resources/application.properties`. Key property prefixes: `spring.datasource.*`, `security.user.*`, `security.prometheus.*`, `openfoodfacts.*`, `batch.job.*`, `pantrio.logging.http.*`, `spring.quartz.*`, `spring.batch.*`. Environment-specific values are `${ENV_VAR}`; secrets never get a default.
 
 ## Architecture
 
-Pantrio is a Spring Boot 4 / Java 21 pantry inventory management app. It applies **CQRS at the API layer** — controllers expose separate command (mutating) and query (read) operations — and the UI is driven by HTMX.
+Pantrio is a Spring Boot 4.1 / Java 25 pantry inventory management app. It applies **CQRS at the API layer** — controllers expose separate command (mutating) and query (read) operations — and the UI is driven by HTMX. It follows the Crosig integration-team conventions (the `integration-team:spring-boot` skill; the `household` service is the reference implementation).
 
 ### Package layout (`dev.mmatokovic.pantrio`)
 
 | Package | Responsibility |
 |---------|---------------|
-| `api/` | REST controllers — `ItemController`, `StorageController`, `ProductController`, `JobManagementController` |
-| `app/` | Application services + MapStruct mappers (sub-packages: `item`, `storage`, `product`, `job`) |
-| `domain/` | JPA entities, repository interfaces, request/response DTOs (sub-packages: `item`, `storage`, `instance`, `product`) |
-| `infra/` | All infrastructure concerns: `error`, `exception`, `jackson`, `job`, `logging`, `openfoodfacts`, `rest`, `security`, `validation`, `web` |
+| `api/` | REST controllers — `ItemController`, `StorageController`, `ProductController`, `JobManagementController`; methods return `ResponseEntity` |
+| `app/` | `*Service` interface + `*ServiceImpl` in the same package, MapStruct mappers (sub-packages: `item`, `storage`, `product`, `job`) |
+| `domain/` | JPA entities, repository interfaces (ports), request/response records, validation (sub-packages: `item`, `storage`, `instance`, `product`, `validation`) |
+| `infra/` | All infrastructure concerns: `config`, `error`, `exception`, `jackson`, `job`, `logging`, `openfoodfacts`, `rest`, `security`, `web` |
 
-Test packages mirror production packages (e.g., `infra/job/BatchConfigTest` lives in `src/test/.../infra/job/`).
+Test packages mirror production packages exactly (e.g. `infra/job/BatchConfigShould` lives in `src/test/.../infra/job/`).
 
 ### Key infrastructure details
 
 - **Database**: Oracle with Spring Data JPA/Hibernate; schema migrations via **Liquibase**
-- **Scheduling**: Quartz (JDBC-backed, clusterable) + Spring Batch — batch jobs enrich items with OpenFoodFacts data
-- **Security**: Spring Security with HTTP Basic Auth; two in-memory users (`user` / `ADMIN` role, `prometheus` / `METRICS` role); passwords injected via `security.user.password` and `security.prometheus.password` env vars
-- **External API**: `OpenFoodFactsAdapter` calls `world.openfoodfacts.org` via a configured `RestClient`; responses are mapped with MapStruct (`OpenFoodFactsMapper`)
-- **Logging**: Structured JSON logs via Logback + Logstash encoder; `HttpLoggingFilter` and `RestClientRequestLogger` trace HTTP in/out
+- **Scheduling**: Quartz (JDBC-backed, clusterable) + Spring Batch — batch jobs enrich items with OpenFoodFacts data; run IDs come from the `Clock` bean
+- **Security**: Spring Security with HTTP Basic Auth; two in-memory users (`user` / `ADMIN` role, `prometheus` / `METRICS` role); passwords bound through `SecurityUsersProperties` from `security.user.password` and `security.prometheus.password`
+- **External API**: `OpenFoodFactsAdapter` (`@Repository`, implements the `ProductRepository` port) calls `world.openfoodfacts.org` through a `RestClient` built from Boot's `RestClient.Builder`; responses are mapped with MapStruct (`OpenFoodFactsMapper`)
+- **Errors**: every error body is `ErrorResponse(status, message, errors)`. `ErrorHandler` builds it for pantrio exceptions; the `ProblemDetail` Spring creates for its own MVC exceptions (malformed body, wrong method, …) is mapped to it in `handleExceptionInternal`, which also logs the failure. 500s never expose the exception message
+- **JSON**: one configuration, `JacksonConfig.buildMapper()` (Jackson 3 — databind is `tools.jackson.*`, annotations stay `com.fasterxml.jackson.annotation.*`). Only `HttpLoggingUtils` uses `JsonMapper.shared()`, because it just compacts raw JSON for the log
+- **Configuration**: `@ConfigurationProperties` records (`*Properties`), constructor injection, no `@Value` fields; `*Config` classes are `@Configuration(proxyBeanMethods = false)`
+- **Logging**: plain `@Slf4j` with the fluent key-value API (`log.atInfo().addKeyValue(...)`), no log topics. `HttpLoggingFilter` logs inbound requests/responses and puts `request.id` into MDC; `RestClientRequestLogger` logs outbound calls; both read `pantrio.logging.http.*` (`HttpLoggingProperties`). `logback-spring.xml` writes a console pattern with `%kvp`, plus a rolling file outside the `local` profile
 - **Validation**: Custom `@Barcode` constraint annotation (`BarcodeValidator`)
-- **Code style**: Checkstyle runs during the `compile` phase; violations fail the build
+- **Code style**: Checkstyle runs during the `compile` phase and Error Prone runs in the compiler; both fail the build. `MissingJavadoc` warnings are expected — the team writes no Javadoc
+
+### Code conventions
+
+- Fields are named after their type in full (`itemRepository`, not `repo`); no `final` on locals, use `var`
+- No comments that repeat the code and no Javadoc. A comment is only for a non-obvious *why* or an actionable TODO
+- Dead code is deleted, not suppressed with `@SuppressWarnings("unused")`
+- `toLowerCase`/`toUpperCase` take `Locale.ROOT`; time comes from the injected `Clock`, never `now()` without one
 
 ### Testing strategy
 
-**Naming convention**: test methods follow `should_<behavior>_when_<condition>` (e.g., `should_throw_when_storage_not_found`). The `_when_<condition>` part may be omitted for unambiguous happy-path tests where the condition is implied (e.g., `should_return_single_item`).
+**Naming convention**: unit test classes are `<ClassUnderTest>Should` with methods `methodUnderTest_doSomething[_whenCondition]` (`ItemServiceImplShould.getItem_throwEntityNotFound_whenItemDoesNotExist`); integration test methods name the API operation as the subject (`getItem_returns404_whenItemDoesNotExist`). No `should_` prefix, no `*Test` suffix.
 
-- **Unit tests** (`*Test.java`) use `@ExtendWith(MockitoExtension.class)` with `@Mock` / `@InjectMocks` — not `@SpringBootTest`. Always add explicit `verify()` calls for `void` methods because Mockito lenient mode won't catch missing invocations otherwise.
-- **Integration tests** (`*IT.java`) extend `BaseIntegrationTest`, which spins up an Oracle XE TestContainer and a WireMock server; they use `@SpringBootTest(webEnvironment = RANDOM_PORT)`. Use `RestTestClient` (autowired) for HTTP calls. Because the app runs on a real port, authentication must be provided on each request via `.headers(h -> h.setBasicAuth("user", "userpwd"))` — `BaseIntegrationTest` sets `security.user.password=userpwd` as a test property. Clean relevant tables with `JdbcTemplate` in `@BeforeEach` — do not rely on transaction rollback.
-- **ArchUnit tests** (`src/test/.../archunit/`) enforce structural rules (naming, layering, annotations, proxies, etc.). Review all rules using `.allowEmptyShould(true)` — the goal is to eliminate them.
+- **Unit tests** (`*Should.java`) use `@ExtendWith(MockitoExtension.class)` with `@Mock` / `@InjectMocks` — not `@SpringBootTest`. Stub with exact arguments and don't `verify` a stubbed call (strict stubs already check it); `verify` only void calls. End every test with `verifyNoMoreInteractions(...)` / `verifyNoInteractions(...)`. Build test data inside each test (no `@BeforeEach` fixtures, no per-type helpers) and assert whole records with `isEqualTo`.
+- **Integration tests** (`*IT.java`) extend `BaseIntegrationTest`, which spins up an Oracle XE Testcontainer and a WireMock server on `RANDOM_PORT` and points RestAssured at the app. Call the API with `RestAssured.given().auth().basic(USER_NAME, USER_PWD)`, send request records as bodies, read responses with `.extract().as(...)` and compare them whole (`usingRecursiveComparison().ignoringFields(...)` only for DB-generated ids/timestamps). Test properties live in `src/test/resources/application-default.properties`. Clean relevant tables with `JdbcTemplate` in `@BeforeEach` — do not rely on transaction rollback.
+- **ArchUnit tests** (`src/test/.../archunit/`) enforce structural rules (naming, layering, annotations, proxies, etc.). Never delete or loosen a rule to get green.
 - **Contract tests** (`ContractFreezeIT`) guard against unintentional API shape changes.
 
 ### Dependency management
 
-All dependency versions are declared in the root `pom.xml`. Before adding a new dependency, check whether it is already present as a transitive dependency (`./mvnw dependency:tree`). Always verify Spring Boot compatibility via the official coordinates matrix for the current Boot version.
+All dependency versions are declared in the root `pom.xml` (Dependabot opens weekly update PRs). Before adding a new dependency, check whether it is already present as a transitive dependency (`./mvnw dependency:tree`). Always verify Spring Boot compatibility via the official coordinates matrix for the current Boot version.
+
+### Git
+
+Never add Claude attribution (`Co-Authored-By: Claude`, "Generated with Claude Code") to commits or pull requests.

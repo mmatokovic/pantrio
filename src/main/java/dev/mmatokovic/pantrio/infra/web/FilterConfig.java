@@ -5,16 +5,16 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.filter.ShallowEtagHeaderFilter;
 
-@Configuration
-public class FilterConfig {
+@Configuration(proxyBeanMethods = false)
+class FilterConfig {
 
     @Bean
-    public FilterRegistrationBean<ShallowEtagHeaderFilter> etagFilter() {
-        ShallowEtagHeaderFilter etagFilter = new ShallowEtagHeaderFilter();
-        // ETag that start with "W/..." allows Tomcat gzip compression to work
+    FilterRegistrationBean<ShallowEtagHeaderFilter> etagFilter() {
+        var etagFilter = new ShallowEtagHeaderFilter();
+        // A weak ETag ("W/...") still lets Tomcat gzip the response
         etagFilter.setWriteWeakETag(true);
 
-        FilterRegistrationBean<ShallowEtagHeaderFilter> filter = new FilterRegistrationBean<>(etagFilter);
+        var filter = new FilterRegistrationBean<>(etagFilter);
         filter.addUrlPatterns("/*");
         return filter;
     }

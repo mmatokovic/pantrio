@@ -3,10 +3,10 @@ package dev.mmatokovic.pantrio.infra.job;
 import dev.mmatokovic.pantrio.domain.item.Item;
 import dev.mmatokovic.pantrio.domain.item.ItemRepository;
 import dev.mmatokovic.pantrio.domain.item.UnitEnum;
-import dev.mmatokovic.pantrio.domain.product.Product;
 import dev.mmatokovic.pantrio.domain.product.ProductRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.jspecify.annotations.Nullable;
 import org.springframework.batch.core.job.Job;
 import org.springframework.batch.core.job.builder.JobBuilder;
 import org.springframework.batch.core.repository.JobRepository;
@@ -22,21 +22,24 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.jdbc.core.BeanPropertyRowMapper;
 
 import javax.sql.DataSource;
+import java.util.Locale;
 import java.util.Map;
 
 import static dev.mmatokovic.pantrio.infra.job.QuartzConfig.JOB_NAME;
 
 @Slf4j
-@Configuration
+@Configuration(proxyBeanMethods = false)
 @RequiredArgsConstructor
 public class BatchConfig {
 
     private static final int CHUNK_SIZE = 10;
+    private static final int PAGE_SIZE = 100;
+    private static final int SKIP_LIMIT = 2;
 
     private final JobRepository jobRepository;
 
     @Bean
-    public ItemReader<Item> reader(DataSource dataSource) throws Exception {
+    ItemReader<Item> reader(DataSource dataSource) throws Exception {
         return new JdbcPagingItemReaderBuilder<Item>()
             .name("itemReader")
             .dataSource(dataSource)
@@ -44,29 +47,25 @@ public class BatchConfig {
             .fromClause("FROM items")
             .whereClause("WHERE barcode IS NOT NULL AND picture_url IS NULL")
             .sortKeys(Map.of("id", Order.ASCENDING))
-            .pageSize(100)
+            .pageSize(PAGE_SIZE)
             .rowMapper(new BeanPropertyRowMapper<>(Item.class))
             .build();
     }
 
     @Bean
-    public ItemProcessor<Item, Item> processor(ProductRepository productRepository) {
+    ItemProcessor<Item, Item> processor(ProductRepository productRepository) {
         return item -> enrichItem(item, productRepository);
     }
 
     @Bean
-    public ItemWriter<Item> writer(ItemRepository itemRepository) {
-        return chunk -> {
-            for (Item item : chunk.getItems()) {
-                itemRepository.save(item);
-            }
-        };
+    ItemWriter<Item> writer(ItemRepository itemRepository) {
+        return chunk -> itemRepository.saveAll(chunk.getItems());
     }
 
     @Bean
-    public Step itemEnrichmentStep(ItemReader<Item> reader,
-                                   ItemProcessor<Item, Item> processor,
-                                   ItemWriter<Item> writer) {
+    Step itemEnrichmentStep(ItemReader<Item> reader,
+                            ItemProcessor<Item, Item> processor,
+                            ItemWriter<Item> writer) {
         return new StepBuilder("itemEnrichmentStep", jobRepository)
             .<Item, Item>chunk(CHUNK_SIZE)
             .reader(reader)
@@ -74,35 +73,36 @@ public class BatchConfig {
             .writer(writer)
             .faultTolerant()
             .skip(Exception.class)
-            .skipLimit(2)
+            .skipLimit(SKIP_LIMIT)
             .build();
     }
 
     @Bean
-    public Job generateItemEnrichmentJob(Step itemEnrichmentStep) {
+    Job generateItemEnrichmentJob(Step itemEnrichmentStep) {
         return new JobBuilder(JOB_NAME, jobRepository)
             .start(itemEnrichmentStep)
             .build();
     }
 
-    private Item enrichItem(Item item, ProductRepository productRepository) {
+    private static @Nullable Item enrichItem(Item item, ProductRepository productRepository) {
         if (item.getBarcode() == null) {
-            log.warn("Item id={} has no barcode, skipping enrichment", item.getId());
+            log.atWarn().addKeyValue("item_id", item.getId()).log("Item has no barcode, skipping enrichment");
             return null;
         }
 
-        Product product = productRepository.getProductByBarcode(item.getBarcode());
-
+        var product = productRepository.getProductByBarcode(item.getBarcode());
         item.setName(product.productName());
         item.setPictureUrl(product.imageUrl());
         if (product.unit() != null) {
             try {
-                item.setUnit(UnitEnum.valueOf(product.unit().toUpperCase()));
+                item.setUnit(UnitEnum.valueOf(product.unit().toUpperCase(Locale.ROOT)));
             } catch (IllegalArgumentException e) {
-                log.warn("Unknown unit '{}' for barcode '{}', skipping unit enrichment", product.unit(), item.getBarcode());
+                log.atWarn()
+                    .addKeyValue("unit", product.unit())
+                    .addKeyValue("barcode", item.getBarcode())
+                    .log("Unknown unit, skipping unit enrichment");
             }
         }
-
         return item;
     }
 }

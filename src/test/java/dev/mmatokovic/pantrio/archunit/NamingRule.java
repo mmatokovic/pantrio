@@ -6,6 +6,7 @@ import com.tngtech.archunit.lang.ArchRule;
 import com.tngtech.archunit.lang.syntax.ArchRuleDefinition;
 import dev.mmatokovic.pantrio.PantrioApplication;
 import jakarta.persistence.Entity;
+import org.junit.jupiter.api.Test;
 import org.springframework.stereotype.Repository;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -42,8 +43,8 @@ class NamingRule {
 
     @ArchTest
     public static final ArchRule testClassNamingRule = ArchRuleDefinition.classes()
-        .that().containAnyMethodsThat(annotatedWith(org.junit.jupiter.api.Test.class))
-        .should().haveSimpleNameEndingWith("Test").orShould().haveSimpleNameEndingWith("IT");
+        .that().containAnyMethodsThat(annotatedWith(Test.class))
+        .should().haveSimpleNameEndingWith("Should").orShould().haveSimpleNameEndingWith("IT");
 
     @ArchTest
     public static final ArchRule utilityClassNamingRule = ArchRuleDefinition.noClasses()
@@ -56,7 +57,6 @@ class NamingRule {
     @ArchTest
     public static final ArchRule enumClassNamingRule = ArchRuleDefinition.classes()
         .that().areEnums()
-        .should().haveSimpleNameEndingWith("Enum")
-        .allowEmptyShould(true);
+        .should().haveSimpleNameEndingWith("Enum");
 
 }

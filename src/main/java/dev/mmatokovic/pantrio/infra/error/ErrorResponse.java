@@ -1,14 +1,17 @@
 package dev.mmatokovic.pantrio.infra.error;
 
+import org.jspecify.annotations.Nullable;
+
 import java.util.List;
 
 public record ErrorResponse(
     Integer status,
     String message,
-    List<ErrorInfo> errors
+    @Nullable List<ErrorInfo> errors
 ) {
+
     public record ErrorInfo(
         String field,
-        String detail
+        @Nullable String detail
     ) { }
 }

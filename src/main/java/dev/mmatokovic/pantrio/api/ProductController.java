@@ -20,10 +20,10 @@ import org.springframework.web.bind.annotation.RestController;
 @RequiredArgsConstructor
 public class ProductController {
 
-    private final ProductService service;
+    private final ProductService productService;
 
     @GetMapping(value = "/{code}", produces = MediaType.APPLICATION_JSON_VALUE)
-    ResponseEntity<ProductResponse> find(@PathVariable @Barcode String code) {
-        return ResponseEntity.ok(service.findProductByBarcode(code));
+    public ResponseEntity<ProductResponse> find(@PathVariable @Barcode String code) {
+        return ResponseEntity.ok(productService.findProductByBarcode(code));
     }
 }

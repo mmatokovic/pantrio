@@ -16,7 +16,7 @@ class ProxyRule {
     @ArchTest
     public static final ArchRule publicTransactionalMethodRule = ArchRuleDefinition.methods()
         .that().areAnnotatedWith(Transactional.class)
-        .should().bePublic().allowEmptyShould(true);
+        .should().bePublic();
 
     @ArchTest
     public static final ArchRule useSpringTransactionalRule = ArchRuleDefinition.noMethods()
