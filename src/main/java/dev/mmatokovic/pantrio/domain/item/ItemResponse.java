@@ -7,7 +7,7 @@ public record ItemResponse(
     String name,
     String remarks,
     String barcode,
-    String unit,
+    UnitEnum unit,
     String pictureUrl,
     Boolean disabled,
     LocalDateTime createdAt,

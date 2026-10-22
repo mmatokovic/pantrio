@@ -357,4 +357,18 @@
 
         <addForeignKeyConstraint baseTableName="${table_prefix}BLOB_TRIGGERS" constraintName="${table_prefix}BLOB_TRIGGERS_SCHED_NAME_FKEY" baseColumnNames="SCHED_NAME, TRIGGER_NAME, TRIGGER_GROUP" referencedTableName="${table_prefix}TRIGGERS" referencedColumnNames="SCHED_NAME, TRIGGER_NAME, TRIGGER_GROUP"/>
     </changeSet>
+
+    <!-- Oracle does not index foreign key columns; QRTZ_TRIGGERS references QRTZ_JOB_DETAILS -->
+    <changeSet id="quartz-fk-indexes" author="quartz">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <indexExists tableName="${table_prefix}TRIGGERS" columnNames="SCHED_NAME, JOB_NAME, JOB_GROUP"/>
+            </not>
+        </preConditions>
+        <createIndex tableName="${table_prefix}TRIGGERS" indexName="IDX_${table_prefix}T_J">
+            <column name="SCHED_NAME"/>
+            <column name="JOB_NAME"/>
+            <column name="JOB_GROUP"/>
+        </createIndex>
+    </changeSet>
 </databaseChangeLog>

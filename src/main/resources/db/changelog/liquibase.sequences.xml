@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                        https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.8.xsd">
+
+    <!-- Hibernate's pooled optimizer needs INCREMENT BY = allocationSize (50); start above existing ids -->
+    <changeSet id="1" author="pantrio" dbms="oracle">
+        <sql splitStatements="false">
+            DECLARE
+                v_start NUMBER;
+            BEGIN
+                SELECT NVL(MAX(id), 0) + 1 INTO v_start FROM items;
+                EXECUTE IMMEDIATE 'CREATE SEQUENCE items_seq START WITH ' || v_start || ' INCREMENT BY 50';
+                SELECT NVL(MAX(id), 0) + 1 INTO v_start FROM storage;
+                EXECUTE IMMEDIATE 'CREATE SEQUENCE storage_seq START WITH ' || v_start || ' INCREMENT BY 50';
+                SELECT NVL(MAX(id), 0) + 1 INTO v_start FROM item_instance;
+                EXECUTE IMMEDIATE 'CREATE SEQUENCE item_instance_seq START WITH ' || v_start || ' INCREMENT BY 50';
+            END;
+        </sql>
+        <rollback>
+            <dropSequence sequenceName="items_seq"/>
+            <dropSequence sequenceName="storage_seq"/>
+            <dropSequence sequenceName="item_instance_seq"/>
+        </rollback>
+    </changeSet>
+</databaseChangeLog>

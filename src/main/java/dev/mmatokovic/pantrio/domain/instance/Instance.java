@@ -10,27 +10,25 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.SequenceGenerator;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 import jakarta.persistence.Version;
 import jakarta.validation.constraints.NotNull;
 import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import lombok.Setter;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.OnDelete;
 import org.hibernate.annotations.OnDeleteAction;
 import org.hibernate.annotations.UpdateTimestamp;
+import org.jspecify.annotations.Nullable;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Getter
-@Setter
-@NoArgsConstructor
-@AllArgsConstructor
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Entity
 @Table(
     name = "ITEM_INSTANCE",
@@ -42,9 +40,11 @@ import java.time.LocalDateTime;
     }
 )
 public class Instance {
+
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "ID", nullable = false)
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "item_instance_seq")
+    @SequenceGenerator(name = "item_instance_seq", sequenceName = "ITEM_INSTANCE_SEQ", allocationSize = 50)
+    @Column(name = "ID", updatable = false, nullable = false)
     private Long id;
 
     @NotNull
@@ -66,7 +66,6 @@ public class Instance {
     private LocalDate expiryDate;
 
     @Version
-    @Setter(AccessLevel.NONE)
     @Column(name = "VERSION", nullable = false)
     private Integer version;
 
@@ -77,4 +76,18 @@ public class Instance {
     @UpdateTimestamp
     @Column(name = "UPDATED_AT")
     private LocalDateTime updatedAt;
+
+    public static Instance create(Storage storage, Item item, Integer quantity, @Nullable LocalDate expiryDate) {
+        var instance = new Instance();
+        instance.storage = storage;
+        instance.item = item;
+        instance.quantity = quantity;
+        instance.expiryDate = expiryDate;
+        return instance;
+    }
+
+    public void restock(Integer quantity, @Nullable LocalDate expiryDate) {
+        this.quantity = quantity;
+        this.expiryDate = expiryDate;
+    }
 }

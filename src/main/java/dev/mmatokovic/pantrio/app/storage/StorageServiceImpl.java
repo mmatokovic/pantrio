@@ -46,16 +46,14 @@ public class StorageServiceImpl implements StorageService {
         if (storageRepository.existsByName(request.name())) {
             throw new ConflictException("Storage with name " + request.name() + " already exists");
         }
-        return storageMapper.toResponse(storageRepository.save(storageMapper.toEntity(request)));
+        return storageMapper.toResponse(storageRepository.save(Storage.create(request.name(), request.description(), request.disabled())));
     }
 
     @Override
     @Transactional
     public StorageResponse updateStorage(Long id, StorageRequest request) {
         var storage = findStorage(id);
-        storage.setName(request.name());
-        storage.setDescription(request.description());
-        storage.setDisabled(request.disabled() != null && request.disabled());
+        storage.update(request.name(), request.description(), request.disabled());
         return storageMapper.toResponse(storageRepository.save(storage));
     }
 
@@ -71,9 +69,7 @@ public class StorageServiceImpl implements StorageService {
         var storage = findStorage(storageId);
         var item = itemRepository.findById(request.itemId())
             .orElseThrow(() -> new EntityNotFoundException("Item " + request.itemId() + " not found"));
-        var instance = storageMapper.toInstance(request);
-        instance.setStorage(storage);
-        instance.setItem(item);
+        var instance = Instance.create(storage, item, request.quantity(), request.expiryDate());
         return storageMapper.toItemResponse(instanceRepository.save(instance));
     }
 
@@ -81,8 +77,7 @@ public class StorageServiceImpl implements StorageService {
     @Transactional
     public StorageItemResponse updateInstance(Long storageId, Long itemId, StorageItemUpdateRequest request) {
         var instance = findInstance(storageId, itemId);
-        instance.setQuantity(request.quantity());
-        instance.setExpiryDate(request.expiryDate());
+        instance.restock(request.quantity(), request.expiryDate());
         return storageMapper.toItemResponse(instanceRepository.save(instance));
     }
 

@@ -16,7 +16,7 @@ import org.springframework.web.bind.annotation.RestController;
 @Validated
 @RestController
 @Tag(name = "Product")
-@RequestMapping("/products")
+@RequestMapping(path = "/products", version = "v1")
 @RequiredArgsConstructor
 public class ProductController {
 

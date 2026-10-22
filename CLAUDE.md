@@ -74,7 +74,9 @@ Test packages mirror production packages exactly (e.g. `infra/job/BatchConfigSho
 
 ### Key infrastructure details
 
-- **Database**: Oracle with Spring Data JPA/Hibernate; schema migrations via **Liquibase**
+- **API versioning**: Spring Framework 7 path-segment versioning. `WebConfig` prefixes every pantrio `@RestController` with `pantrio.api.base-path` + `/{version}` and resolves the version from that segment only for `/api/**` (springdoc, actuator and static files stay unversioned). Controllers declare `@RequestMapping(path = "...", version = "v1")`; supported versions are `pantrio.api.supported-versions`. A new version is a new mapping with `version = "v2"`, never a change to `v1`
+- **Database**: Oracle with Spring Data JPA/Hibernate; schema migrations via **Liquibase**. Never edit an applied changeset — add a new one. Oracle does not index foreign key columns: every new FK gets its own index in the same PR, guarded with an `indexExists` precondition (`onFail="MARK_RAN"`)
+- **Entities**: `@Getter` only, `@NoArgsConstructor(access = PROTECTED)`, a static `create(...)` factory and behaviour methods (`update`, `enrich`, `restock`) — no setters or builders. IDs come from Oracle sequences (`*_SEQ`, `allocationSize = 50` = `INCREMENT BY 50`) so Hibernate can batch inserts
 - **Scheduling**: Quartz (JDBC-backed, clusterable) + Spring Batch — batch jobs enrich items with OpenFoodFacts data; run IDs come from the `Clock` bean
 - **Security**: Spring Security with HTTP Basic Auth; two in-memory users (`user` / `ADMIN` role, `prometheus` / `METRICS` role); passwords bound through `SecurityUsersProperties` from `security.user.password` and `security.prometheus.password`
 - **External API**: `OpenFoodFactsAdapter` (`@Repository`, implements the `ProductRepository` port) calls `world.openfoodfacts.org` through a `RestClient` built from Boot's `RestClient.Builder`; responses are mapped with MapStruct (`OpenFoodFactsMapper`)
@@ -96,10 +98,19 @@ Test packages mirror production packages exactly (e.g. `infra/job/BatchConfigSho
 
 **Naming convention**: unit test classes are `<ClassUnderTest>Should` with methods `methodUnderTest_doSomething[_whenCondition]` (`ItemServiceImplShould.getItem_throwEntityNotFound_whenItemDoesNotExist`); integration test methods name the API operation as the subject (`getItem_returns404_whenItemDoesNotExist`). No `should_` prefix, no `*Test` suffix.
 
-- **Unit tests** (`*Should.java`) use `@ExtendWith(MockitoExtension.class)` with `@Mock` / `@InjectMocks` — not `@SpringBootTest`. Stub with exact arguments and don't `verify` a stubbed call (strict stubs already check it); `verify` only void calls. End every test with `verifyNoMoreInteractions(...)` / `verifyNoInteractions(...)`. Build test data inside each test (no `@BeforeEach` fixtures, no per-type helpers) and assert whole records with `isEqualTo`.
+- **Unit tests** (`*Should.java`) use `@ExtendWith(MockitoExtension.class)` with `@Mock` / `@InjectMocks` — not `@SpringBootTest`. Service tests use the real generated mappers (`new ItemMapperImpl()`), so responses are compared whole. Stub with exact arguments and don't `verify` a stubbed call (strict stubs already check it); `verify` only void calls. End every test with `verifyNoMoreInteractions(...)` / `verifyNoInteractions(...)`. Build test data inside each test (no `@BeforeEach` fixtures, no per-type helpers) and assert whole records with `isEqualTo`.
 - **Integration tests** (`*IT.java`) extend `BaseIntegrationTest`, which spins up an Oracle XE Testcontainer and a WireMock server on `RANDOM_PORT` and points RestAssured at the app. Call the API with `RestAssured.given().auth().basic(USER_NAME, USER_PWD)`, send request records as bodies, read responses with `.extract().as(...)` and compare them whole (`usingRecursiveComparison().ignoringFields(...)` only for DB-generated ids/timestamps). Test properties live in `src/test/resources/application-default.properties`. Clean relevant tables with `JdbcTemplate` in `@BeforeEach` — do not rely on transaction rollback.
 - **ArchUnit tests** (`src/test/.../archunit/`) enforce structural rules (naming, layering, annotations, proxies, etc.). Never delete or loosen a rule to get green.
 - **Contract tests** (`ContractFreezeIT`) guard against unintentional API shape changes.
+
+### Deliberate deviations from team standards
+
+| Standard | Here | Why |
+|---|---|---|
+| RFC 9457 `ProblemDetail` error bodies | `ErrorResponse(status, message, errors)`; Spring's `ProblemDetail` is mapped to it | the existing client contract |
+| `*Mapper` as a final utility class | MapStruct interfaces (constructor injection) | many record ↔ entity mappings; generated code stays in sync with the records |
+| Spring context without a DB, port mocked in ITs | Oracle XE Testcontainer, real JPA + Liquibase | pantrio owns its schema, so the ITs prove the mappings and migrations |
+| Multi-module (`*-api`, `*-batch`, shared logging module) | single module | one deployable; no second service shares the code |
 
 ### Dependency management
 

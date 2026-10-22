@@ -41,7 +41,7 @@ class ItemControllerIT extends BaseIntegrationTest {
         ItemResponse response = RestAssured.given()
             .auth().basic(USER_NAME, USER_PWD)
             .when()
-            .get("/items/1")
+            .get("/api/v1/items/1")
             .then()
             .statusCode(HttpStatus.OK.value())
             .extract().as(ItemResponse.class);
@@ -55,7 +55,7 @@ class ItemControllerIT extends BaseIntegrationTest {
         ErrorResponse response = RestAssured.given()
             .auth().basic(USER_NAME, USER_PWD)
             .when()
-            .get("/items/999")
+            .get("/api/v1/items/999")
             .then()
             .statusCode(HttpStatus.NOT_FOUND.value())
             .extract().as(ErrorResponse.class);
@@ -71,7 +71,7 @@ class ItemControllerIT extends BaseIntegrationTest {
         List<ItemResponse> response = RestAssured.given()
             .auth().basic(USER_NAME, USER_PWD)
             .when()
-            .get("/items")
+            .get("/api/v1/items")
             .then()
             .statusCode(HttpStatus.OK.value())
             .extract().as(new TypeRef<>() { });
@@ -89,12 +89,12 @@ class ItemControllerIT extends BaseIntegrationTest {
             .contentType(ContentType.JSON)
             .body(new ItemRequest("Milk", null, "8000500179864", UnitEnum.PCS, null, false))
             .when()
-            .post("/items")
+            .post("/api/v1/items")
             .then()
             .statusCode(HttpStatus.CREATED.value())
             .extract().as(ItemResponse.class);
 
-        var expectedResponse = new ItemResponse(null, "Milk", null, "8000500179864", "PCS", null, false, null, null);
+        var expectedResponse = new ItemResponse(null, "Milk", null, "8000500179864", UnitEnum.PCS, null, false, null, null);
         assertThat(response)
             .usingRecursiveComparison()
             .ignoringFields("id", "createdAt", "updatedAt")
@@ -109,7 +109,7 @@ class ItemControllerIT extends BaseIntegrationTest {
             .contentType(ContentType.JSON)
             .body(new ItemRequest(name, null, null, null, null, false))
             .when()
-            .post("/items")
+            .post("/api/v1/items")
             .then()
             .statusCode(HttpStatus.BAD_REQUEST.value())
             .extract().as(ErrorResponse.class);
@@ -125,7 +125,7 @@ class ItemControllerIT extends BaseIntegrationTest {
             .contentType(ContentType.JSON)
             .body(new ItemRequest("Milk", null, "8000500179865", null, null, false))
             .when()
-            .post("/items")
+            .post("/api/v1/items")
             .then()
             .statusCode(HttpStatus.BAD_REQUEST.value())
             .extract().as(ErrorResponse.class);
@@ -142,7 +142,7 @@ class ItemControllerIT extends BaseIntegrationTest {
             .contentType(ContentType.JSON)
             .body("{\"name\": ")
             .when()
-            .post("/items")
+            .post("/api/v1/items")
             .then()
             .statusCode(HttpStatus.BAD_REQUEST.value())
             .extract().as(ErrorResponse.class);
@@ -159,7 +159,7 @@ class ItemControllerIT extends BaseIntegrationTest {
             .contentType(ContentType.JSON)
             .body(new ItemRequest("Oat milk", "Lactose free", null, null, null, false))
             .when()
-            .put("/items/1")
+            .put("/api/v1/items/1")
             .then()
             .statusCode(HttpStatus.OK.value())
             .extract().as(ItemResponse.class);
@@ -181,7 +181,7 @@ class ItemControllerIT extends BaseIntegrationTest {
             .contentType(ContentType.JSON)
             .body(new ItemRequest(name, null, null, null, null, false))
             .when()
-            .put("/items/1")
+            .put("/api/v1/items/1")
             .then()
             .statusCode(HttpStatus.BAD_REQUEST.value());
     }
@@ -193,7 +193,7 @@ class ItemControllerIT extends BaseIntegrationTest {
         RestAssured.given()
             .auth().basic(USER_NAME, USER_PWD)
             .when()
-            .delete("/items/1")
+            .delete("/api/v1/items/1")
             .then()
             .statusCode(HttpStatus.NO_CONTENT.value());
 
@@ -204,7 +204,7 @@ class ItemControllerIT extends BaseIntegrationTest {
     void listItems_returns401_whenNotAuthenticated() {
         RestAssured.given()
             .when()
-            .get("/items")
+            .get("/api/v1/items")
             .then()
             .statusCode(HttpStatus.UNAUTHORIZED.value());
     }

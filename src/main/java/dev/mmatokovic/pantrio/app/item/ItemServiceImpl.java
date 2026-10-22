@@ -34,14 +34,15 @@ public class ItemServiceImpl implements ItemService {
     @Override
     @Transactional
     public ItemResponse createItem(ItemRequest request) {
-        return itemMapper.toResponse(itemRepository.save(itemMapper.toEntity(request)));
+        var item = Item.create(request.name(), request.remarks(), request.barcode(), request.unit(), request.pictureUrl(), request.disabled());
+        return itemMapper.toResponse(itemRepository.save(item));
     }
 
     @Override
     @Transactional
     public ItemResponse updateItem(Long id, ItemRequest request) {
         var item = findItem(id);
-        itemMapper.updateItemFromRequest(request, item);
+        item.update(request.name(), request.remarks(), request.barcode(), request.unit(), request.pictureUrl(), request.disabled());
         return itemMapper.toResponse(itemRepository.save(item));
     }
 
