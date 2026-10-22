@@ -40,7 +40,7 @@ public class QuartzJob extends QuartzJobBean {
                 .toJobParameters();
             jobOperator.start(generateItemEnrichmentJob, jobParameters);
             log.atInfo().addKeyValue("job", jobName).addKeyValue("run_id", runId).log("Job started");
-        } catch (Exception e) {
+        } catch (org.springframework.batch.core.job.JobExecutionException e) {
             log.atError().addKeyValue("job", jobName).addKeyValue("run_id", runId).setCause(e).log("Job start failed");
             throw new JobExecutionException(e);
         }

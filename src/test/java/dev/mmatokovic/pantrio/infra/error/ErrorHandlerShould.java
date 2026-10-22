@@ -14,6 +14,7 @@ import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.web.client.HttpServerErrorException;
 import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.context.request.ServletWebRequest;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.sql.SQLException;
 
@@ -114,6 +115,17 @@ class ErrorHandlerShould {
 
         assertThat(response).isEqualTo(ResponseEntity.status(HttpStatus.METHOD_NOT_ALLOWED)
             .body(new ErrorResponse(405, "Method 'PATCH' is not supported.", null)));
+    }
+
+    @Test
+    void handleExceptionInternal_useExceptionReason_whenProblemDetailHasNoDetail() {
+        var errorHandler = new ErrorHandler();
+
+        var response = errorHandler.handleExceptionInternal(new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid API version: '2.0.0'."),
+            ProblemDetail.forStatus(HttpStatus.BAD_REQUEST), new HttpHeaders(), HttpStatus.BAD_REQUEST, new ServletWebRequest(new MockHttpServletRequest()));
+
+        assertThat(response).isEqualTo(ResponseEntity.status(HttpStatus.BAD_REQUEST)
+            .body(new ErrorResponse(400, "Invalid API version: '2.0.0'.", null)));
     }
 
     @Test

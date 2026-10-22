@@ -4,6 +4,7 @@ import dev.mmatokovic.pantrio.domain.item.Item;
 import dev.mmatokovic.pantrio.domain.item.ItemRepository;
 import dev.mmatokovic.pantrio.domain.item.UnitEnum;
 import dev.mmatokovic.pantrio.domain.product.ProductRepository;
+import dev.mmatokovic.pantrio.infra.exception.NoSuchElementFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.jspecify.annotations.Nullable;
@@ -19,10 +20,9 @@ import org.springframework.batch.infrastructure.item.database.Order;
 import org.springframework.batch.infrastructure.item.database.builder.JdbcPagingItemReaderBuilder;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.jdbc.core.BeanPropertyRowMapper;
 
 import javax.sql.DataSource;
-import java.util.Locale;
+import java.util.Arrays;
 import java.util.Map;
 
 import static dev.mmatokovic.pantrio.infra.job.QuartzConfig.JOB_NAME;
@@ -39,22 +39,24 @@ public class BatchConfig {
     private final JobRepository jobRepository;
 
     @Bean
-    ItemReader<Item> reader(DataSource dataSource) throws Exception {
-        return new JdbcPagingItemReaderBuilder<Item>()
+    ItemReader<Long> reader(DataSource dataSource) throws Exception {
+        return new JdbcPagingItemReaderBuilder<Long>()
             .name("itemReader")
             .dataSource(dataSource)
-            .selectClause("SELECT *")
+            .selectClause("SELECT id")
             .fromClause("FROM items")
             .whereClause("WHERE barcode IS NOT NULL AND picture_url IS NULL")
             .sortKeys(Map.of("id", Order.ASCENDING))
             .pageSize(PAGE_SIZE)
-            .rowMapper(new BeanPropertyRowMapper<>(Item.class))
+            .rowMapper((resultSet, rowNumber) -> resultSet.getLong("id"))
             .build();
     }
 
     @Bean
-    ItemProcessor<Item, Item> processor(ProductRepository productRepository) {
-        return item -> enrichItem(item, productRepository);
+    ItemProcessor<Long, Item> processor(ItemRepository itemRepository, ProductRepository productRepository) {
+        return itemId -> itemRepository.findById(itemId)
+            .map(item -> enrichItem(item, productRepository))
+            .orElse(null);
     }
 
     @Bean
@@ -63,16 +65,16 @@ public class BatchConfig {
     }
 
     @Bean
-    Step itemEnrichmentStep(ItemReader<Item> reader,
-                            ItemProcessor<Item, Item> processor,
+    Step itemEnrichmentStep(ItemReader<Long> reader,
+                            ItemProcessor<Long, Item> processor,
                             ItemWriter<Item> writer) {
         return new StepBuilder("itemEnrichmentStep", jobRepository)
-            .<Item, Item>chunk(CHUNK_SIZE)
+            .<Long, Item>chunk(CHUNK_SIZE)
             .reader(reader)
             .processor(processor)
             .writer(writer)
             .faultTolerant()
-            .skip(Exception.class)
+            .skip(NoSuchElementFoundException.class)
             .skipLimit(SKIP_LIMIT)
             .build();
     }
@@ -91,18 +93,20 @@ public class BatchConfig {
         }
 
         var product = productRepository.getProductByBarcode(item.getBarcode());
-        item.setName(product.productName());
-        item.setPictureUrl(product.imageUrl());
-        if (product.unit() != null) {
-            try {
-                item.setUnit(UnitEnum.valueOf(product.unit().toUpperCase(Locale.ROOT)));
-            } catch (IllegalArgumentException e) {
-                log.atWarn()
-                    .addKeyValue("unit", product.unit())
-                    .addKeyValue("barcode", item.getBarcode())
-                    .log("Unknown unit, skipping unit enrichment");
-            }
-        }
+        item.enrich(product.productName(), product.imageUrl(), toUnit(product.unit(), item.getBarcode()));
         return item;
+    }
+
+    private static @Nullable UnitEnum toUnit(@Nullable String productUnit, String barcode) {
+        if (productUnit == null) {
+            return null;
+        }
+        return Arrays.stream(UnitEnum.values())
+            .filter(unit -> unit.getValue().equalsIgnoreCase(productUnit))
+            .findFirst()
+            .orElseGet(() -> {
+                log.atWarn().addKeyValue("unit", productUnit).addKeyValue("barcode", barcode).log("Unknown unit, skipping unit enrichment");
+                return null;
+            });
     }
 }

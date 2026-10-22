@@ -8,7 +8,6 @@ import dev.mmatokovic.pantrio.domain.item.UnitEnum;
 import jakarta.persistence.EntityNotFoundException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.PageImpl;
@@ -19,6 +18,8 @@ import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
+import static org.mockito.AdditionalAnswers.returnsFirstArg;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
@@ -29,108 +30,97 @@ class ItemServiceImplShould {
     @Mock
     private ItemRepository itemRepository;
 
-    @Mock
-    private ItemMapper itemMapper;
-
-    @InjectMocks
-    private ItemServiceImpl itemService;
-
     @Test
     void listItems_returnMappedPage() {
-        var item = Item.builder().id(1L).name("Milk").build();
-        var itemResponse = new ItemResponse(1L, "Milk", null, null, null, null, false, null, null);
+        var itemService = new ItemServiceImpl(itemRepository, new ItemMapperImpl());
+        var item = Item.create("Milk", null, "8000500179864", UnitEnum.L, null, false);
         when(itemRepository.findAll(PageRequest.of(0, 10))).thenReturn(new PageImpl<>(List.of(item)));
-        when(itemMapper.toResponseList(List.of(item))).thenReturn(List.of(itemResponse));
 
         var response = itemService.listItems(PageRequest.of(0, 10));
 
-        assertThat(response).isEqualTo(List.of(itemResponse));
-        verifyNoMoreInteractions(itemRepository, itemMapper);
+        assertThat(response).isEqualTo(List.of(new ItemResponse(null, "Milk", null, "8000500179864", UnitEnum.L, null, false, null, null)));
+        verifyNoMoreInteractions(itemRepository);
     }
 
     @Test
     void getItem_returnMappedItem() {
-        var item = Item.builder().id(1L).name("Milk").build();
-        var itemResponse = new ItemResponse(1L, "Milk", null, null, null, null, false, null, null);
-        when(itemRepository.findById(1L)).thenReturn(Optional.of(item));
-        when(itemMapper.toResponse(item)).thenReturn(itemResponse);
+        var itemService = new ItemServiceImpl(itemRepository, new ItemMapperImpl());
+        when(itemRepository.findById(1L)).thenReturn(Optional.of(Item.create("Milk", "Fresh", null, UnitEnum.L, null, true)));
 
         var response = itemService.getItem(1L);
 
-        assertThat(response).isEqualTo(itemResponse);
-        verifyNoMoreInteractions(itemRepository, itemMapper);
+        assertThat(response).isEqualTo(new ItemResponse(null, "Milk", "Fresh", null, UnitEnum.L, null, true, null, null));
+        verifyNoMoreInteractions(itemRepository);
     }
 
     @Test
     void getItem_throwEntityNotFound_whenItemDoesNotExist() {
+        var itemService = new ItemServiceImpl(itemRepository, new ItemMapperImpl());
         when(itemRepository.findById(1L)).thenReturn(Optional.empty());
 
         assertThatExceptionOfType(EntityNotFoundException.class)
             .isThrownBy(() -> itemService.getItem(1L))
             .withMessage("Item 1 not found");
-        verifyNoMoreInteractions(itemRepository, itemMapper);
+        verifyNoMoreInteractions(itemRepository);
     }
 
     @Test
-    void createItem_saveMappedEntity() {
-        var request = new ItemRequest("Milk", null, "8000500179864", UnitEnum.PCS, null, false);
-        var item = Item.builder().name("Milk").barcode("8000500179864").unit(UnitEnum.PCS).build();
-        var itemResponse = new ItemResponse(1L, "Milk", null, "8000500179864", "pcs", null, false, null, null);
-        when(itemMapper.toEntity(request)).thenReturn(item);
-        when(itemRepository.save(item)).thenReturn(item);
-        when(itemMapper.toResponse(item)).thenReturn(itemResponse);
+    void createItem_saveNewItemFromRequest() {
+        var itemService = new ItemServiceImpl(itemRepository, new ItemMapperImpl());
+        // A new entity has no identity to stub with, so the repository echoes what it is given
+        when(itemRepository.save(any(Item.class))).then(returnsFirstArg());
 
-        var response = itemService.createItem(request);
+        var response = itemService.createItem(new ItemRequest("Milk", null, "8000500179864", UnitEnum.PCS, null, null));
 
-        assertThat(response).isEqualTo(itemResponse);
-        verifyNoMoreInteractions(itemRepository, itemMapper);
+        assertThat(response).isEqualTo(new ItemResponse(null, "Milk", null, "8000500179864", UnitEnum.PCS, null, false, null, null));
+        verifyNoMoreInteractions(itemRepository);
     }
 
     @Test
     void updateItem_applyRequestToExistingItem() {
-        var request = new ItemRequest("Oat milk", null, null, null, null, false);
-        var item = Item.builder().id(1L).name("Milk").build();
-        var itemResponse = new ItemResponse(1L, "Oat milk", null, null, null, null, false, null, null);
+        var itemService = new ItemServiceImpl(itemRepository, new ItemMapperImpl());
+        var item = Item.create("Milk", "Fresh", "8000500179864", UnitEnum.L, null, false);
         when(itemRepository.findById(1L)).thenReturn(Optional.of(item));
         when(itemRepository.save(item)).thenReturn(item);
-        when(itemMapper.toResponse(item)).thenReturn(itemResponse);
 
-        var response = itemService.updateItem(1L, request);
+        var response = itemService.updateItem(1L, new ItemRequest("Oat milk", null, null, null, null, true));
 
-        assertThat(response).isEqualTo(itemResponse);
-        verify(itemMapper).updateItemFromRequest(request, item);
-        verifyNoMoreInteractions(itemRepository, itemMapper);
+        assertThat(response).isEqualTo(new ItemResponse(null, "Oat milk", "Fresh", "8000500179864", UnitEnum.L, null, true, null, null));
+        verifyNoMoreInteractions(itemRepository);
     }
 
     @Test
     void updateItem_throwEntityNotFound_whenItemDoesNotExist() {
+        var itemService = new ItemServiceImpl(itemRepository, new ItemMapperImpl());
         var request = new ItemRequest("Oat milk", null, null, null, null, false);
         when(itemRepository.findById(1L)).thenReturn(Optional.empty());
 
         assertThatExceptionOfType(EntityNotFoundException.class)
             .isThrownBy(() -> itemService.updateItem(1L, request))
             .withMessage("Item 1 not found");
-        verifyNoMoreInteractions(itemRepository, itemMapper);
+        verifyNoMoreInteractions(itemRepository);
     }
 
     @Test
     void deleteItem_deleteExistingItem() {
-        var item = Item.builder().id(1L).name("Milk").build();
+        var itemService = new ItemServiceImpl(itemRepository, new ItemMapperImpl());
+        var item = Item.create("Milk", null, null, null, null, false);
         when(itemRepository.findById(1L)).thenReturn(Optional.of(item));
 
         itemService.deleteItem(1L);
 
         verify(itemRepository).delete(item);
-        verifyNoMoreInteractions(itemRepository, itemMapper);
+        verifyNoMoreInteractions(itemRepository);
     }
 
     @Test
     void deleteItem_throwEntityNotFound_whenItemDoesNotExist() {
+        var itemService = new ItemServiceImpl(itemRepository, new ItemMapperImpl());
         when(itemRepository.findById(1L)).thenReturn(Optional.empty());
 
         assertThatExceptionOfType(EntityNotFoundException.class)
             .isThrownBy(() -> itemService.deleteItem(1L))
             .withMessage("Item 1 not found");
-        verifyNoMoreInteractions(itemRepository, itemMapper);
+        verifyNoMoreInteractions(itemRepository);
     }
 }

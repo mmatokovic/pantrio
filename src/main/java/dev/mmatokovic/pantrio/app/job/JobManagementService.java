@@ -6,13 +6,13 @@ import java.time.LocalDateTime;
 
 public interface JobManagementService {
 
-    void execute(Job job) throws Exception;
+    void execute(Job job);
 
-    void interrupt(String jobName) throws Exception;
+    void interrupt(String jobName);
 
-    LocalDateTime reschedule(String jobName, String triggerName, String cron) throws Exception;
+    LocalDateTime reschedule(String triggerName, String cron);
 
-    void changeState(String jobName, String newJobState) throws Exception;
+    void changeState(String jobName, JobStateEnum jobState);
 
-    String getJobStatus(String jobName, String triggerName) throws Exception;
+    String getJobStatus(String triggerName);
 }
