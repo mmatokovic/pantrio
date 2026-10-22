@@ -1,6 +1,11 @@
-package dev.mmatokovic.pantrio.product;
+package dev.mmatokovic.pantrio.infra.openfoodfacts;
 
-import com.github.tomakehurst.wiremock.junit5.WireMockTest;
+import dev.mmatokovic.pantrio.BaseIntegrationTest;
+import dev.mmatokovic.pantrio.domain.product.Product;
+import dev.mmatokovic.pantrio.infra.exception.NoSuchElementFoundException;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.client.HttpServerErrorException;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.get;
@@ -10,104 +15,96 @@ import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo;
 import static com.github.tomakehurst.wiremock.client.WireMock.verify;
 import static com.github.tomakehurst.wiremock.stubbing.Scenario.STARTED;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 
-import dev.mmatokovic.pantrio.BaseIntegrationTest;
-import dev.mmatokovic.pantrio.domain.product.Product;
-import dev.mmatokovic.pantrio.infra.exception.NoSuchElementFoundException;
-import dev.mmatokovic.pantrio.infra.openfoodfacts.OpenFoodFactsAdapter;
-import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.client.HttpServerErrorException;
-
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
-
-@WireMockTest
 class OpenFoodFactsAdapterIT extends BaseIntegrationTest {
 
     @Autowired
-    private OpenFoodFactsAdapter adapter;
+    private OpenFoodFactsAdapter openFoodFactsAdapter;
 
     @Test
-    void should_return_product_when_found() {
+    void getProductByBarcode_mapFoundProduct() {
         stubFor(get(urlPathEqualTo("/api/v2/product/737628064502"))
             .willReturn(okJson("""
                 {
                     "code": "737628064502",
                     "status": 1,
                     "product": {
+                        "code": "737628064502",
                         "product_name": "Pasta",
                         "product_quantity": 500,
                         "product_quantity_unit": "g",
                         "image_url": "https://example.com/pasta.jpg"
                     }
                 }
-            """)));
+                """)));
 
-        Product result = adapter.getProductByBarcode("737628064502");
+        var product = openFoodFactsAdapter.getProductByBarcode("737628064502");
 
-        assertThat(result)
-            .isNotNull()
-            .satisfies(p -> {
-                assertThat(p.productName()).isEqualTo("Pasta");
-                assertThat(p.code()).isEqualTo("737628064502");
-                assertThat(p.quantity()).isEqualTo(500);
-                assertThat(p.unit()).isEqualTo("g");
-            });
-
+        assertThat(product).isEqualTo(new Product("737628064502", "Pasta", 500L, "g", "https://example.com/pasta.jpg"));
         verify(1, getRequestedFor(urlPathEqualTo("/api/v2/product/737628064502")));
     }
 
     @Test
-    void should_return_not_found_when_not_found() {
+    void getProductByBarcode_throwNoSuchElementFound_whenApiReturns404() {
         stubFor(get(urlPathEqualTo("/api/v2/product/000000000000"))
             .willReturn(aResponse()
                 .withStatus(404)
                 .withHeader("Content-Type", "application/json")
                 .withBody("""
                     {"code":"000000000000","status":0,"status_verbose":"product not found"}
-                """)));
+                    """)));
 
-        assertThatThrownBy(() -> adapter.getProductByBarcode("000000000000"))
-            .isInstanceOf(NoSuchElementFoundException.class)
-            .hasMessageContaining("000000000000 not found");
+        assertThatExceptionOfType(NoSuchElementFoundException.class)
+            .isThrownBy(() -> openFoodFactsAdapter.getProductByBarcode("000000000000"))
+            .withMessage("Product 000000000000 not found");
     }
 
     @Test
-    void should_retry_on_server_error_and_succeed() {
+    void getProductByBarcode_throwNoSuchElementFound_whenStatusIsZero() {
+        stubFor(get(urlPathEqualTo("/api/v2/product/000000000000"))
+            .willReturn(okJson("""
+                {"code":"000000000000","status":0,"status_verbose":"product not found"}
+                """)));
+
+        assertThatExceptionOfType(NoSuchElementFoundException.class)
+            .isThrownBy(() -> openFoodFactsAdapter.getProductByBarcode("000000000000"))
+            .withMessage("Product 000000000000 not found");
+    }
+
+    @Test
+    void getProductByBarcode_retryServerErrorsUntilSuccess() {
         stubFor(get(urlPathEqualTo("/api/v2/product/737628064502"))
             .inScenario("retry")
             .whenScenarioStateIs(STARTED)
             .willReturn(aResponse().withStatus(500))
             .willSetStateTo("retry-1"));
-
         stubFor(get(urlPathEqualTo("/api/v2/product/737628064502"))
             .inScenario("retry")
             .whenScenarioStateIs("retry-1")
             .willReturn(aResponse().withStatus(500))
             .willSetStateTo("retry-2"));
-
         stubFor(get(urlPathEqualTo("/api/v2/product/737628064502"))
             .inScenario("retry")
             .whenScenarioStateIs("retry-2")
             .willReturn(okJson("""
-                {"code":"737628064502","status":1,"product":{"product_name":"Pasta"}}
-            """)));
+                {"code":"737628064502","status":1,"product":{"code":"737628064502","product_name":"Pasta"}}
+                """)));
 
-        Product result = adapter.getProductByBarcode("737628064502");
+        var product = openFoodFactsAdapter.getProductByBarcode("737628064502");
 
-        assertThat(result).isNotNull();
+        assertThat(product).isEqualTo(new Product("737628064502", "Pasta", null, null, null));
         verify(3, getRequestedFor(urlPathEqualTo("/api/v2/product/737628064502")));
     }
 
     @Test
-    void should_throw_after_retries_exhausted() {
+    void getProductByBarcode_throwServerError_whenRetriesAreExhausted() {
         stubFor(get(urlPathEqualTo("/api/v2/product/737628064502"))
             .willReturn(aResponse().withStatus(500)));
 
-        assertThatThrownBy(() -> adapter.getProductByBarcode("737628064502"))
-            .isInstanceOf(HttpServerErrorException.class);
-
+        assertThatExceptionOfType(HttpServerErrorException.class)
+            .isThrownBy(() -> openFoodFactsAdapter.getProductByBarcode("737628064502"));
         verify(3, getRequestedFor(urlPathEqualTo("/api/v2/product/737628064502")));
     }
 }

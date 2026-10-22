@@ -1,0 +1,46 @@
+version: 2
+updates:
+  - package-ecosystem: maven
+    directory: /
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 10
+    groups:
+      spring-boot:
+        patterns:
+          - "org.springframework.boot:*"
+      test:
+        patterns:
+          - "com.tngtech.archunit:*"
+          - "io.rest-assured:*"
+          - "org.wiremock.integrations:*"
+          - "org.openapitools.openapidiff:*"
+      build-plugins:
+        patterns:
+          - "com.google.errorprone:*"
+          - "com.puppycrawl.tools:*"
+          - "org.apache.maven.plugins:*"
+          - "org.jacoco:*"
+    ignore:
+      # Stay on stable releases; milestones and release candidates come in as new versions otherwise
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+
+  - package-ecosystem: docker
+    directory: /
+    schedule:
+      interval: weekly
+    ignore:
+      # The JDK major is pinned by the pom (java.version) and the enforcer rule
+      - dependency-name: "eclipse-temurin"
+        update-types: ["version-update:semver-major"]
+
+  - package-ecosystem: docker-compose
+    directory: /docker
+    schedule:
+      interval: monthly

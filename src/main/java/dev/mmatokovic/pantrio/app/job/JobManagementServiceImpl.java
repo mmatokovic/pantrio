@@ -12,8 +12,8 @@ import org.springframework.batch.core.launch.JobOperator;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Clock;
 import java.time.LocalDateTime;
-import java.time.ZoneId;
 
 @Service
 @RequiredArgsConstructor
@@ -21,11 +21,12 @@ public class JobManagementServiceImpl implements JobManagementService {
 
     private final Scheduler scheduler;
     private final JobOperator jobOperator;
+    private final Clock clock;
 
     @Override
     public void execute(Job job) throws Exception {
-        final var jobParams = new JobParametersBuilder()
-            .addLong("run.id", System.currentTimeMillis())
+        var jobParams = new JobParametersBuilder()
+            .addLong("run.id", clock.millis())
             .toJobParameters();
 
         jobOperator.start(job, jobParams);
@@ -40,13 +41,13 @@ public class JobManagementServiceImpl implements JobManagementService {
     @Transactional
     @Override
     public LocalDateTime reschedule(String jobName, String triggerName, String cron) throws Exception {
-        final var triggerKey = TriggerKey.triggerKey(triggerName);
-        final CronTrigger existingTrigger = (CronTrigger) scheduler.getTrigger(triggerKey);
-        final CronTrigger newTrigger = existingTrigger.getTriggerBuilder()
+        var triggerKey = TriggerKey.triggerKey(triggerName);
+        var existingTrigger = (CronTrigger) scheduler.getTrigger(triggerKey);
+        var newTrigger = existingTrigger.getTriggerBuilder()
             .withSchedule(CronScheduleBuilder.cronSchedule(cron).withMisfireHandlingInstructionDoNothing())
             .build();
 
-        return LocalDateTime.ofInstant(scheduler.rescheduleJob(triggerKey, newTrigger).toInstant(), ZoneId.systemDefault());
+        return LocalDateTime.ofInstant(scheduler.rescheduleJob(triggerKey, newTrigger).toInstant(), clock.getZone());
     }
 
     @Transactional
@@ -63,10 +64,9 @@ public class JobManagementServiceImpl implements JobManagementService {
 
     @Override
     public String getJobStatus(String jobName, String triggerName) throws Exception {
-        final var triggerKey = TriggerKey.triggerKey(triggerName);
-        final var triggerState = scheduler.getTriggerState(triggerKey);
+        var triggerKey = TriggerKey.triggerKey(triggerName);
+        var triggerState = scheduler.getTriggerState(triggerKey);
 
         return triggerState.name();
     }
-
 }

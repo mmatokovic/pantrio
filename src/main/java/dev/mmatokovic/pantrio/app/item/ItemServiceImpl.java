@@ -6,7 +6,6 @@ import dev.mmatokovic.pantrio.domain.item.ItemRequest;
 import dev.mmatokovic.pantrio.domain.item.ItemResponse;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
-import org.jspecify.annotations.NonNull;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -17,42 +16,43 @@ import java.util.List;
 @RequiredArgsConstructor
 public class ItemServiceImpl implements ItemService {
 
-    private final ItemRepository repo;
-    private final ItemMapper mapper;
+    private final ItemRepository itemRepository;
+    private final ItemMapper itemMapper;
 
     @Override
     @Transactional(readOnly = true)
     public List<ItemResponse> listItems(Pageable pageable) {
-        return mapper.toResponseList(repo.findAll(pageable).getContent());
+        return itemMapper.toResponseList(itemRepository.findAll(pageable).getContent());
     }
 
     @Override
     @Transactional(readOnly = true)
     public ItemResponse getItem(Long id) {
-        Item item = repo.findById(id)
-            .orElseThrow(() -> new EntityNotFoundException("Item " + id + " not found"));
-        return mapper.toResponse(item);
+        return itemMapper.toResponse(findItem(id));
     }
 
     @Override
     @Transactional
     public ItemResponse createItem(ItemRequest request) {
-        return mapper.toResponse(repo.save(mapper.toEntity(request)));
+        return itemMapper.toResponse(itemRepository.save(itemMapper.toEntity(request)));
     }
 
     @Override
     @Transactional
-    public ItemResponse updateItem(Long id, @NonNull ItemRequest request) {
-        Item item = repo.findById(id)
-            .orElseThrow(() -> new EntityNotFoundException("Item " + id + " not found"));
-        mapper.updateItemFromRequest(request, item);
-        return mapper.toResponse(repo.save(item));
+    public ItemResponse updateItem(Long id, ItemRequest request) {
+        var item = findItem(id);
+        itemMapper.updateItemFromRequest(request, item);
+        return itemMapper.toResponse(itemRepository.save(item));
     }
 
     @Override
     @Transactional
     public void deleteItem(Long id) {
-        repo.delete(repo.findById(id)
-            .orElseThrow(() -> new EntityNotFoundException("Item " + id + " not found")));
+        itemRepository.delete(findItem(id));
+    }
+
+    private Item findItem(Long id) {
+        return itemRepository.findById(id)
+            .orElseThrow(() -> new EntityNotFoundException("Item " + id + " not found"));
     }
 }

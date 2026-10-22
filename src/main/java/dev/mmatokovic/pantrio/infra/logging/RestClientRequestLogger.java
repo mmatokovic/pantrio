@@ -1,7 +1,9 @@
 package dev.mmatokovic.pantrio.infra.logging;
 
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpRequest;
 import org.springframework.http.HttpStatusCode;
@@ -9,85 +11,68 @@ import org.springframework.http.MediaType;
 import org.springframework.http.client.ClientHttpRequestExecution;
 import org.springframework.http.client.ClientHttpRequestInterceptor;
 import org.springframework.http.client.ClientHttpResponse;
-import org.springframework.stereotype.Component;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.time.Instant;
-import java.util.List;
-import java.util.UUID;
 
-import static dev.mmatokovic.pantrio.infra.logging.HttpLoggingUtils.MAX_BODY_BYTES;
-
-@Slf4j(topic = "audit.logger")
-@Component
+@Slf4j
+@RequiredArgsConstructor
 public final class RestClientRequestLogger implements ClientHttpRequestInterceptor {
 
-    private static final String REQUEST_ID_HEADER = "X-Request-Id";
-    private static final List<String> IGNORED_PREFIXES = List.of("/actuator");
+    private static final int RESPONSE_CACHE_LIMIT = 1024 * 1024;
+
+    private final HttpLoggingProperties properties;
 
     @Override
     public @NonNull ClientHttpResponse intercept(@NonNull HttpRequest request,
                                                  byte @NonNull [] body,
-                                                 @NonNull ClientHttpRequestExecution execution)
-        throws IOException {
+                                                 @NonNull ClientHttpRequestExecution execution) throws IOException {
+        var startNanos = System.nanoTime();
+        logRequest(request, body);
 
-        final var uri = request.getURI().toString();
-        final var path = request.getURI().getPath();
-        if (IGNORED_PREFIXES.stream().anyMatch(path::startsWith)) {
-            return execution.execute(request, body);
-        }
-
-        final var ctx = new LogContext(UUID.randomUUID().toString(), request.getMethod().name(), uri, request.getURI().getHost(), Instant.now());
-        request.getHeaders().set(REQUEST_ID_HEADER, ctx.requestId());
-
-        logRequest(ctx, request.getHeaders().getContentType(), body);
-
-        final var response = execution.execute(request, body);
-        final var contentType = response.getHeaders().getContentType();
-        final var contentLength = response.getHeaders().getContentLength();
-
-        if (HttpLoggingUtils.isBinaryContent(contentType) || contentLength > MAX_BODY_BYTES) {
-            logResponse(ctx, response.getStatusCode().value(), contentType, new byte[0], contentLength);
+        var response = execution.execute(request, body);
+        var contentType = response.getHeaders().getContentType();
+        var contentLength = response.getHeaders().getContentLength();
+        if (HttpLoggingUtils.isBinaryContent(contentType) || contentLength > RESPONSE_CACHE_LIMIT) {
+            logResponse(request, response.getStatusCode(), contentType, new byte[0], System.nanoTime() - startNanos);
             return response;
         }
 
-        final var responseBody = response.getBody().readNBytes(MAX_BODY_BYTES);
-        logResponse(ctx, response.getStatusCode().value(), contentType, responseBody, responseBody.length);
-
-        return new BufferingClientHttpResponseWrapper(response, responseBody);
+        var responseBody = response.getBody().readNBytes(RESPONSE_CACHE_LIMIT);
+        logResponse(request, response.getStatusCode(), contentType, responseBody, System.nanoTime() - startNanos);
+        return new BufferedClientHttpResponse(response, responseBody);
     }
 
-    private static void logRequest(LogContext ctx, MediaType contentType, byte[] body) {
+    private void logRequest(HttpRequest request, byte[] body) {
+        var contentType = request.getHeaders().getContentType();
         log.atInfo()
-            .addKeyValue("event.action", "request")
-            .addKeyValue("http.request.method", ctx.method())
-            .addKeyValue("url.full", ctx.uri())
-            .addKeyValue("server.address", ctx.source())
-            .addKeyValue("http.request.body.bytes", body.length)
-            .addKeyValue("http.request.body.content", HttpLoggingUtils.extractLoggableBody(contentType, body))
-            .log(">>> EXTERNAL {} {}", ctx.method(), ctx.uri());
+            .addKeyValue("bytes", body.length)
+            .addKeyValue("content", readableBody(HttpLoggingUtils.isLoggableContent(contentType), body, contentType))
+            .log("HTTP {} outbound request :: {}", request.getMethod(), request.getURI());
     }
 
-    private static void logResponse(LogContext ctx, int status,
-                                    MediaType contentType, byte[] body, long responseBytes) {
-        log.atInfo()
-            .addKeyValue("event.action", "response")
-            .addKeyValue("http.request.method", ctx.method())
-            .addKeyValue("url.full", ctx.uri())
-            .addKeyValue("server.address", ctx.source())
-            .addKeyValue("http.response.status_code", status)
-            .addKeyValue("event.duration", ctx.elapsedMs())
-            .addKeyValue("http.response.body.bytes", responseBytes)
-            .addKeyValue("http.response.body.content", HttpLoggingUtils.extractLoggableBody(contentType, body))
-            .log("<<< EXTERNAL {} {} {}", ctx.method(), ctx.uri(), status);
+    private void logResponse(HttpRequest request, HttpStatusCode status, @Nullable MediaType contentType, byte[] body, long durationNanos) {
+        var logBody = status.isError() || HttpLoggingUtils.isLoggableContent(contentType);
+        var event = status.is5xxServerError() ? log.atError() : status.isError() ? log.atWarn() : log.atInfo();
+        event
+            .addKeyValue("bytes", body.length)
+            .addKeyValue("content", readableBody(logBody, body, contentType))
+            .log("HTTP {} outbound response :: {} {} in {} ms", request.getMethod(), request.getURI(), status.value(), durationNanos / 1_000_000);
     }
 
-    private record BufferingClientHttpResponseWrapper(
-        ClientHttpResponse response,
-        byte[] body
-    ) implements ClientHttpResponse {
+    private @Nullable String readableBody(boolean shouldLog, byte[] body, @Nullable MediaType contentType) {
+        if (!shouldLog || body.length == 0) {
+            return null;
+        }
+        return HttpLoggingUtils.normalizeBody(body, contentType == null ? null : contentType.toString(), properties.maxBodyBytes());
+    }
+
+    @RequiredArgsConstructor
+    private static final class BufferedClientHttpResponse implements ClientHttpResponse {
+
+        private final ClientHttpResponse response;
+        private final byte[] body;
 
         @Override
         public @NonNull InputStream getBody() {

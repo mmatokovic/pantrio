@@ -5,20 +5,17 @@ import org.quartz.JobBuilder;
 import org.quartz.JobDetail;
 import org.quartz.Trigger;
 import org.quartz.TriggerBuilder;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-@Configuration
+@Configuration(proxyBeanMethods = false)
 public class QuartzConfig {
+
     public static final String JOB_NAME = "itemEnrichmentJob";
     public static final String TRIGGER_NAME = "itemEnrichmentTrigger";
 
-    @Value("${batch.job.schedule}")
-    private String cronExpression;
-
     @Bean
-    public JobDetail itemEnrichmentJobDetail() {
+    JobDetail itemEnrichmentJobDetail() {
         return JobBuilder.newJob(QuartzJob.class)
             .withIdentity(JOB_NAME)
             .storeDurably()
@@ -26,11 +23,11 @@ public class QuartzConfig {
     }
 
     @Bean
-    public Trigger itemEnrichmentTrigger(JobDetail itemEnrichmentJobDetail) {
+    Trigger itemEnrichmentTrigger(JobDetail itemEnrichmentJobDetail, BatchJobProperties batchJobProperties) {
         return TriggerBuilder.newTrigger()
             .forJob(itemEnrichmentJobDetail)
             .withIdentity(TRIGGER_NAME)
-            .withSchedule(CronScheduleBuilder.cronSchedule(cronExpression).withMisfireHandlingInstructionDoNothing())
+            .withSchedule(CronScheduleBuilder.cronSchedule(batchJobProperties.schedule()).withMisfireHandlingInstructionDoNothing())
             .build();
     }
 }

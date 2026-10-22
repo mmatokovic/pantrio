@@ -1,80 +1,59 @@
 package dev.mmatokovic.pantrio.contract;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import dev.mmatokovic.pantrio.BaseIntegrationTest;
+import io.restassured.RestAssured;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.IOUtils;
-import org.apache.commons.lang3.StringUtils;
 import org.junit.jupiter.api.Test;
 import org.openapitools.openapidiff.core.OpenApiCompare;
-import org.openapitools.openapidiff.core.model.ChangedOpenApi;
 import org.openapitools.openapidiff.core.output.MarkdownRender;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
-import org.springframework.security.test.context.support.WithMockUser;
-import dev.mmatokovic.pantrio.BaseIntegrationTest;
-import org.springframework.test.web.servlet.client.RestTestClient;
-import tools.jackson.databind.ObjectMapper;
+import org.springframework.http.HttpStatus;
+import tools.jackson.databind.json.JsonMapper;
 
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.util.Map;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.assertj.core.api.Assertions.assertThat;
 
-@WithMockUser(roles = "ADMIN")
+@Slf4j
 class ContractFreezeIT extends BaseIntegrationTest {
 
-    private static final Logger log = LoggerFactory.getLogger(ContractFreezeIT.class);
-
     @Autowired
-    private RestTestClient rest;
-
-    @Autowired
-    private ObjectMapper jackson;
+    private JsonMapper jsonMapper;
 
     @Value("classpath:/openapi.json")
-    private Resource expectedOpenAPI;
+    private Resource expectedOpenApi;
 
     @Test
-    void should_keep_openapi_contract_compatible_with_expected() throws Exception {
+    void apiDocs_staysCompatibleWithFrozenContract() throws IOException {
+        var actualOpenApiJson = prettify(RestAssured.given()
+            .auth().basic(USER_NAME, USER_PWD)
+            .when()
+            .get("/v3/api-docs")
+            .then()
+            .statusCode(HttpStatus.OK.value())
+            .extract().asString());
+        var expectedOpenApiJson = prettify(IOUtils.toString(expectedOpenApi.getInputStream(), UTF_8).replace(":8080", ""));
 
-        String actualOpenAPIJson = prettifyJsonString(
-            rest.get()
-                .uri("/v3/api-docs")
-                .headers(headers -> headers.setBasicAuth("user", "userpwd"))
-                .exchange()
-                .expectStatus().isOk()
-                .expectBody(String.class)
-                .returnResult()
-                .getResponseBody()
-        );
-
-        String expectedOpenAPIJson = prettifyJsonString(
-            IOUtils.toString(expectedOpenAPI.getInputStream(), UTF_8)
-                .replace(":8080", "")
-        );
-
-        ChangedOpenApi diff =
-            OpenApiCompare.fromContents(expectedOpenAPIJson, actualOpenAPIJson);
+        var diff = OpenApiCompare.fromContents(expectedOpenApiJson, actualOpenApiJson);
 
         if (!diff.isCompatible()) {
-            ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            new MarkdownRender().render(diff, new OutputStreamWriter(baos, UTF_8));
-            log.error("OpenAPI contract diff:\n{}", baos.toString(UTF_8));
-
-            assertThat(actualOpenAPIJson)
-                .describedAs("Exposed OpenAPI should not have changed")
-                .isEqualTo(expectedOpenAPIJson);
+            var markdown = new ByteArrayOutputStream();
+            new MarkdownRender().render(diff, new OutputStreamWriter(markdown, UTF_8));
+            log.error("OpenAPI contract diff:\n{}", markdown.toString(UTF_8));
         }
+        assertThat(diff.isCompatible())
+            .describedAs("Exposed OpenAPI must stay compatible with src/test/resources/openapi.json")
+            .isTrue();
     }
 
-    private String prettifyJsonString(String raw) {
-        if (StringUtils.isBlank(raw)) return raw;
-        return jackson.writerWithDefaultPrettyPrinter()
-            .writeValueAsString(
-                jackson.readValue(raw, Map.class)
-            );
+    private String prettify(String json) {
+        return jsonMapper.writerWithDefaultPrettyPrinter().writeValueAsString(jsonMapper.readValue(json, Map.class));
     }
 }

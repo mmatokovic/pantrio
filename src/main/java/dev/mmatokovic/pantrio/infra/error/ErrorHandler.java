@@ -5,15 +5,15 @@ import dev.mmatokovic.pantrio.infra.exception.NoSuchElementFoundException;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.validation.ConstraintViolationException;
 import lombok.extern.slf4j.Slf4j;
+import org.hibernate.exception.ConstraintViolationException.ConstraintKind;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
+import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
-import org.springframework.http.converter.HttpMessageNotReadableException;
-import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -21,110 +21,76 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.client.HttpServerErrorException;
 import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.context.request.WebRequest;
-import org.springframework.web.servlet.NoHandlerFoundException;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
-import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import java.util.List;
+import java.util.Locale;
+import java.util.Map;
 
-/**
- * Gracefully handles exception occurred during REST API call execution
- */
-@Slf4j(topic = "error.logger")
+@Slf4j
 @RestControllerAdvice
 public class ErrorHandler extends ResponseEntityExceptionHandler {
 
-    private ErrorResponse buildErrorResponse(Exception ex, String message, HttpStatusCode status) {
-        return buildErrorResponse(ex, message, status, null);
-    }
-
-    private ErrorResponse buildErrorResponse(Exception ex, String message, @NonNull HttpStatusCode status, List<ErrorResponse.ErrorInfo> errors) {
-        if (status.is5xxServerError()) {
-            log.error(ex.getMessage(), ex);
-        } else if (log.isDebugEnabled()) {
-            log.debug("[{}] {}", status.value(), message, ex);
-        }
-        return new ErrorResponse(status.value(), message, errors);
-    }
+    private static final Map<String, String> CONSTRAINT_MESSAGES = Map.of(
+        "pantrio.idx_items_barcode", "Item with same barcode already exists",
+        "pantrio.idx_storage_name", "Storage with this name already exists",
+        "pantrio.fk_item_instance_storage", "Referenced storage does not exist",
+        "pantrio.fk_item_instance_item", "Referenced item does not exist",
+        "pantrio.uk_item_instance_storage_item", "Item instance with same storage and item already exists"
+    );
 
     @ExceptionHandler(Exception.class)
-    public ResponseEntity<ErrorResponse> handleGlobalException(Exception ex) {
-        final var error = buildErrorResponse(ex, "Something went wrong", HttpStatus.INTERNAL_SERVER_ERROR);
-        return ResponseEntity.internalServerError().body(error);
+    ResponseEntity<Object> handleGlobalException(Exception ex, WebRequest request) {
+        return respond(ex, HttpStatus.INTERNAL_SERVER_ERROR, "Something went wrong", request);
     }
 
     @ExceptionHandler(DataIntegrityViolationException.class)
-    public ResponseEntity<ErrorResponse> handleDataIntegrityViolation(@NonNull DataIntegrityViolationException ex) {
-        String message = "Data integrity violation";
-        if (ex.getCause() instanceof org.hibernate.exception.ConstraintViolationException cve) {
-            String constraint = cve.getConstraintName();
-            if (constraint != null) {
-                message = switch (constraint.toLowerCase()) {
-                    case "pantrio.idx_items_barcode" -> "Item with same barcode already exists";
-                    case "pantrio.idx_storage_name" -> "Storage with this name already exists";
-                    case "pantrio.fk_item_instance_storage" -> "Referenced storage does not exist";
-                    case "pantrio.fk_item_instance_item" -> "Referenced item does not exist";
-                    case "pantrio.uk_item_instance_storage_item" -> "Item instance with same storage and item already exists";
-                    default -> "Data constraint violation " + cve.getKind().name().toLowerCase();
-                };
-            }
+    ResponseEntity<Object> handleDataIntegrityViolation(DataIntegrityViolationException ex, WebRequest request) {
+        var message = "Data integrity violation";
+        if (ex.getCause() instanceof org.hibernate.exception.ConstraintViolationException cve && cve.getConstraintName() != null) {
+            message = CONSTRAINT_MESSAGES.getOrDefault(cve.getConstraintName().toLowerCase(Locale.ROOT), constraintFallback(cve.getKind()));
         }
-
-        final var error = buildErrorResponse(ex, message, HttpStatus.CONFLICT);
-        return ResponseEntity.status(HttpStatus.CONFLICT).body(error);
+        return respond(ex, HttpStatus.CONFLICT, message, request);
     }
 
     @ExceptionHandler({NoSuchElementFoundException.class, EntityNotFoundException.class})
-    public ResponseEntity<ErrorResponse> handleNotFound(Exception ex) {
-        final var error = buildErrorResponse(ex, ex.getMessage() != null ? ex.getMessage() : "Resource not found", HttpStatus.NOT_FOUND);
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
+    ResponseEntity<Object> handleNotFound(RuntimeException ex, WebRequest request) {
+        return respond(ex, HttpStatus.NOT_FOUND, ex.getMessage() != null ? ex.getMessage() : "Resource not found", request);
     }
 
     @ExceptionHandler(ConflictException.class)
-    public ResponseEntity<ErrorResponse> handleConflictException(ConflictException ex) {
-        final var error = buildErrorResponse(ex, ex.getMessage() != null ? ex.getMessage() : "Duplicate resource", HttpStatus.CONFLICT);
-        return ResponseEntity.status(HttpStatus.CONFLICT).body(error);
+    ResponseEntity<Object> handleConflictException(ConflictException ex, WebRequest request) {
+        return respond(ex, HttpStatus.CONFLICT, ex.getMessage() != null ? ex.getMessage() : "Duplicate resource", request);
     }
 
     @ExceptionHandler(ConstraintViolationException.class)
-    public ResponseEntity<ErrorResponse> handleConstraintViolationException(@NonNull ConstraintViolationException ex) {
-        List<ErrorResponse.ErrorInfo> violations = ex.getConstraintViolations()
-            .stream()
-            .map(cv -> new ErrorResponse.ErrorInfo(cv.getPropertyPath().toString(), cv.getMessage()))
+    ResponseEntity<Object> handleConstraintViolationException(ConstraintViolationException ex, WebRequest request) {
+        var errors = ex.getConstraintViolations().stream()
+            .map(violation -> new ErrorResponse.ErrorInfo(violation.getPropertyPath().toString(), violation.getMessage()))
             .toList();
-
-        final var error = buildErrorResponse(ex, "Validation failed", HttpStatus.UNPROCESSABLE_CONTENT, violations);
-        return ResponseEntity.unprocessableContent().body(error);
+        var status = HttpStatus.UNPROCESSABLE_CONTENT;
+        return handleExceptionInternal(ex, new ErrorResponse(status.value(), "Validation failed", errors), new HttpHeaders(), status, request);
     }
 
     @ExceptionHandler(HttpServerErrorException.class)
-    public ResponseEntity<ErrorResponse> handleUpstreamServerError(HttpServerErrorException ex) {
-        final var error = buildErrorResponse(ex, "External service returned an error", HttpStatus.BAD_GATEWAY);
-        return ResponseEntity.status(HttpStatus.BAD_GATEWAY).body(error);
+    ResponseEntity<Object> handleUpstreamServerError(HttpServerErrorException ex, WebRequest request) {
+        return respond(ex, HttpStatus.BAD_GATEWAY, "External service returned an error", request);
     }
 
     @ExceptionHandler(ResourceAccessException.class)
-    public ResponseEntity<ErrorResponse> handleResourceAccessError(ResourceAccessException ex) {
-        final var error = buildErrorResponse(ex, "External service is unreachable", HttpStatus.SERVICE_UNAVAILABLE);
-        return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(error);
+    ResponseEntity<Object> handleResourceAccessError(ResourceAccessException ex, WebRequest request) {
+        return respond(ex, HttpStatus.SERVICE_UNAVAILABLE, "External service is unreachable", request);
     }
 
     @Override
-    protected @Nullable ResponseEntity<Object> handleHttpMessageNotReadable(@NonNull HttpMessageNotReadableException ex,
+    protected @Nullable ResponseEntity<Object> handleMethodArgumentNotValid(@NonNull MethodArgumentNotValidException ex,
                                                                             @NonNull HttpHeaders headers,
                                                                             @NonNull HttpStatusCode status,
                                                                             @NonNull WebRequest request) {
-        final var error = buildErrorResponse(ex, "Failed to read request", status);
-        return handleExceptionInternal(ex, error, headers, status, request);
-    }
-
-    @Override
-    protected @Nullable ResponseEntity<Object> handleHttpRequestMethodNotSupported(@NonNull HttpRequestMethodNotSupportedException ex,
-                                                                                   @NonNull HttpHeaders headers,
-                                                                                   @NonNull HttpStatusCode status,
-                                                                                   @NonNull WebRequest request) {
-        final var error = buildErrorResponse(ex, "HTTP method not allowed: " + ex.getMethod(), status);
-        return handleExceptionInternal(ex, error, headers, status, request);
+        var errors = ex.getBindingResult().getFieldErrors().stream()
+            .map(fieldError -> new ErrorResponse.ErrorInfo(fieldError.getField(), fieldError.getDefaultMessage()))
+            .toList();
+        return handleExceptionInternal(ex, new ErrorResponse(status.value(), "Validation failed", errors), headers, status, request);
     }
 
     @Override
@@ -132,56 +98,36 @@ public class ErrorHandler extends ResponseEntityExceptionHandler {
                                                                                     @NonNull HttpHeaders headers,
                                                                                     @NonNull HttpStatusCode status,
                                                                                     @NonNull WebRequest request) {
-        List<ErrorResponse.ErrorInfo> errors = List.of(
-            new ErrorResponse.ErrorInfo(ex.getParameterName(), "Parameter is required")
-        );
-
-        final var error = buildErrorResponse(ex, "Missing request parameter", status, errors);
-        return handleExceptionInternal(ex, error, headers, status, request);
-    }
-
-    @Override
-    protected ResponseEntity<Object> handleMethodArgumentNotValid(@NonNull MethodArgumentNotValidException ex,
-                                                                  @NonNull HttpHeaders headers,
-                                                                  @NonNull HttpStatusCode status,
-                                                                  @NonNull WebRequest request) {
-        List<ErrorResponse.ErrorInfo> errors = ex.getBindingResult().getFieldErrors()
-            .stream()
-            .map(fieldError -> new ErrorResponse.ErrorInfo(fieldError.getField(), fieldError.getDefaultMessage()))
-            .toList();
-
-        final var error = buildErrorResponse(ex, "Validation failed", status, errors);
-        return handleExceptionInternal(ex, error, headers, status, request);
-    }
-
-    @Override
-    protected ResponseEntity<Object> handleNoHandlerFoundException(@NonNull NoHandlerFoundException ex,
-                                                                   @NonNull HttpHeaders headers,
-                                                                   @NonNull HttpStatusCode status,
-                                                                   @NonNull WebRequest request) {
-        final var error = buildErrorResponse(ex, "No handler found for " + ex.getHttpMethod() + " " + ex.getRequestURL(), status);
-        return handleExceptionInternal(ex, error, headers, status, request);
-    }
-
-    @Override
-    protected @Nullable ResponseEntity<Object> handleNoResourceFoundException(@NonNull NoResourceFoundException ex,
-                                                                              @NonNull HttpHeaders headers,
-                                                                              @NonNull HttpStatusCode status,
-                                                                              @NonNull WebRequest request) {
-        final var error = buildErrorResponse(ex, "No resource found at " + ex.getResourcePath(), status);
-        return handleExceptionInternal(ex, error, headers, status, request);
+        var errors = List.of(new ErrorResponse.ErrorInfo(ex.getParameterName(), "Parameter is required"));
+        return handleExceptionInternal(ex, new ErrorResponse(status.value(), "Missing request parameter", errors), headers, status, request);
     }
 
     @Override
     public ResponseEntity<Object> handleExceptionInternal(@NonNull Exception ex,
-                                                          Object body,
+                                                          @Nullable Object body,
                                                           @NonNull HttpHeaders headers,
                                                           @NonNull HttpStatusCode status,
                                                           @NonNull WebRequest request) {
-        if (!(body instanceof ErrorResponse)) {
-            body = buildErrorResponse(ex, "An unexpected error occurred", status);
-        }
+        (status.is5xxServerError() ? log.atError() : log.atDebug())
+            .setCause(ex)
+            .addKeyValue("status_code", status.value())
+            .addKeyValue("error.type", ex.getClass().getName())
+            .log("Request failed: {}", request.getDescription(false));
 
-        return super.handleExceptionInternal(ex, body, headers, status, request);
+        Object response = switch (body) {
+            case ErrorResponse errorResponse -> errorResponse;
+            case ProblemDetail problemDetail when problemDetail.getDetail() != null ->
+                new ErrorResponse(status.value(), problemDetail.getDetail(), null);
+            case null, default -> new ErrorResponse(status.value(), "An unexpected error occurred", null);
+        };
+        return super.handleExceptionInternal(ex, response, headers, status, request);
+    }
+
+    private ResponseEntity<Object> respond(Exception ex, HttpStatus status, String message, WebRequest request) {
+        return handleExceptionInternal(ex, new ErrorResponse(status.value(), message, null), new HttpHeaders(), status, request);
+    }
+
+    private static String constraintFallback(@Nullable ConstraintKind kind) {
+        return kind == null ? "Data constraint violation" : "Data constraint violation " + kind.name().toLowerCase(Locale.ROOT);
     }
 }
