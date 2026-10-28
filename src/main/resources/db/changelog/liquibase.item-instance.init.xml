@@ -64,4 +64,16 @@
             <column name="storage_id"/>
         </createIndex>
     </changeSet>
+
+    <!-- Oracle does not index foreign key columns; uk_item_instance_storage_item only covers storage_id first -->
+    <changeSet id="6" author="pantrio">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <indexExists tableName="item_instance" columnNames="item_id"/>
+            </not>
+        </preConditions>
+        <createIndex tableName="item_instance" indexName="idx_item_instance_item">
+            <column name="item_id"/>
+        </createIndex>
+    </changeSet>
 </databaseChangeLog>

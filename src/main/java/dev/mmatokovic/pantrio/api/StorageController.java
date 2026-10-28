@@ -29,7 +29,7 @@ import java.util.List;
 
 @RestController
 @Tag(name = "Storage")
-@RequestMapping("/storages")
+@RequestMapping(path = "/storages", version = "v1")
 @RequiredArgsConstructor
 public class StorageController {
 

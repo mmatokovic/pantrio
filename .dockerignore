@@ -1,23 +1,25 @@
-target/**
-!target/*.war
-!target/*.jar
 **/target/**
 !**/target/*.jar
-
-*.env
 
 .mvn/
 mvnw
 mvnw.cmd
 
-helm/
-
 .idea/
 .vscode/
 *.iml
+.DS_Store
+Thumbs.db
 
+# VCS
 .git/
 .gitignore
+.gitattributes
+
+Jenkinsfile*
+checkstyle.xml
+lombok.config
+.editorconfig
 
 *.log
 logs/
@@ -25,16 +27,15 @@ tmp/
 *.tmp
 *.bak
 *.swp
-.DS_Store
-Thumbs.db
+*~
 
-surefire-reports/
-failsafe-reports/
-test-output/
+README.md
+README*.md
 
-.gitattributes
-.editorconfig
-checkstyle.xml
-Jenkinsfile*
-Dockerfile*
-docker-compose*.yml
+# Local only
+.env
+*.env
+.claude/
+.github/
+docker/
+wiki/

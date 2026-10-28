@@ -27,7 +27,7 @@ class ProductControllerIT extends BaseIntegrationTest {
         ProductResponse response = RestAssured.given()
             .auth().basic(USER_NAME, USER_PWD)
             .when()
-            .get("/products/737628064502")
+            .get("/api/v1/products/737628064502")
             .then()
             .statusCode(HttpStatus.OK.value())
             .extract().as(ProductResponse.class);
@@ -44,7 +44,7 @@ class ProductControllerIT extends BaseIntegrationTest {
         RestAssured.given()
             .auth().basic(USER_NAME, USER_PWD)
             .when()
-            .get("/products/737628064502")
+            .get("/api/v1/products/737628064502")
             .then()
             .statusCode(HttpStatus.NOT_FOUND.value());
     }
@@ -54,7 +54,7 @@ class ProductControllerIT extends BaseIntegrationTest {
         RestAssured.given()
             .auth().basic(USER_NAME, USER_PWD)
             .when()
-            .get("/products/737628064503")
+            .get("/api/v1/products/737628064503")
             .then()
             .statusCode(HttpStatus.UNPROCESSABLE_CONTENT.value());
 

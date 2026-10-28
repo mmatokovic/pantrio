@@ -1,6 +1,8 @@
 package dev.mmatokovic.pantrio.infra.error;
 
 import dev.mmatokovic.pantrio.infra.exception.ConflictException;
+import dev.mmatokovic.pantrio.infra.exception.InvalidRequestException;
+import dev.mmatokovic.pantrio.infra.exception.JobManagementException;
 import dev.mmatokovic.pantrio.infra.exception.NoSuchElementFoundException;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.validation.ConstraintViolationException;
@@ -21,6 +23,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.client.HttpServerErrorException;
 import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.context.request.WebRequest;
+import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 
 import java.util.List;
@@ -56,6 +59,16 @@ public class ErrorHandler extends ResponseEntityExceptionHandler {
     @ExceptionHandler({NoSuchElementFoundException.class, EntityNotFoundException.class})
     ResponseEntity<Object> handleNotFound(RuntimeException ex, WebRequest request) {
         return respond(ex, HttpStatus.NOT_FOUND, ex.getMessage() != null ? ex.getMessage() : "Resource not found", request);
+    }
+
+    @ExceptionHandler(InvalidRequestException.class)
+    ResponseEntity<Object> handleInvalidRequest(InvalidRequestException ex, WebRequest request) {
+        return respond(ex, HttpStatus.BAD_REQUEST, ex.getMessage(), request);
+    }
+
+    @ExceptionHandler(JobManagementException.class)
+    ResponseEntity<Object> handleJobManagement(JobManagementException ex, WebRequest request) {
+        return respond(ex, HttpStatus.INTERNAL_SERVER_ERROR, "Job management failed", request);
     }
 
     @ExceptionHandler(ConflictException.class)
@@ -118,13 +131,19 @@ public class ErrorHandler extends ResponseEntityExceptionHandler {
             case ErrorResponse errorResponse -> errorResponse;
             case ProblemDetail problemDetail when problemDetail.getDetail() != null ->
                 new ErrorResponse(status.value(), problemDetail.getDetail(), null);
-            case null, default -> new ErrorResponse(status.value(), "An unexpected error occurred", null);
+            case null, default -> new ErrorResponse(status.value(), fallbackMessage(ex), null);
         };
         return super.handleExceptionInternal(ex, response, headers, status, request);
     }
 
     private ResponseEntity<Object> respond(Exception ex, HttpStatus status, String message, WebRequest request) {
         return handleExceptionInternal(ex, new ErrorResponse(status.value(), message, null), new HttpHeaders(), status, request);
+    }
+
+    private static String fallbackMessage(Exception ex) {
+        return ex instanceof ResponseStatusException responseStatusException && responseStatusException.getReason() != null
+            ? responseStatusException.getReason()
+            : "An unexpected error occurred";
     }
 
     private static String constraintFallback(@Nullable ConstraintKind kind) {

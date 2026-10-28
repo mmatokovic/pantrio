@@ -45,7 +45,7 @@ class StorageControllerIT extends BaseIntegrationTest {
             .contentType(ContentType.JSON)
             .body(new StorageRequest("Fridge", "Kitchen fridge", false))
             .when()
-            .post("/storages")
+            .post("/api/v1/storages")
             .then()
             .statusCode(HttpStatus.CREATED.value())
             .extract().as(StorageResponse.class);
@@ -66,7 +66,7 @@ class StorageControllerIT extends BaseIntegrationTest {
             .contentType(ContentType.JSON)
             .body(new StorageRequest("Fridge", null, false))
             .when()
-            .post("/storages")
+            .post("/api/v1/storages")
             .then()
             .statusCode(HttpStatus.CONFLICT.value());
     }
@@ -79,7 +79,7 @@ class StorageControllerIT extends BaseIntegrationTest {
             .contentType(ContentType.JSON)
             .body(new StorageRequest(name, null, false))
             .when()
-            .post("/storages")
+            .post("/api/v1/storages")
             .then()
             .statusCode(HttpStatus.BAD_REQUEST.value());
     }
@@ -91,7 +91,7 @@ class StorageControllerIT extends BaseIntegrationTest {
         StorageResponse response = RestAssured.given()
             .auth().basic(USER_NAME, USER_PWD)
             .when()
-            .get("/storages/1")
+            .get("/api/v1/storages/1")
             .then()
             .statusCode(HttpStatus.OK.value())
             .extract().as(StorageResponse.class);
@@ -105,7 +105,7 @@ class StorageControllerIT extends BaseIntegrationTest {
         RestAssured.given()
             .auth().basic(USER_NAME, USER_PWD)
             .when()
-            .get("/storages/999")
+            .get("/api/v1/storages/999")
             .then()
             .statusCode(HttpStatus.NOT_FOUND.value());
     }
@@ -118,7 +118,7 @@ class StorageControllerIT extends BaseIntegrationTest {
         List<StorageResponse> response = RestAssured.given()
             .auth().basic(USER_NAME, USER_PWD)
             .when()
-            .get("/storages")
+            .get("/api/v1/storages")
             .then()
             .statusCode(HttpStatus.OK.value())
             .extract().as(new TypeRef<>() { });
@@ -138,7 +138,7 @@ class StorageControllerIT extends BaseIntegrationTest {
             .contentType(ContentType.JSON)
             .body(new StorageRequest("Pantry", "Dry goods", false))
             .when()
-            .put("/storages/1")
+            .put("/api/v1/storages/1")
             .then()
             .statusCode(HttpStatus.OK.value())
             .extract().as(StorageResponse.class);
@@ -157,7 +157,7 @@ class StorageControllerIT extends BaseIntegrationTest {
         RestAssured.given()
             .auth().basic(USER_NAME, USER_PWD)
             .when()
-            .delete("/storages/1")
+            .delete("/api/v1/storages/1")
             .then()
             .statusCode(HttpStatus.NO_CONTENT.value());
 
@@ -174,7 +174,7 @@ class StorageControllerIT extends BaseIntegrationTest {
             .contentType(ContentType.JSON)
             .body(new StorageItemRequest(10L, 2, LocalDate.of(2026, 11, 1)))
             .when()
-            .post("/storages/1/items")
+            .post("/api/v1/storages/1/items")
             .then()
             .statusCode(HttpStatus.CREATED.value())
             .extract().as(StorageItemResponse.class);
@@ -202,7 +202,7 @@ class StorageControllerIT extends BaseIntegrationTest {
             .contentType(ContentType.JSON)
             .body(new StorageItemRequest(10L, 1, null))
             .when()
-            .post("/storages/999/items")
+            .post("/api/v1/storages/999/items")
             .then()
             .statusCode(HttpStatus.NOT_FOUND.value());
     }
@@ -216,7 +216,7 @@ class StorageControllerIT extends BaseIntegrationTest {
             .contentType(ContentType.JSON)
             .body(new StorageItemRequest(999L, 1, null))
             .when()
-            .post("/storages/1/items")
+            .post("/api/v1/storages/1/items")
             .then()
             .statusCode(HttpStatus.NOT_FOUND.value());
     }
@@ -232,7 +232,7 @@ class StorageControllerIT extends BaseIntegrationTest {
         List<StorageItemResponse> response = RestAssured.given()
             .auth().basic(USER_NAME, USER_PWD)
             .when()
-            .get("/storages/1/items")
+            .get("/api/v1/storages/1/items")
             .then()
             .statusCode(HttpStatus.OK.value())
             .extract().as(new TypeRef<>() { });
@@ -259,7 +259,7 @@ class StorageControllerIT extends BaseIntegrationTest {
         StorageItemResponse response = RestAssured.given()
             .auth().basic(USER_NAME, USER_PWD)
             .when()
-            .get("/storages/1/items/10")
+            .get("/api/v1/storages/1/items/10")
             .then()
             .statusCode(HttpStatus.OK.value())
             .extract().as(StorageItemResponse.class);
@@ -288,7 +288,7 @@ class StorageControllerIT extends BaseIntegrationTest {
             .contentType(ContentType.JSON)
             .body(new StorageItemUpdateRequest(10, LocalDate.of(2026, 12, 31)))
             .when()
-            .put("/storages/1/items/10")
+            .put("/api/v1/storages/1/items/10")
             .then()
             .statusCode(HttpStatus.OK.value())
             .extract().as(StorageItemResponse.class);
@@ -318,7 +318,7 @@ class StorageControllerIT extends BaseIntegrationTest {
         RestAssured.given()
             .auth().basic(USER_NAME, USER_PWD)
             .when()
-            .delete("/storages/1/items/10")
+            .delete("/api/v1/storages/1/items/10")
             .then()
             .statusCode(HttpStatus.NO_CONTENT.value());
 

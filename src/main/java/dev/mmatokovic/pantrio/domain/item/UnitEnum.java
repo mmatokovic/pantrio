@@ -1,7 +1,10 @@
 package dev.mmatokovic.pantrio.domain.item;
 
 import com.fasterxml.jackson.annotation.JsonValue;
+import lombok.Getter;
+import lombok.RequiredArgsConstructor;
 
+@RequiredArgsConstructor
 public enum UnitEnum {
     PCS("pcs"),
     G("g"),
@@ -9,16 +12,8 @@ public enum UnitEnum {
     L("l"),
     ML("ml");
 
+    @Getter(onMethod_ = @JsonValue)
     private final String value;
-
-    UnitEnum(String value) {
-        this.value = value;
-    }
-
-    @JsonValue
-    public String getValue() {
-        return value;
-    }
 
     @Override
     public String toString() {

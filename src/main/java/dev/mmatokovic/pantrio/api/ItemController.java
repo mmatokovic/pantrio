@@ -26,7 +26,7 @@ import java.util.List;
 
 @RestController
 @Tag(name = "Item")
-@RequestMapping("/items")
+@RequestMapping(path = "/items", version = "v1")
 @RequiredArgsConstructor
 public class ItemController {
 

@@ -5,39 +5,40 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.SequenceGenerator;
 import jakarta.persistence.Table;
 import jakarta.persistence.Version;
 import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import lombok.Setter;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
+import org.jspecify.annotations.Nullable;
 
 import java.time.LocalDateTime;
 
 @Getter
-@Setter
-@NoArgsConstructor
-@AllArgsConstructor
-@Builder
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Entity
 @Table(name = "STORAGE")
 public class Storage {
+
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "storage_seq")
+    @SequenceGenerator(name = "storage_seq", sequenceName = "STORAGE_SEQ", allocationSize = 50)
+    @Column(name = "ID", updatable = false, nullable = false)
     private Long id;
-    @Column(unique = true)
+
+    @Column(name = "NAME", unique = true, nullable = false)
     private String name;
+
+    @Column(name = "DESCRIPTION")
     private String description;
 
     @Column(name = "DISABLED", nullable = false)
     private boolean disabled;
 
     @Version
-    @Setter(AccessLevel.NONE)
     @Column(name = "VERSION", nullable = false)
     private Integer version;
 
@@ -48,4 +49,18 @@ public class Storage {
     @UpdateTimestamp
     @Column(name = "UPDATED_AT")
     private LocalDateTime updatedAt;
+
+    public static Storage create(String name, @Nullable String description, @Nullable Boolean disabled) {
+        var storage = new Storage();
+        storage.name = name;
+        storage.description = description;
+        storage.disabled = disabled != null && disabled;
+        return storage;
+    }
+
+    public void update(String name, @Nullable String description, @Nullable Boolean disabled) {
+        this.name = name;
+        this.description = description;
+        this.disabled = disabled != null && disabled;
+    }
 }

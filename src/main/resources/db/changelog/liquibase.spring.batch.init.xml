@@ -12,4 +12,27 @@
                  endDelimiter=";" stripComments="true" />
     </changeSet>
 
+
+    <!-- Oracle does not index foreign key columns; schema-oracle.sql already indexes BATCH_JOB_EXECUTION_PARAMS -->
+    <changeSet id="batch-je-job-instance-fk-index" author="pantrio" dbms="oracle">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <indexExists tableName="BATCH_JOB_EXECUTION" columnNames="JOB_INSTANCE_ID"/>
+            </not>
+        </preConditions>
+        <createIndex tableName="BATCH_JOB_EXECUTION" indexName="BATCH_JE_JOB_INST_ID_IX">
+            <column name="JOB_INSTANCE_ID"/>
+        </createIndex>
+    </changeSet>
+
+    <changeSet id="batch-se-job-execution-fk-index" author="pantrio" dbms="oracle">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <indexExists tableName="BATCH_STEP_EXECUTION" columnNames="JOB_EXECUTION_ID"/>
+            </not>
+        </preConditions>
+        <createIndex tableName="BATCH_STEP_EXECUTION" indexName="BATCH_SE_JOB_EXEC_ID_IX">
+            <column name="JOB_EXECUTION_ID"/>
+        </createIndex>
+    </changeSet>
 </databaseChangeLog>
