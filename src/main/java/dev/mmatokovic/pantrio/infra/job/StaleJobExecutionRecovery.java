@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.batch.core.launch.JobOperator;
 import org.springframework.batch.core.repository.JobRepository;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
@@ -12,6 +13,7 @@ import static dev.mmatokovic.pantrio.infra.job.QuartzConfig.JOB_NAME;
 
 @Slf4j
 @Component
+@ConditionalOnProperty(name = "spring.quartz.properties.org.quartz.jobStore.isClustered", havingValue = "false", matchIfMissing = true)
 @RequiredArgsConstructor
 class StaleJobExecutionRecovery {
 
