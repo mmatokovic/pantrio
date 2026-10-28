@@ -27,6 +27,8 @@ public abstract class BaseIntegrationTest {
     protected static final String USER_NAME = "user";
     protected static final String USER_PWD = "userpwd";
 
+    protected JdbcTemplate jdbcTemplate;
+
     @LocalServerPort
     private int port;
 
@@ -34,6 +36,19 @@ public abstract class BaseIntegrationTest {
     void setUpRestAssured() {
         RestAssured.port = port;
         RestAssured.basePath = "";
+        jdbcTemplate = SeedJdbcTemplateHolder.JDBC_TEMPLATE;
+    }
+
+    private static final class SeedJdbcTemplateHolder {
+
+        private static final JdbcTemplate JDBC_TEMPLATE = createSeedJdbcTemplate();
+
+        private static JdbcTemplate createSeedJdbcTemplate() {
+            var container = TestContainersConfig.DATABASE_CONTAINER;
+            var seedDataSource = new SingleConnectionDataSource(container.getJdbcUrl(), container.getUsername(), container.getPassword(), true);
+            seedDataSource.setAutoCommit(true);
+            return new JdbcTemplate(seedDataSource);
+        }
     }
 
     @TestConfiguration(proxyBeanMethods = false)
@@ -48,14 +63,6 @@ public abstract class BaseIntegrationTest {
         @ServiceConnection
         OracleContainer databaseContainer() {
             return DATABASE_CONTAINER;
-        }
-
-        @Bean
-        JdbcTemplate jdbcTemplate(OracleContainer databaseContainer) {
-            var seedDataSource = new SingleConnectionDataSource(
-                databaseContainer.getJdbcUrl(), databaseContainer.getUsername(), databaseContainer.getPassword(), true);
-            seedDataSource.setAutoCommit(true);
-            return new JdbcTemplate(seedDataSource);
         }
     }
 }
