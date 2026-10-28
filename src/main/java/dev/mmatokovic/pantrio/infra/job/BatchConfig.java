@@ -8,20 +8,28 @@ import dev.mmatokovic.pantrio.infra.exception.NoSuchElementFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.jspecify.annotations.Nullable;
+import org.springframework.batch.core.configuration.annotation.StepScope;
 import org.springframework.batch.core.job.Job;
 import org.springframework.batch.core.job.builder.JobBuilder;
 import org.springframework.batch.core.repository.JobRepository;
 import org.springframework.batch.core.step.Step;
 import org.springframework.batch.core.step.builder.StepBuilder;
 import org.springframework.batch.infrastructure.item.ItemProcessor;
-import org.springframework.batch.infrastructure.item.ItemReader;
 import org.springframework.batch.infrastructure.item.ItemWriter;
+import org.springframework.batch.infrastructure.item.database.JdbcPagingItemReader;
 import org.springframework.batch.infrastructure.item.database.Order;
 import org.springframework.batch.infrastructure.item.database.builder.JdbcPagingItemReaderBuilder;
 import org.springframework.context.annotation.Bean;
+import org.springframework.boot.batch.autoconfigure.BatchTaskExecutor;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.task.SimpleAsyncTaskExecutor;
+import org.springframework.core.task.TaskExecutor;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.web.client.RestClientException;
 
 import javax.sql.DataSource;
+import java.time.Clock;
+import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.Map;
 
@@ -34,18 +42,19 @@ public class BatchConfig {
 
     private static final int CHUNK_SIZE = 10;
     private static final int PAGE_SIZE = 100;
-    private static final int SKIP_LIMIT = 2;
+    private static final int SKIP_LIMIT = 20;
 
     private final JobRepository jobRepository;
 
     @Bean
-    ItemReader<Long> reader(DataSource dataSource) throws Exception {
+    @StepScope
+    JdbcPagingItemReader<Long> reader(DataSource dataSource) throws Exception {
         return new JdbcPagingItemReaderBuilder<Long>()
             .name("itemReader")
             .dataSource(dataSource)
             .selectClause("SELECT id")
             .fromClause("FROM items")
-            .whereClause("WHERE barcode IS NOT NULL AND picture_url IS NULL")
+            .whereClause("WHERE barcode IS NOT NULL AND enriched_at IS NULL")
             .sortKeys(Map.of("id", Order.ASCENDING))
             .pageSize(PAGE_SIZE)
             .rowMapper((resultSet, rowNumber) -> resultSet.getLong("id"))
@@ -53,9 +62,9 @@ public class BatchConfig {
     }
 
     @Bean
-    ItemProcessor<Long, Item> processor(ItemRepository itemRepository, ProductRepository productRepository) {
+    ItemProcessor<Long, Item> processor(ItemRepository itemRepository, ProductRepository productRepository, Clock clock) {
         return itemId -> itemRepository.findById(itemId)
-            .map(item -> enrichItem(item, productRepository))
+            .map(item -> enrichItem(item, productRepository, LocalDateTime.now(clock)))
             .orElse(null);
     }
 
@@ -65,16 +74,26 @@ public class BatchConfig {
     }
 
     @Bean
-    Step itemEnrichmentStep(ItemReader<Long> reader,
+    @BatchTaskExecutor
+    static TaskExecutor batchTaskExecutor() {
+        var taskExecutor = new SimpleAsyncTaskExecutor("pantrio-batch-");
+        taskExecutor.setConcurrencyLimit(1);
+        return taskExecutor;
+    }
+
+    @Bean
+    Step itemEnrichmentStep(JdbcPagingItemReader<Long> reader,
                             ItemProcessor<Long, Item> processor,
-                            ItemWriter<Item> writer) {
+                            ItemWriter<Item> writer,
+                            PlatformTransactionManager transactionManager) {
         return new StepBuilder("itemEnrichmentStep", jobRepository)
             .<Long, Item>chunk(CHUNK_SIZE)
+            .transactionManager(transactionManager)
             .reader(reader)
             .processor(processor)
             .writer(writer)
             .faultTolerant()
-            .skip(NoSuchElementFoundException.class)
+            .skip(RestClientException.class)
             .skipLimit(SKIP_LIMIT)
             .build();
     }
@@ -86,14 +105,19 @@ public class BatchConfig {
             .build();
     }
 
-    private static @Nullable Item enrichItem(Item item, ProductRepository productRepository) {
+    private static @Nullable Item enrichItem(Item item, ProductRepository productRepository, LocalDateTime now) {
         if (item.getBarcode() == null) {
             log.atWarn().addKeyValue("item_id", item.getId()).log("Item has no barcode, skipping enrichment");
             return null;
         }
 
-        var product = productRepository.getProductByBarcode(item.getBarcode());
-        item.enrich(product.productName(), product.imageUrl(), toUnit(product.unit(), item.getBarcode()));
+        try {
+            var product = productRepository.getProductByBarcode(item.getBarcode());
+            item.enrich(product.productName(), product.imageUrl(), toUnit(product.unit(), item.getBarcode()), now);
+        } catch (NoSuchElementFoundException e) {
+            log.atInfo().addKeyValue("item_id", item.getId()).addKeyValue("barcode", item.getBarcode()).log("Product not found, item will not be enriched");
+            item.markEnrichmentAttempted(now);
+        }
         return item;
     }
 

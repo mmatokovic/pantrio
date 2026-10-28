@@ -1,9 +1,11 @@
 package dev.mmatokovic.pantrio.app.job;
 
+import dev.mmatokovic.pantrio.infra.exception.ConflictException;
 import dev.mmatokovic.pantrio.infra.exception.InvalidRequestException;
 import dev.mmatokovic.pantrio.infra.exception.JobManagementException;
 import dev.mmatokovic.pantrio.infra.exception.NoSuchElementFoundException;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.quartz.CronExpression;
 import org.quartz.CronScheduleBuilder;
 import org.quartz.CronTrigger;
@@ -14,40 +16,54 @@ import org.quartz.TriggerKey;
 import org.springframework.batch.core.job.Job;
 import org.springframework.batch.core.job.JobExecutionException;
 import org.springframework.batch.core.job.parameters.JobParametersBuilder;
+import org.springframework.batch.core.launch.JobExecutionNotRunningException;
 import org.springframework.batch.core.launch.JobOperator;
+import org.springframework.batch.core.repository.JobRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Clock;
 import java.time.LocalDateTime;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class JobManagementServiceImpl implements JobManagementService {
 
     private final Scheduler scheduler;
+    private final Job generateItemEnrichmentJob;
     private final JobOperator jobOperator;
+    private final JobRepository jobRepository;
     private final Clock clock;
 
     @Override
-    public void execute(Job job) {
+    public void execute() {
+        var jobName = generateItemEnrichmentJob.getName();
+        if (!jobRepository.findRunningJobExecutions(jobName).isEmpty()) {
+            throw new ConflictException("Job " + jobName + " is already running");
+        }
         var jobParameters = new JobParametersBuilder()
             .addLong("run.id", clock.millis())
             .toJobParameters();
         try {
-            jobOperator.start(job, jobParameters);
+            jobOperator.start(generateItemEnrichmentJob, jobParameters);
         } catch (JobExecutionException e) {
-            throw new JobManagementException("Job " + job.getName() + " could not be started", e);
+            throw new JobManagementException("Job " + jobName + " could not be started", e);
         }
     }
 
     @Override
-    @Transactional
     public void interrupt(String jobName) {
-        try {
-            scheduler.interrupt(new JobKey(jobName));
-        } catch (SchedulerException e) {
-            throw new JobManagementException("Job " + jobName + " could not be interrupted", e);
+        var runningExecutions = jobRepository.findRunningJobExecutions(jobName);
+        if (runningExecutions.isEmpty()) {
+            throw new ConflictException("Job " + jobName + " is not running");
+        }
+        for (var jobExecution : runningExecutions) {
+            try {
+                jobOperator.stop(jobExecution);
+            } catch (JobExecutionNotRunningException e) {
+                log.atDebug().addKeyValue("job", jobName).addKeyValue("job_execution_id", jobExecution.getId()).log("Job execution already finished");
+            }
         }
     }
 
