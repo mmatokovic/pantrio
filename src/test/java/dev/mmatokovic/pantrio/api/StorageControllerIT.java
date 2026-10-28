@@ -7,6 +7,7 @@ import dev.mmatokovic.pantrio.domain.storage.StorageItemResponse;
 import dev.mmatokovic.pantrio.domain.storage.StorageItemUpdateRequest;
 import dev.mmatokovic.pantrio.domain.storage.StorageRequest;
 import dev.mmatokovic.pantrio.domain.storage.StorageResponse;
+import dev.mmatokovic.pantrio.infra.error.ErrorResponse;
 import io.restassured.RestAssured;
 import io.restassured.common.mapper.TypeRef;
 import io.restassured.http.ContentType;
@@ -15,6 +16,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.NullAndEmptySource;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.jdbc.core.JdbcTemplate;
 
@@ -23,6 +25,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.hamcrest.Matchers.endsWith;
 
 class StorageControllerIT extends BaseIntegrationTest {
 
@@ -165,6 +168,25 @@ class StorageControllerIT extends BaseIntegrationTest {
     }
 
     @Test
+    void deleteStorage_returns409_whenStorageStillHoldsStock() {
+        jdbcTemplate.update("INSERT INTO storage (id, name, created_at, updated_at) VALUES (1, 'Fridge', ?, ?)", CREATED_AT, CREATED_AT);
+        jdbcTemplate.update("INSERT INTO items (id, name, created_at, updated_at) VALUES (10, 'Milk', ?, ?)", CREATED_AT, CREATED_AT);
+        jdbcTemplate.update(
+            "INSERT INTO item_instance (id, storage_id, item_id, quantity, created_at, updated_at) VALUES (100, 1, 10, 3, ?, ?)",
+            CREATED_AT, CREATED_AT);
+
+        ErrorResponse response = RestAssured.given()
+            .auth().basic(USER_NAME, USER_PWD)
+            .when()
+            .delete("/api/v1/storages/1")
+            .then()
+            .statusCode(HttpStatus.CONFLICT.value())
+            .extract().as(ErrorResponse.class);
+
+        assertThat(response).isEqualTo(new ErrorResponse(409, "Storage still holds stock", null));
+    }
+
+    @Test
     void addItem_returns201WithStockedItem() {
         jdbcTemplate.update("INSERT INTO storage (id, name, created_at, updated_at) VALUES (1, 'Fridge', ?, ?)", CREATED_AT, CREATED_AT);
         jdbcTemplate.update("INSERT INTO items (id, name, created_at, updated_at) VALUES (10, 'Milk', ?, ?)", CREATED_AT, CREATED_AT);
@@ -177,6 +199,7 @@ class StorageControllerIT extends BaseIntegrationTest {
             .post("/api/v1/storages/1/items")
             .then()
             .statusCode(HttpStatus.CREATED.value())
+            .header(HttpHeaders.LOCATION, endsWith("/api/v1/storages/1/items/10"))
             .extract().as(StorageItemResponse.class);
 
         var expectedResponse = new StorageItemResponse(

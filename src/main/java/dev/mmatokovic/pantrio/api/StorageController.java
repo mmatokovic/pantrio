@@ -9,6 +9,7 @@ import dev.mmatokovic.pantrio.domain.storage.StorageResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.jspecify.annotations.Nullable;
 import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
@@ -29,14 +30,14 @@ import java.util.List;
 
 @RestController
 @Tag(name = "Storage")
-@RequestMapping(path = "/storages", version = "v1")
+@RequestMapping(path = "/storages", version = "v1+")
 @RequiredArgsConstructor
 public class StorageController {
 
     private final StorageService storageService;
 
     @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<List<StorageResponse>> index(@ParameterObject @PageableDefault Pageable pageable) {
+    public ResponseEntity<List<StorageResponse>> index(@ParameterObject @PageableDefault(sort = "id") Pageable pageable) {
         return ResponseEntity.ok(storageService.listStorages(pageable));
     }
 
@@ -60,7 +61,7 @@ public class StorageController {
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> delete(@PathVariable Long id) {
+    public ResponseEntity<@Nullable Void> delete(@PathVariable Long id) {
         storageService.deleteStorage(id);
         return ResponseEntity.noContent().build();
     }
@@ -69,7 +70,7 @@ public class StorageController {
     public ResponseEntity<StorageItemResponse> addItem(@PathVariable Long storageId,
                                                        @Valid @RequestBody StorageItemRequest request) {
         StorageItemResponse instance = storageService.addInstance(storageId, request);
-        URI location = ServletUriComponentsBuilder.fromCurrentRequest().path("/{id}").buildAndExpand(instance.id()).toUri();
+        URI location = ServletUriComponentsBuilder.fromCurrentRequest().path("/{itemId}").buildAndExpand(request.itemId()).toUri();
         return ResponseEntity.created(location).body(instance);
     }
 
@@ -92,7 +93,7 @@ public class StorageController {
     }
 
     @DeleteMapping("/{storageId}/items/{itemId}")
-    public ResponseEntity<Void> consumeItem(@PathVariable Long storageId,
+    public ResponseEntity<@Nullable Void> consumeItem(@PathVariable Long storageId,
                                              @PathVariable Long itemId) {
         storageService.deleteInstance(storageId, itemId);
         return ResponseEntity.noContent().build();

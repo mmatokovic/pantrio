@@ -16,5 +16,7 @@ public interface ItemService {
 
     ItemResponse updateItem(Long id, ItemRequest request);
 
+    ItemResponse replaceItem(Long id, ItemRequest request);
+
     void deleteItem(Long id);
 }

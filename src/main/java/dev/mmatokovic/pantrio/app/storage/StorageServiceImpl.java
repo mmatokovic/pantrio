@@ -17,6 +17,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Clock;
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
@@ -27,6 +29,7 @@ public class StorageServiceImpl implements StorageService {
     private final StorageMapper storageMapper;
     private final InstanceRepository instanceRepository;
     private final ItemRepository itemRepository;
+    private final Clock clock;
 
     @Override
     @Transactional(readOnly = true)
@@ -46,14 +49,14 @@ public class StorageServiceImpl implements StorageService {
         if (storageRepository.existsByName(request.name())) {
             throw new ConflictException("Storage with name " + request.name() + " already exists");
         }
-        return storageMapper.toResponse(storageRepository.save(Storage.create(request.name(), request.description(), request.disabled())));
+        return storageMapper.toResponse(storageRepository.save(Storage.create(request.name(), request.description(), request.disabled(), LocalDateTime.now(clock))));
     }
 
     @Override
     @Transactional
     public StorageResponse updateStorage(Long id, StorageRequest request) {
         var storage = findStorage(id);
-        storage.update(request.name(), request.description(), request.disabled());
+        storage.update(request.name(), request.description(), request.disabled(), LocalDateTime.now(clock));
         return storageMapper.toResponse(storageRepository.save(storage));
     }
 
@@ -69,7 +72,7 @@ public class StorageServiceImpl implements StorageService {
         var storage = findStorage(storageId);
         var item = itemRepository.findById(request.itemId())
             .orElseThrow(() -> new EntityNotFoundException("Item " + request.itemId() + " not found"));
-        var instance = Instance.create(storage, item, request.quantity(), request.expiryDate());
+        var instance = Instance.create(storage, item, request.quantity(), request.expiryDate(), LocalDateTime.now(clock));
         return storageMapper.toItemResponse(instanceRepository.save(instance));
     }
 
@@ -77,7 +80,7 @@ public class StorageServiceImpl implements StorageService {
     @Transactional
     public StorageItemResponse updateInstance(Long storageId, Long itemId, StorageItemUpdateRequest request) {
         var instance = findInstance(storageId, itemId);
-        instance.restock(request.quantity(), request.expiryDate());
+        instance.restock(request.quantity(), request.expiryDate(), LocalDateTime.now(clock));
         return storageMapper.toItemResponse(instanceRepository.save(instance));
     }
 

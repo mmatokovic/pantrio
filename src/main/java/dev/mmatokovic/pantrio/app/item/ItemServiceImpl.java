@@ -10,6 +10,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Clock;
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
@@ -18,6 +20,7 @@ public class ItemServiceImpl implements ItemService {
 
     private final ItemRepository itemRepository;
     private final ItemMapper itemMapper;
+    private final Clock clock;
 
     @Override
     @Transactional(readOnly = true)
@@ -34,7 +37,7 @@ public class ItemServiceImpl implements ItemService {
     @Override
     @Transactional
     public ItemResponse createItem(ItemRequest request) {
-        var item = Item.create(request.name(), request.remarks(), request.barcode(), request.unit(), request.pictureUrl(), request.disabled());
+        var item = Item.create(request.name(), request.remarks(), request.barcode(), request.unit(), request.pictureUrl(), request.disabled(), LocalDateTime.now(clock));
         return itemMapper.toResponse(itemRepository.save(item));
     }
 
@@ -42,7 +45,15 @@ public class ItemServiceImpl implements ItemService {
     @Transactional
     public ItemResponse updateItem(Long id, ItemRequest request) {
         var item = findItem(id);
-        item.update(request.name(), request.remarks(), request.barcode(), request.unit(), request.pictureUrl(), request.disabled());
+        item.update(request.name(), request.remarks(), request.barcode(), request.unit(), request.pictureUrl(), request.disabled(), LocalDateTime.now(clock));
+        return itemMapper.toResponse(itemRepository.save(item));
+    }
+
+    @Override
+    @Transactional
+    public ItemResponse replaceItem(Long id, ItemRequest request) {
+        var item = findItem(id);
+        item.replace(request.name(), request.remarks(), request.barcode(), request.unit(), request.pictureUrl(), request.disabled(), LocalDateTime.now(clock));
         return itemMapper.toResponse(itemRepository.save(item));
     }
 
