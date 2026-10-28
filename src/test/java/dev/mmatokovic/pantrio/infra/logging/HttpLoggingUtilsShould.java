@@ -79,6 +79,15 @@ class HttpLoggingUtilsShould {
         assertThat(normalized).isEqualTo("hello...[truncated]");
     }
 
+    @Test
+    void normalizeBody_escapeLineBreaks_soTextCannotForgeLogLines() {
+        var body = "ok\r\n2026-10-28 ERROR forged".getBytes(UTF_8);
+
+        var normalized = HttpLoggingUtils.normalizeBody(body, "text/plain", 100);
+
+        assertThat(normalized).isEqualTo("ok\\r\\n2026-10-28 ERROR forged");
+    }
+
     @ParameterizedTest
     @ValueSource(strings = {"application/octet-stream", "application/pdf", "image/png", "video/mp4", "audio/mpeg"})
     void isBinaryContent_returnTrueForBinaryMediaTypes(String contentType) {

@@ -12,7 +12,6 @@ import org.junit.jupiter.api.Test;
 import org.springframework.batch.core.repository.JobRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
-import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 import java.math.BigDecimal;
@@ -30,8 +29,6 @@ class JobManagementControllerIT extends BaseIntegrationTest {
     @MockitoBean
     private ProductRepository productRepository;
 
-    @Autowired
-    private JdbcTemplate jdbcTemplate;
 
     @Autowired
     private JobRepository jobRepository;

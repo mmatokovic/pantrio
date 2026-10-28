@@ -15,10 +15,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.NullAndEmptySource;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
-import org.springframework.jdbc.core.JdbcTemplate;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -31,8 +29,6 @@ class StorageControllerIT extends BaseIntegrationTest {
 
     private static final LocalDateTime CREATED_AT = LocalDateTime.of(2026, 10, 1, 8, 30);
 
-    @Autowired
-    private JdbcTemplate jdbcTemplate;
 
     @BeforeEach
     void cleanTables() {

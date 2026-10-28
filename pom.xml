@@ -249,7 +249,7 @@
                         </path>
                     </annotationProcessorPaths>
                     <compilerArgs>
-                        <arg>-Xplugin:ErrorProne ${error-prone.flags} -Xep:NullAway:ERROR -XepOpt:NullAway:AnnotatedPackages=dev.mmatokovic.pantrio</arg>
+                        <arg>-Xplugin:ErrorProne ${error-prone.flags} -Xep:NullAway:ERROR -XepOpt:NullAway:AnnotatedPackages=dev.mmatokovic.pantrio -XepOpt:NullAway:CustomContractAnnotations=org.springframework.lang.Contract</arg>
                         <arg>-XDcompilePolicy=simple</arg>
                         <arg>--should-stop=ifError=FLOW</arg>
                     </compilerArgs>

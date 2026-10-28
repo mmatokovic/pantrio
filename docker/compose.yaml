@@ -78,6 +78,7 @@ services:
       context: ..
       dockerfile: Dockerfile
     restart: unless-stopped
+    stop_grace_period: 70s
     environment:
       - PANTRIO_DB_URL=${PANTRIO_DB_URL:-jdbc:oracle:thin:@oracle-db:1521/XEPDB1}
       - PANTRIO_DB_USER=${PANTRIO_DB_USER:-PANTRIO}
@@ -92,7 +93,7 @@ services:
     volumes:
       - app-logs:/opt/logs
     healthcheck:
-      test: [ "CMD-SHELL", "wget -q --spider http://localhost:8080/actuator/health" ]
+      test: [ "CMD-SHELL", "wget -q --spider http://localhost:8080/actuator/health/liveness" ]
       interval: 15s
       timeout: 5s
       retries: 3

@@ -15,6 +15,7 @@ import org.springframework.http.client.ClientHttpResponse;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.SequenceInputStream;
 
 @Slf4j
 @RequiredArgsConstructor
@@ -39,9 +40,14 @@ public final class RestClientRequestLogger implements ClientHttpRequestIntercept
             return response;
         }
 
-        var responseBody = response.getBody().readNBytes(RESPONSE_CACHE_LIMIT);
-        logResponse(request, response.getStatusCode(), contentType, responseBody, System.nanoTime() - startNanos);
-        return new BufferedClientHttpResponse(response, responseBody);
+        var bodyStream = response.getBody();
+        var bufferedBody = bodyStream.readNBytes(RESPONSE_CACHE_LIMIT + 1);
+        if (bufferedBody.length > RESPONSE_CACHE_LIMIT) {
+            logResponse(request, response.getStatusCode(), contentType, new byte[0], System.nanoTime() - startNanos);
+            return new BufferedClientHttpResponse(response, new SequenceInputStream(new ByteArrayInputStream(bufferedBody), bodyStream));
+        }
+        logResponse(request, response.getStatusCode(), contentType, bufferedBody, System.nanoTime() - startNanos);
+        return new BufferedClientHttpResponse(response, new ByteArrayInputStream(bufferedBody));
     }
 
     private void logRequest(HttpRequest request, byte[] body) {
@@ -72,11 +78,11 @@ public final class RestClientRequestLogger implements ClientHttpRequestIntercept
     private static final class BufferedClientHttpResponse implements ClientHttpResponse {
 
         private final ClientHttpResponse response;
-        private final byte[] body;
+        private final InputStream body;
 
         @Override
         public @NonNull InputStream getBody() {
-            return new ByteArrayInputStream(body);
+            return body;
         }
 
         @Override

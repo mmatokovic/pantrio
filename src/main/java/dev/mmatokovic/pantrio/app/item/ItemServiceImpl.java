@@ -25,7 +25,7 @@ public class ItemServiceImpl implements ItemService {
     @Override
     @Transactional(readOnly = true)
     public List<ItemResponse> listItems(Pageable pageable) {
-        return itemMapper.toResponseList(itemRepository.findAll(pageable).getContent());
+        return itemMapper.toResponseList(itemRepository.findAllBy(pageable).getContent());
     }
 
     @Override
