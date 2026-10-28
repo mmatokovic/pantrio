@@ -8,6 +8,8 @@ import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.datasource.DriverManagerDataSource;
 import org.testcontainers.oracle.OracleContainer;
 import org.testcontainers.utility.DockerImageName;
 import org.wiremock.spring.EnableWireMock;
@@ -46,6 +48,12 @@ public abstract class BaseIntegrationTest {
         @ServiceConnection
         OracleContainer databaseContainer() {
             return DATABASE_CONTAINER;
+        }
+
+        @Bean
+        JdbcTemplate jdbcTemplate(OracleContainer databaseContainer) {
+            return new JdbcTemplate(new DriverManagerDataSource(
+                databaseContainer.getJdbcUrl(), databaseContainer.getUsername(), databaseContainer.getPassword()));
         }
     }
 }
