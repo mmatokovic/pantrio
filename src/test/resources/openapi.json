@@ -276,6 +276,47 @@
         }
       }
     },
+    "/api/v2/items/{id}" : {
+      "put" : {
+        "tags" : [
+          "Item"
+        ],
+        "operationId" : "replace",
+        "parameters" : [
+          {
+            "name" : "id",
+            "in" : "path",
+            "required" : true,
+            "schema" : {
+              "type" : "integer",
+              "format" : "int64"
+            }
+          }
+        ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/ItemRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ItemResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/items/{id}" : {
       "get" : {
         "tags" : [ "Item" ],

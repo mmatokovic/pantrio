@@ -24,16 +24,11 @@ public class QuartzJob extends QuartzJobBean {
     private final Job generateItemEnrichmentJob;
     private final JobOperator jobOperator;
     private final JobRepository jobRepository;
-    private final BatchJobProperties batchJobProperties;
     private final Clock clock;
 
     @Override
     protected void executeInternal(@NonNull JobExecutionContext context) throws JobExecutionException {
         var jobName = generateItemEnrichmentJob.getName();
-        if (!batchJobProperties.enabled()) {
-            log.atInfo().addKeyValue("job", jobName).log("Job is disabled, skipping execution");
-            return;
-        }
         if (!jobRepository.findRunningJobExecutions(jobName).isEmpty()) {
             log.atInfo().addKeyValue("job", jobName).log("Job is already running, skipping execution");
             return;
