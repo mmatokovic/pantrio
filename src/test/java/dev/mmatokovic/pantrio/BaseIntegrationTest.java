@@ -9,7 +9,7 @@ import org.springframework.boot.testcontainers.service.connection.ServiceConnect
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.jdbc.datasource.DriverManagerDataSource;
+import org.springframework.jdbc.datasource.SingleConnectionDataSource;
 import org.testcontainers.oracle.OracleContainer;
 import org.testcontainers.utility.DockerImageName;
 import org.wiremock.spring.EnableWireMock;
@@ -52,8 +52,10 @@ public abstract class BaseIntegrationTest {
 
         @Bean
         JdbcTemplate jdbcTemplate(OracleContainer databaseContainer) {
-            return new JdbcTemplate(new DriverManagerDataSource(
-                databaseContainer.getJdbcUrl(), databaseContainer.getUsername(), databaseContainer.getPassword()));
+            var seedDataSource = new SingleConnectionDataSource(
+                databaseContainer.getJdbcUrl(), databaseContainer.getUsername(), databaseContainer.getPassword(), true);
+            seedDataSource.setAutoCommit(true);
+            return new JdbcTemplate(seedDataSource);
         }
     }
 }
