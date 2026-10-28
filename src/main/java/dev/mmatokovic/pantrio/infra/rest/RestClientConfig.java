@@ -1,8 +1,8 @@
 package dev.mmatokovic.pantrio.infra.rest;
 
+import dev.mmatokovic.pantrio.infra.config.AppInfoProperties;
 import dev.mmatokovic.pantrio.infra.logging.RestClientRequestLogger;
 import dev.mmatokovic.pantrio.infra.openfoodfacts.OpenFoodFactsProperties;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.http.client.ClientHttpRequestFactoryBuilder;
 import org.springframework.boot.http.client.HttpClientSettings;
 import org.springframework.context.annotation.Bean;
@@ -17,14 +17,13 @@ class RestClientConfig {
     RestClient openFoodFactsClient(RestClient.Builder restClientBuilder,
                                    OpenFoodFactsProperties openFoodFactsProperties,
                                    RestClientRequestLogger restClientRequestLogger,
-                                   @Value("${spring.application.name}") String appName,
-                                   @Value("${info.app.version}") String appVersion) {
+                                   AppInfoProperties appInfoProperties) {
         var requestFactory = ClientHttpRequestFactoryBuilder.detect()
             .build(HttpClientSettings.defaults().withTimeouts(openFoodFactsProperties.connectTimeout(), openFoodFactsProperties.readTimeout()));
         return restClientBuilder
             .baseUrl(openFoodFactsProperties.host())
             .requestFactory(requestFactory)
-            .defaultHeader(HttpHeaders.USER_AGENT, appName + "/" + appVersion)
+            .defaultHeader(HttpHeaders.USER_AGENT, appInfoProperties.name() + "/" + appInfoProperties.version())
             .requestInterceptor(restClientRequestLogger)
             .build();
     }
