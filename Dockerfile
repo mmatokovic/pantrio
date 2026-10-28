@@ -11,6 +11,7 @@ FROM eclipse-temurin:25-jre-alpine
 
 ENV SERVER_PORT=8080
 ENV TZ=Europe/Zagreb
+ENV JAVA_TOOL_OPTIONS="-XX:MaxRAMPercentage=75"
 
 WORKDIR /app
 

@@ -39,6 +39,10 @@
         <wiremock.version>4.4.3</wiremock.version>
         <checkstyle.version>14.3.0</checkstyle.version>
         <error-prone.version>2.51.0</error-prone.version>
+        <nullaway.version>0.14.3</nullaway.version>
+        <!-- BooleanParameter: team does not use inline argument comments -->
+        <!-- XepExcludedPaths: MapStruct implementations are generated code -->
+        <error-prone.flags>-XepAllDisabledChecksAsWarnings -XepExcludedPaths:.*/target/generated-.*sources/.* -Xep:PrivateConstructorForUtilityClass:OFF -Xep:Var:OFF -Xep:IdentifierName:OFF -Xep:VarWithPrimitive:OFF -Xep:Java8ApiChecker:OFF -Xep:AddNullMarkedToClass:OFF -Xep:ImmutableMemberCollection:OFF -Xep:UnnecessarySemicolon:OFF -Xep:BooleanParameter:OFF -Xep:MissingJavadoc:OFF</error-prone.flags>
         <failsafe.version>3.6.0</failsafe.version>
         <jacoco.version>0.8.15</jacoco.version>
         <argLine/>
@@ -81,10 +85,6 @@
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-opentelemetry</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-batch</artifactId>
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -133,7 +133,12 @@
         </dependency>
         <dependency>
             <groupId>org.testcontainers</groupId>
-            <artifactId>testcontainers-oracle-xe</artifactId>
+            <artifactId>testcontainers-oracle-free</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.awaitility</groupId>
+            <artifactId>awaitility</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -237,28 +242,30 @@
                             <artifactId>error_prone_core</artifactId>
                             <version>${error-prone.version}</version>
                         </path>
+                        <path>
+                            <groupId>com.uber.nullaway</groupId>
+                            <artifactId>nullaway</artifactId>
+                            <version>${nullaway.version}</version>
+                        </path>
                     </annotationProcessorPaths>
                     <compilerArgs>
-                        <!-- BooleanParameter: team does not use inline argument comments -->
-                        <!-- XepExcludedPaths: MapStruct implementations are generated code -->
-                        <arg>
-                            -Xplugin:ErrorProne
-                            -XepAllDisabledChecksAsWarnings
-                            -XepExcludedPaths:.*/target/generated-.*sources/.*
-                            -Xep:PrivateConstructorForUtilityClass:OFF
-                            -Xep:Var:OFF
-                            -Xep:IdentifierName:OFF
-                            -Xep:VarWithPrimitive:OFF
-                            -Xep:Java8ApiChecker:OFF
-                            -Xep:AddNullMarkedToClass:OFF
-                            -Xep:ImmutableMemberCollection:OFF
-                            -Xep:UnnecessarySemicolon:OFF
-                            -Xep:BooleanParameter:OFF
-                        </arg>
+                        <arg>-Xplugin:ErrorProne ${error-prone.flags} -Xep:NullAway:ERROR -XepOpt:NullAway:AnnotatedPackages=dev.mmatokovic.pantrio</arg>
                         <arg>-XDcompilePolicy=simple</arg>
                         <arg>--should-stop=ifError=FLOW</arg>
                     </compilerArgs>
                 </configuration>
+                <executions>
+                    <execution>
+                        <id>default-testCompile</id>
+                        <configuration>
+                            <compilerArgs>
+                                <arg>-Xplugin:ErrorProne ${error-prone.flags} -Xep:NullAway:OFF</arg>
+                                <arg>-XDcompilePolicy=simple</arg>
+                                <arg>--should-stop=ifError=FLOW</arg>
+                            </compilerArgs>
+                        </configuration>
+                    </execution>
+                </executions>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -356,7 +363,7 @@
         </repository>
         <snapshotRepository>
             <id>maven-snapshots</id>
-            <url>https://registry.local/repository/maven-releases/</url>
+            <url>https://registry.local/repository/maven-snapshots/</url>
         </snapshotRepository>
     </distributionManagement>
 </project>
