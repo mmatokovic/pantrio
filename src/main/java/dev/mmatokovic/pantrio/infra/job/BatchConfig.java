@@ -19,16 +19,19 @@ import org.springframework.batch.infrastructure.item.ItemWriter;
 import org.springframework.batch.infrastructure.item.database.JdbcPagingItemReader;
 import org.springframework.batch.infrastructure.item.database.Order;
 import org.springframework.batch.infrastructure.item.database.builder.JdbcPagingItemReaderBuilder;
+import org.springframework.batch.infrastructure.support.transaction.ResourcelessTransactionManager;
 import org.springframework.context.annotation.Bean;
 import org.springframework.boot.batch.autoconfigure.BatchTaskExecutor;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.task.SimpleAsyncTaskExecutor;
 import org.springframework.core.task.TaskExecutor;
 import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.web.client.RestClientException;
 
 import javax.sql.DataSource;
 import java.time.Clock;
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.Map;
@@ -43,6 +46,7 @@ public class BatchConfig {
     private static final int CHUNK_SIZE = 10;
     private static final int PAGE_SIZE = 100;
     private static final int SKIP_LIMIT = 20;
+    private static final Duration SHUTDOWN_WAIT = Duration.ofSeconds(55);
 
     private final JobRepository jobRepository;
 
@@ -69,8 +73,9 @@ public class BatchConfig {
     }
 
     @Bean
-    ItemWriter<Item> writer(ItemRepository itemRepository) {
-        return chunk -> itemRepository.saveAll(chunk.getItems());
+    ItemWriter<Item> writer(ItemRepository itemRepository, PlatformTransactionManager transactionManager) {
+        var transactionTemplate = new TransactionTemplate(transactionManager);
+        return chunk -> transactionTemplate.executeWithoutResult(status -> itemRepository.saveAll(chunk.getItems()));
     }
 
     @Bean
@@ -78,17 +83,17 @@ public class BatchConfig {
     static TaskExecutor batchTaskExecutor() {
         var taskExecutor = new SimpleAsyncTaskExecutor("pantrio-batch-");
         taskExecutor.setConcurrencyLimit(1);
+        taskExecutor.setTaskTerminationTimeout(SHUTDOWN_WAIT.toMillis());
         return taskExecutor;
     }
 
     @Bean
     Step itemEnrichmentStep(JdbcPagingItemReader<Long> reader,
                             ItemProcessor<Long, Item> processor,
-                            ItemWriter<Item> writer,
-                            PlatformTransactionManager transactionManager) {
+                            ItemWriter<Item> writer) {
         return new StepBuilder("itemEnrichmentStep", jobRepository)
             .<Long, Item>chunk(CHUNK_SIZE)
-            .transactionManager(transactionManager)
+            .transactionManager(new ResourcelessTransactionManager())
             .reader(reader)
             .processor(processor)
             .writer(writer)
