@@ -1,11 +1,12 @@
 package dev.mmatokovic.pantrio.infra.openfoodfacts;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import org.jspecify.annotations.Nullable;
 
 public record OpenFoodFactsProductResponse(
     String code,
     Product product,
-    Integer status,
+    @Nullable Integer status,
     @JsonProperty("status_verbose")
     String statusVerbose
 ) {

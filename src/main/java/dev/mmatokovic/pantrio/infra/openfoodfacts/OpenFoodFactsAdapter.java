@@ -27,9 +27,10 @@ public class OpenFoodFactsAdapter implements ProductRepository {
         delay = 1500,
         multiplier = 1.5,
         maxDelay = 3500,
+        jitter = 500,
         maxRetries = 2
     )
-    @ConcurrencyLimit(5)
+    @ConcurrencyLimit(limit = 5, policy = ConcurrencyLimit.ThrottlePolicy.REJECT)
     @Override
     public Product getProductByBarcode(String barcode) {
         var response = openFoodFactsClient.get()
