@@ -11,8 +11,6 @@ import jakarta.persistence.Version;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import org.hibernate.annotations.CreationTimestamp;
-import org.hibernate.annotations.UpdateTimestamp;
 import org.jspecify.annotations.Nullable;
 
 import java.time.LocalDateTime;
@@ -33,7 +31,7 @@ public class Storage {
     private String name;
 
     @Column(name = "DESCRIPTION")
-    private String description;
+    private @Nullable String description;
 
     @Column(name = "DISABLED", nullable = false)
     private boolean disabled;
@@ -42,25 +40,26 @@ public class Storage {
     @Column(name = "VERSION", nullable = false)
     private Integer version;
 
-    @CreationTimestamp
     @Column(name = "CREATED_AT", updatable = false, nullable = false)
     private LocalDateTime createdAt;
 
-    @UpdateTimestamp
     @Column(name = "UPDATED_AT")
     private LocalDateTime updatedAt;
 
-    public static Storage create(String name, @Nullable String description, @Nullable Boolean disabled) {
+    public static Storage create(String name, @Nullable String description, @Nullable Boolean disabled, LocalDateTime now) {
         var storage = new Storage();
         storage.name = name;
         storage.description = description;
         storage.disabled = disabled != null && disabled;
+        storage.createdAt = now;
+        storage.updatedAt = now;
         return storage;
     }
 
-    public void update(String name, @Nullable String description, @Nullable Boolean disabled) {
+    public void update(String name, @Nullable String description, @Nullable Boolean disabled, LocalDateTime now) {
         this.name = name;
         this.description = description;
         this.disabled = disabled != null && disabled;
+        updatedAt = now;
     }
 }

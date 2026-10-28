@@ -6,6 +6,7 @@ import dev.mmatokovic.pantrio.domain.item.ItemResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.jspecify.annotations.Nullable;
 import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
@@ -26,14 +27,14 @@ import java.util.List;
 
 @RestController
 @Tag(name = "Item")
-@RequestMapping(path = "/items", version = "v1")
+@RequestMapping(path = "/items", version = "v1+")
 @RequiredArgsConstructor
 public class ItemController {
 
     private final ItemService itemService;
 
     @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<List<ItemResponse>> index(@ParameterObject @PageableDefault Pageable pageable) {
+    public ResponseEntity<List<ItemResponse>> index(@ParameterObject @PageableDefault(sort = "id") Pageable pageable) {
         return ResponseEntity.ok(itemService.listItems(pageable));
     }
 
@@ -49,14 +50,20 @@ public class ItemController {
         return ResponseEntity.ok(itemService.getItem(id));
     }
 
-    @PutMapping(value = "/{id}", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+    @PutMapping(value = "/{id}", version = "v1", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ItemResponse> update(@PathVariable Long id,
                                                @Valid @RequestBody ItemRequest request) {
         return ResponseEntity.ok(itemService.updateItem(id, request));
     }
 
+    @PutMapping(value = "/{id}", version = "v2+", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<ItemResponse> replace(@PathVariable Long id,
+                                                @Valid @RequestBody ItemRequest request) {
+        return ResponseEntity.ok(itemService.replaceItem(id, request));
+    }
+
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> delete(@PathVariable Long id) {
+    public ResponseEntity<@Nullable Void> delete(@PathVariable Long id) {
         itemService.deleteItem(id);
         return ResponseEntity.noContent().build();
     }

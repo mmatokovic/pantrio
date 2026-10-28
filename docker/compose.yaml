@@ -19,44 +19,44 @@ services:
       timeout: 10s
       retries: 5
       start_period: 120s
-    container_name: oracle-db
+    container_name: pantrio-oracle-db
 
   zipkin:
-    image: openzipkin/zipkin:latest
+    image: openzipkin/zipkin:3.6.1
     ports:
       - '9411:9411'
-    container_name: zipkin
+    container_name: pantrio-zipkin
 
   prometheus:
-    image: prom/prometheus:latest
+    image: prom/prometheus:v3.15.1
     ports:
       - '9090:9090'
     volumes:
       - prometheus-data:/prometheus
       - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
-    container_name: prometheus
+    container_name: pantrio-prometheus
 
   grafana:
-    image: grafana/grafana-oss:latest
+    image: grafana/grafana-oss:13.0.2
     ports:
       - '3000:3000'
     volumes:
       - ./grafana/grafana.ini:/etc/grafana/grafana.ini
       - ./grafana/provisioning/:/etc/grafana/provisioning/
-    container_name: grafana
+    container_name: pantrio-grafana
 
   otel-collector:
-    image: otel/opentelemetry-collector-contrib:latest
+    image: otel/opentelemetry-collector-contrib:0.164.0
     volumes:
       - ./otel/collector-config.yaml:/etc/otelcol-contrib/config.yaml:ro
     expose:
       - '4318'
     ports:
       - '4318:4318'
-    container_name: otel-collector
+    container_name: pantrio-otel-collector
 
   keycloak:
-    image: quay.io/keycloak/keycloak:latest
+    image: quay.io/keycloak/keycloak:26.8.1
     environment:
       KC_BOOTSTRAP_ADMIN_USERNAME: god
       KC_BOOTSTRAP_ADMIN_PASSWORD: god
@@ -66,7 +66,7 @@ services:
       - '8180:8080'
     volumes:
       - ./keycloak/realm-export.json:/opt/keycloak/data/import/realm-export.json
-    container_name: keycloak
+    container_name: pantrio-keycloak
 
   app:
     depends_on:
@@ -82,8 +82,9 @@ services:
       - PANTRIO_DB_URL=${PANTRIO_DB_URL:-jdbc:oracle:thin:@oracle-db:1521/XEPDB1}
       - PANTRIO_DB_USER=${PANTRIO_DB_USER:-PANTRIO}
       - PANTRIO_DB_PASS=${PANTRIO_DB_PASS:-"oraclepwd123"}
-      - PANTRIO_OAUTH2_ISSUER_URI=${PANTRIO_OAUTH2_ISSUER_URI:-http://keycloak:8180/realms/Pantrio}
-      - PANTRIO_OPENFOODFACTS_HOST=${PANTRIO_OPENFOODFACTS_HOST:-https://world.openfoodfacts.org}
+      - PANTRIO_OPENFOODFACTS_HOST=${PANTRIO_OPENFOODFACTS_HOST:-https://world.openfoodfacts.org/api/v2}
+      - PANTRIO_USER_PASSWORD=${PANTRIO_USER_PASSWORD:-userpwd}
+      - PANTRIO_PROMETHEUS_PASSWORD=${PANTRIO_PROMETHEUS_PASSWORD:-prometheus}
       - LOG_PATH=${LOG_PATH:-/opt/logs}
       - OTEL_EXPORTER_OTLP_ENDPOINT=${OTEL_EXPORTER_OTLP_ENDPOINT:-http://otel-collector:4318}
     ports:

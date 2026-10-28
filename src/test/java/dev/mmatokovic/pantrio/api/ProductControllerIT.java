@@ -4,11 +4,14 @@ import dev.mmatokovic.pantrio.BaseIntegrationTest;
 import dev.mmatokovic.pantrio.domain.product.Product;
 import dev.mmatokovic.pantrio.domain.product.ProductRepository;
 import dev.mmatokovic.pantrio.domain.product.ProductResponse;
+import dev.mmatokovic.pantrio.infra.error.ErrorResponse;
 import dev.mmatokovic.pantrio.infra.exception.NoSuchElementFoundException;
 import io.restassured.RestAssured;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpStatus;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
+
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -51,13 +54,15 @@ class ProductControllerIT extends BaseIntegrationTest {
 
     @Test
     void findProduct_returns422_whenBarcodeIsInvalid() {
-        RestAssured.given()
+        ErrorResponse response = RestAssured.given()
             .auth().basic(USER_NAME, USER_PWD)
             .when()
             .get("/api/v1/products/737628064503")
             .then()
-            .statusCode(HttpStatus.UNPROCESSABLE_CONTENT.value());
+            .statusCode(HttpStatus.UNPROCESSABLE_CONTENT.value())
+            .extract().as(ErrorResponse.class);
 
+        assertThat(response).isEqualTo(new ErrorResponse(422, "Validation failed", List.of(new ErrorResponse.ErrorInfo("code", "Invalid barcode"))));
         verifyNoInteractions(productRepository);
     }
 }

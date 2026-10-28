@@ -14,13 +14,17 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.provisioning.InMemoryUserDetailsManager;
 import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.access.AccessDeniedHandler;
+import tools.jackson.databind.json.JsonMapper;
 
 @Configuration(proxyBeanMethods = false)
 @EnableWebSecurity
 public class SecurityConfig {
 
     @Bean
-    SecurityFilterChain filterChain(HttpSecurity http, AuthenticationEntryPoint authenticationEntryPoint) {
+    SecurityFilterChain filterChain(HttpSecurity http,
+                                   AuthenticationEntryPoint authenticationEntryPoint,
+                                   AccessDeniedHandler accessDeniedHandler) {
         return http
             .csrf(AbstractHttpConfigurer::disable)
             .cors(AbstractHttpConfigurer::disable)
@@ -30,16 +34,24 @@ public class SecurityConfig {
                 authz.requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll();
                 authz.requestMatchers("/actuator/health", "/actuator/health/**").permitAll();
                 authz.requestMatchers("/actuator/prometheus").hasRole("METRICS");
-                authz.anyRequest().authenticated();
+                authz.anyRequest().hasRole("ADMIN");
             })
             .httpBasic(httpBasic -> httpBasic.authenticationEntryPoint(authenticationEntryPoint))
+            .exceptionHandling(exceptionHandling -> exceptionHandling
+                .authenticationEntryPoint(authenticationEntryPoint)
+                .accessDeniedHandler(accessDeniedHandler))
             .logout(AbstractHttpConfigurer::disable)
             .build();
     }
 
     @Bean
-    AuthenticationEntryPoint authenticationEntryPoint() {
-        return new CustomAuthenticationEntryPoint();
+    AuthenticationEntryPoint authenticationEntryPoint(JsonMapper jsonMapper) {
+        return new CustomAuthenticationEntryPoint(jsonMapper);
+    }
+
+    @Bean
+    AccessDeniedHandler accessDeniedHandler(JsonMapper jsonMapper) {
+        return new CustomAccessDeniedHandler(jsonMapper);
     }
 
     @Bean

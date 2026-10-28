@@ -2,6 +2,7 @@ package dev.mmatokovic.pantrio.domain.validation;
 
 import jakarta.validation.ConstraintValidator;
 import jakarta.validation.ConstraintValidatorContext;
+import org.jspecify.annotations.Nullable;
 
 import java.util.regex.Pattern;
 
@@ -10,7 +11,7 @@ class BarcodeValidator implements ConstraintValidator<Barcode, String> {
     private static final Pattern NUMERIC = Pattern.compile("\\d{8}|\\d{12}|\\d{13}");
 
     @Override
-    public boolean isValid(String value, ConstraintValidatorContext context) {
+    public boolean isValid(@Nullable String value, ConstraintValidatorContext context) {
         if (value == null) {
             return true;
         }

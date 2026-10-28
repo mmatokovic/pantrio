@@ -15,7 +15,30 @@ class ApiVersioningIT extends BaseIntegrationTest {
         ErrorResponse response = RestAssured.given()
             .auth().basic(USER_NAME, USER_PWD)
             .when()
+            .get("/api/v3/items")
+            .then()
+            .statusCode(HttpStatus.BAD_REQUEST.value())
+            .extract().as(ErrorResponse.class);
+
+        assertThat(response).isEqualTo(new ErrorResponse(400, "Invalid API version: '3.0.0'.", null));
+    }
+
+    @Test
+    void listItems_isServedByV2() {
+        RestAssured.given()
+            .auth().basic(USER_NAME, USER_PWD)
+            .when()
             .get("/api/v2/items")
+            .then()
+            .statusCode(HttpStatus.OK.value());
+    }
+
+    @Test
+    void pullProduct_returns400_inV2() {
+        ErrorResponse response = RestAssured.given()
+            .auth().basic(USER_NAME, USER_PWD)
+            .when()
+            .get("/api/v2/pull/737628064502")
             .then()
             .statusCode(HttpStatus.BAD_REQUEST.value())
             .extract().as(ErrorResponse.class);

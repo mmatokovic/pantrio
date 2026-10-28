@@ -8,7 +8,7 @@ import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
-import org.testcontainers.containers.OracleContainer;
+import org.testcontainers.oracle.OracleContainer;
 import org.testcontainers.utility.DockerImageName;
 import org.wiremock.spring.EnableWireMock;
 
@@ -38,7 +38,7 @@ public abstract class BaseIntegrationTest {
     static class TestContainersConfig {
 
         private static final OracleContainer DATABASE_CONTAINER =
-            new OracleContainer(DockerImageName.parse("gvenzl/oracle-xe:21-slim-faststart"))
+            new OracleContainer(DockerImageName.parse("gvenzl/oracle-free:23-slim-faststart"))
                 .withUsername("PANTRIO_TEST")
                 .withReuse(true);
 

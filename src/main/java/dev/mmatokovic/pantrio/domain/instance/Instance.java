@@ -18,10 +18,8 @@ import jakarta.validation.constraints.NotNull;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.OnDelete;
 import org.hibernate.annotations.OnDeleteAction;
-import org.hibernate.annotations.UpdateTimestamp;
 import org.jspecify.annotations.Nullable;
 
 import java.time.LocalDate;
@@ -63,31 +61,32 @@ public class Instance {
     private Integer quantity;
 
     @Column(name = "EXPIRY_DATE")
-    private LocalDate expiryDate;
+    private @Nullable LocalDate expiryDate;
 
     @Version
     @Column(name = "VERSION", nullable = false)
     private Integer version;
 
-    @CreationTimestamp
     @Column(name = "CREATED_AT", updatable = false, nullable = false)
     private LocalDateTime createdAt;
 
-    @UpdateTimestamp
     @Column(name = "UPDATED_AT")
     private LocalDateTime updatedAt;
 
-    public static Instance create(Storage storage, Item item, Integer quantity, @Nullable LocalDate expiryDate) {
+    public static Instance create(Storage storage, Item item, Integer quantity, @Nullable LocalDate expiryDate, LocalDateTime now) {
         var instance = new Instance();
         instance.storage = storage;
         instance.item = item;
         instance.quantity = quantity;
         instance.expiryDate = expiryDate;
+        instance.createdAt = now;
+        instance.updatedAt = now;
         return instance;
     }
 
-    public void restock(Integer quantity, @Nullable LocalDate expiryDate) {
+    public void restock(Integer quantity, @Nullable LocalDate expiryDate, LocalDateTime now) {
         this.quantity = quantity;
         this.expiryDate = expiryDate;
+        updatedAt = now;
     }
 }

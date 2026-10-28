@@ -13,6 +13,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.NullAndEmptySource;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.jdbc.core.JdbcTemplate;
 
@@ -171,6 +172,60 @@ class ItemControllerIT extends BaseIntegrationTest {
             .isEqualTo(expectedResponse);
     }
 
+    @Test
+    void updateItem_keepsFieldsMissingFromRequest_inV1() {
+        jdbcTemplate.update("INSERT INTO items (id, name, remarks, created_at, updated_at) VALUES (1, 'Milk', 'Fresh', ?, ?)", CREATED_AT, CREATED_AT);
+
+        ItemResponse response = RestAssured.given()
+            .auth().basic(USER_NAME, USER_PWD)
+            .contentType(ContentType.JSON)
+            .body(new ItemRequest("Oat milk", null, null, null, null, null))
+            .when()
+            .put("/api/v1/items/1")
+            .then()
+            .statusCode(HttpStatus.OK.value())
+            .extract().as(ItemResponse.class);
+
+        assertThat(response)
+            .usingRecursiveComparison()
+            .ignoringFields("updatedAt")
+            .isEqualTo(new ItemResponse(1L, "Oat milk", "Fresh", null, null, null, false, CREATED_AT, null));
+    }
+
+    @Test
+    void replaceItem_clearsFieldsMissingFromRequest_inV2() {
+        jdbcTemplate.update("INSERT INTO items (id, name, remarks, created_at, updated_at) VALUES (1, 'Milk', 'Fresh', ?, ?)", CREATED_AT, CREATED_AT);
+
+        ItemResponse response = RestAssured.given()
+            .auth().basic(USER_NAME, USER_PWD)
+            .contentType(ContentType.JSON)
+            .body(new ItemRequest("Oat milk", null, null, null, null, null))
+            .when()
+            .put("/api/v2/items/1")
+            .then()
+            .statusCode(HttpStatus.OK.value())
+            .extract().as(ItemResponse.class);
+
+        assertThat(response)
+            .usingRecursiveComparison()
+            .ignoringFields("updatedAt")
+            .isEqualTo(new ItemResponse(1L, "Oat milk", null, null, null, null, false, CREATED_AT, null));
+    }
+
+    @Test
+    void listItems_returns400_whenSortPropertyIsUnknown() {
+        ErrorResponse response = RestAssured.given()
+            .auth().basic(USER_NAME, USER_PWD)
+            .queryParam("sort", "colour")
+            .when()
+            .get("/api/v1/items")
+            .then()
+            .statusCode(HttpStatus.BAD_REQUEST.value())
+            .extract().as(ErrorResponse.class);
+
+        assertThat(response).isEqualTo(new ErrorResponse(400, "Unknown sort property: colour", null));
+    }
+
     @ParameterizedTest
     @NullAndEmptySource
     void updateItem_returns400_whenNameIsBlank(String name) {
@@ -202,10 +257,27 @@ class ItemControllerIT extends BaseIntegrationTest {
 
     @Test
     void listItems_returns401_whenNotAuthenticated() {
-        RestAssured.given()
+        ErrorResponse response = RestAssured.given()
             .when()
             .get("/api/v1/items")
             .then()
-            .statusCode(HttpStatus.UNAUTHORIZED.value());
+            .statusCode(HttpStatus.UNAUTHORIZED.value())
+            .header(HttpHeaders.WWW_AUTHENTICATE, "Basic realm=\"pantrio\"")
+            .extract().as(ErrorResponse.class);
+
+        assertThat(response).isEqualTo(new ErrorResponse(401, "Authentication required", null));
+    }
+
+    @Test
+    void listItems_returns403_whenUserIsTheMetricsUser() {
+        ErrorResponse response = RestAssured.given()
+            .auth().basic("prometheus", "prometheus")
+            .when()
+            .get("/api/v1/items")
+            .then()
+            .statusCode(HttpStatus.FORBIDDEN.value())
+            .extract().as(ErrorResponse.class);
+
+        assertThat(response).isEqualTo(new ErrorResponse(403, "Access denied", null));
     }
 }

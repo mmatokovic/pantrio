@@ -20,6 +20,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.UUID;
+import java.util.regex.Pattern;
 
 @Slf4j
 @RequiredArgsConstructor
@@ -28,6 +29,7 @@ final class HttpLoggingFilter extends OncePerRequestFilter {
     static final String REQUEST_ID_HEADER = "X-Request-Id";
     private static final int REQUEST_CACHE_LIMIT = 1024 * 1024;
     private static final String MDC_REQUEST_ID = "request.id";
+    private static final Pattern REQUEST_ID_PATTERN = Pattern.compile("[A-Za-z0-9._-]{1,64}");
 
     private final HttpLoggingProperties properties;
 
@@ -58,7 +60,7 @@ final class HttpLoggingFilter extends OncePerRequestFilter {
 
     private static String resolveRequestId(HttpServletRequest request) {
         var requestId = request.getHeader(REQUEST_ID_HEADER);
-        return requestId == null || requestId.isBlank() ? UUID.randomUUID().toString() : requestId;
+        return requestId != null && REQUEST_ID_PATTERN.matcher(requestId).matches() ? requestId : UUID.randomUUID().toString();
     }
 
     private void logExchange(ContentCachingRequestWrapper request, ContentCachingResponseWrapper response, long durationNanos) {
