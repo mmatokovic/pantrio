@@ -49,10 +49,7 @@ public final class HttpLoggingUtils {
         if (isJson(mediaType)) {
             return normalizeJson(rawBody, maxBodyBytes);
         }
-        var text = new String(rawBody, StandardCharsets.UTF_8).trim();
-        return text.length() > maxBodyBytes
-            ? text.substring(0, maxBodyBytes) + "...[truncated]"
-            : text;
+        return truncate(escapeLineBreaks(new String(rawBody, StandardCharsets.UTF_8).trim()), maxBodyBytes);
     }
 
     private static String normalizeJson(byte[] rawBody, int maxLength) {
@@ -60,9 +57,16 @@ public final class HttpLoggingUtils {
             var json = MAPPER.readTree(rawBody).toString();
             return json.length() > maxLength ? json.substring(0, maxLength) + "...[truncated]" : json;
         } catch (RuntimeException e) {
-            var raw = new String(rawBody, StandardCharsets.UTF_8).trim();
-            return raw.length() > maxLength ? raw.substring(0, maxLength) + "...[truncated]" : raw;
+            return truncate(escapeLineBreaks(new String(rawBody, StandardCharsets.UTF_8).trim()), maxLength);
         }
+    }
+
+    private static String escapeLineBreaks(String text) {
+        return text.replace("\r", "\\r").replace("\n", "\\n");
+    }
+
+    private static String truncate(String text, int maxLength) {
+        return text.length() > maxLength ? text.substring(0, maxLength) + "...[truncated]" : text;
     }
 
     private static boolean isJson(@Nullable MediaType mediaType) {
