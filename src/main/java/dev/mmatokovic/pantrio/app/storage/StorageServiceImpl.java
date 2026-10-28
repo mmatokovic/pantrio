@@ -34,7 +34,7 @@ public class StorageServiceImpl implements StorageService {
     @Override
     @Transactional(readOnly = true)
     public List<StorageResponse> listStorages(Pageable pageable) {
-        return storageMapper.toResponseList(storageRepository.findAll(pageable).getContent());
+        return storageMapper.toResponseList(storageRepository.findAllBy(pageable).getContent());
     }
 
     @Override

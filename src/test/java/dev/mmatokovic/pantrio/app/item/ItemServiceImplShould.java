@@ -10,8 +10,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.SliceImpl;
 
 import java.time.Clock;
 import java.time.LocalDateTime;
@@ -40,7 +40,7 @@ class ItemServiceImplShould {
     void listItems_returnMappedPage() {
         var itemService = new ItemServiceImpl(itemRepository, new ItemMapperImpl(), CLOCK);
         var item = Item.create("Milk", null, "8000500179864", UnitEnum.L, null, false, NOW);
-        when(itemRepository.findAll(PageRequest.of(0, 10))).thenReturn(new PageImpl<>(List.of(item)));
+        when(itemRepository.findAllBy(PageRequest.of(0, 10))).thenReturn(new SliceImpl<>(List.of(item)));
 
         var response = itemService.listItems(PageRequest.of(0, 10));
 

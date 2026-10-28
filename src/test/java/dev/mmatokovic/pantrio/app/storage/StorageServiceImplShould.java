@@ -19,8 +19,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.SliceImpl;
 
 import java.time.Clock;
 import java.time.LocalDate;
@@ -56,7 +56,7 @@ class StorageServiceImplShould {
     @Test
     void listStorages_returnMappedPage() {
         var storageService = new StorageServiceImpl(storageRepository, new StorageMapperImpl(new ItemMapperImpl()), instanceRepository, itemRepository, CLOCK);
-        when(storageRepository.findAll(PageRequest.of(0, 10))).thenReturn(new PageImpl<>(List.of(Storage.create("Fridge", null, false, NOW))));
+        when(storageRepository.findAllBy(PageRequest.of(0, 10))).thenReturn(new SliceImpl<>(List.of(Storage.create("Fridge", null, false, NOW))));
 
         var response = storageService.listStorages(PageRequest.of(0, 10));
 
