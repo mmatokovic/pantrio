@@ -32,7 +32,7 @@ import java.time.LocalDateTime;
     name = "ITEM_INSTANCE",
     uniqueConstraints = {
         @UniqueConstraint(
-            name = "uk_instance_storage_item",
+            name = "uk_item_instance_storage_item",
             columnNames = {"STORAGE_ID", "ITEM_ID"}
         )
     }

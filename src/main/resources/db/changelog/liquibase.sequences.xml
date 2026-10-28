@@ -3,7 +3,7 @@
     xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
     xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
-                        https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.8.xsd">
+                        https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
 
     <!-- Hibernate's pooled optimizer needs INCREMENT BY = allocationSize (50); start above existing ids -->
     <changeSet id="1" author="pantrio" dbms="oracle">
