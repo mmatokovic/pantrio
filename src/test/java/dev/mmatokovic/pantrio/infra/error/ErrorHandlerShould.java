@@ -6,11 +6,13 @@ import jakarta.persistence.EntityNotFoundException;
 import org.hibernate.exception.ConstraintViolationException;
 import org.junit.jupiter.api.Test;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
 import org.springframework.mock.web.MockHttpServletRequest;
+import org.springframework.resilience.InvocationRejectedException;
 import org.springframework.web.client.HttpServerErrorException;
 import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.context.request.ServletWebRequest;
@@ -61,6 +63,53 @@ class ErrorHandlerShould {
 
         assertThat(response).isEqualTo(ResponseEntity.status(HttpStatus.CONFLICT)
             .body(new ErrorResponse(409, "Storage with this name already exists", null)));
+    }
+
+    @Test
+    void handleDataIntegrityViolation_mapConstraintToMessage_whenSchemaIsNotPantrio() {
+        var errorHandler = new ErrorHandler();
+        var cause = new ConstraintViolationException("unique constraint violated", new SQLException("ORA-00001"), "PANTRIO_TEST.IDX_ITEMS_BARCODE");
+
+        var response = errorHandler.handleDataIntegrityViolation(
+            new DataIntegrityViolationException("could not execute statement", cause), new ServletWebRequest(new MockHttpServletRequest()));
+
+        assertThat(response).isEqualTo(ResponseEntity.status(HttpStatus.CONFLICT)
+            .body(new ErrorResponse(409, "Item with same barcode already exists", null)));
+    }
+
+    @Test
+    void handleDataIntegrityViolation_reportStockStillPresent_whenParentIsDeletedWithChildren() {
+        var errorHandler = new ErrorHandler();
+        var cause = new ConstraintViolationException(
+            "integrity constraint violated - child record found", new SQLException("ORA-02292", "23000", 2292), "PANTRIO.FK_ITEM_INSTANCE_ITEM");
+
+        var response = errorHandler.handleDataIntegrityViolation(
+            new DataIntegrityViolationException("could not execute statement", cause), new ServletWebRequest(new MockHttpServletRequest()));
+
+        assertThat(response).isEqualTo(ResponseEntity.status(HttpStatus.CONFLICT)
+            .body(new ErrorResponse(409, "Item is still stocked in a storage", null)));
+    }
+
+    @Test
+    void handleOptimisticLockingFailure_return409() {
+        var errorHandler = new ErrorHandler();
+
+        var response = errorHandler.handleOptimisticLockingFailure(
+            new OptimisticLockingFailureException("Row was updated by another transaction"), new ServletWebRequest(new MockHttpServletRequest()));
+
+        assertThat(response).isEqualTo(ResponseEntity.status(HttpStatus.CONFLICT)
+            .body(new ErrorResponse(409, "Resource was modified concurrently, reload it and try again", null)));
+    }
+
+    @Test
+    void handleInvocationRejected_return503() {
+        var errorHandler = new ErrorHandler();
+
+        var response = errorHandler.handleInvocationRejected(
+            new InvocationRejectedException("Concurrency limit reached", new Object()), new ServletWebRequest(new MockHttpServletRequest()));
+
+        assertThat(response).isEqualTo(ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
+            .body(new ErrorResponse(503, "External service is busy, try again later", null)));
     }
 
     @Test
