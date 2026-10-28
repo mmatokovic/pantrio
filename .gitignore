@@ -40,3 +40,5 @@ build/
 
 ### Claude Code
 .claude/
+
+docker/otel/agent/
