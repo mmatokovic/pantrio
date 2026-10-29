@@ -10,7 +10,11 @@ RUN java -Djarmode=tools -jar app.jar extract --layers --launcher --destination 
 FROM eclipse-temurin:25-jre-alpine@sha256:b7528962e65d43064d8a8b67ba175367896bc948363ea2d3fcd7f10d34e1f048
 
 # The pinned base lags behind Alpine security fixes until Temurin publishes a new digest
-RUN apk upgrade --no-cache
+RUN apk upgrade --no-cache \
+    && addgroup -S pantrio \
+    && adduser -S -D -H -G pantrio pantrio \
+    && mkdir -p /opt/logs \
+    && chown pantrio:pantrio /opt/logs
 
 ENV SERVER_PORT=8080
 ENV TZ=Europe/Zagreb
@@ -22,6 +26,8 @@ COPY --from=builder /build/extracted/dependencies/ ./
 COPY --from=builder /build/extracted/spring-boot-loader/ ./
 COPY --from=builder /build/extracted/snapshot-dependencies/ ./
 COPY --from=builder /build/extracted/application/ ./
+
+USER pantrio
 
 EXPOSE 8080
 
