@@ -11,7 +11,6 @@ import java.util.Set;
 
 public final class HttpLoggingUtils {
 
-    // Only compacts raw JSON (tree in, tree out), which no setting of JacksonConfig affects
     private static final JsonMapper MAPPER = JsonMapper.shared();
     private static final Set<String> BINARY_TYPES = Set.of("image", "video", "audio");
 

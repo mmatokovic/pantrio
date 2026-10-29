@@ -29,7 +29,6 @@ class WebConfig implements WebMvcConfigurer {
 
     @Override
     public void configureApiVersioning(ApiVersionConfigurer configurer) {
-        // Only /api/** is versioned; springdoc, actuator and static resources have no version segment
         configurer.usePathSegment(VERSION_PATH_SEGMENT, path -> path.value().startsWith(apiProperties.basePath() + "/"))
             .addSupportedVersions(apiProperties.supportedVersions().toArray(String[]::new))
             .setVersionRequired(false);

@@ -7,7 +7,7 @@ import dev.mmatokovic.pantrio.domain.product.ProductResponse;
 import dev.mmatokovic.pantrio.domain.validation.Barcode;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
-import org.jspecify.annotations.Nullable;
+import org.jspecify.annotations.NonNull;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -39,13 +39,13 @@ public class JobManagementController {
     }
 
     @PostMapping("/job")
-    public ResponseEntity<@Nullable Void> executeJob() {
+    public ResponseEntity<@NonNull Void> executeJob() {
         jobManagementService.execute();
         return ResponseEntity.accepted().build();
     }
 
     @DeleteMapping("/job")
-    public ResponseEntity<@Nullable Void> interruptJob() {
+    public ResponseEntity<@NonNull Void> interruptJob() {
         jobManagementService.interrupt(JOB_NAME);
         return ResponseEntity.accepted().build();
     }
@@ -56,7 +56,7 @@ public class JobManagementController {
     }
 
     @PutMapping("/job/state")
-    public ResponseEntity<@Nullable Void> changeJobState(@RequestParam("state") JobStateEnum state) {
+    public ResponseEntity<@NonNull Void> changeJobState(@RequestParam("state") JobStateEnum state) {
         jobManagementService.changeState(JOB_NAME, state);
         return ResponseEntity.ok().build();
     }

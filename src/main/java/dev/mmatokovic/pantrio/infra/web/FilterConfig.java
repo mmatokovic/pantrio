@@ -11,7 +11,6 @@ class FilterConfig {
     @Bean
     FilterRegistrationBean<ShallowEtagHeaderFilter> etagFilter() {
         var etagFilter = new ShallowEtagHeaderFilter();
-        // A weak ETag ("W/...") still lets Tomcat gzip the response
         etagFilter.setWriteWeakETag(true);
 
         var filter = new FilterRegistrationBean<>(etagFilter);

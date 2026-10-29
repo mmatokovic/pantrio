@@ -74,35 +74,32 @@ public final class RestClientRequestLogger implements ClientHttpRequestIntercept
         return HttpLoggingUtils.normalizeBody(body, contentType == null ? null : contentType.toString(), properties.maxBodyBytes());
     }
 
-    @RequiredArgsConstructor
-    private static final class BufferedClientHttpResponse implements ClientHttpResponse {
+    private record BufferedClientHttpResponse(ClientHttpResponse response, InputStream body) implements ClientHttpResponse {
 
-        private final ClientHttpResponse response;
-        private final InputStream body;
+            @Override
+            public @NonNull InputStream getBody() {
+                return body;
+            }
 
-        @Override
-        public @NonNull InputStream getBody() {
-            return body;
-        }
+            @Override
+            public @NonNull HttpStatusCode getStatusCode() throws IOException {
+                return response.getStatusCode();
+            }
 
-        @Override
-        public @NonNull HttpStatusCode getStatusCode() throws IOException {
-            return response.getStatusCode();
-        }
+            @Override
+            public @NonNull String getStatusText() throws IOException {
+                return response.getStatusText();
+            }
 
-        @Override
-        public @NonNull String getStatusText() throws IOException {
-            return response.getStatusText();
-        }
+            @Override
+            public @NonNull HttpHeaders getHeaders() {
+                return response.getHeaders();
+            }
 
-        @Override
-        public @NonNull HttpHeaders getHeaders() {
-            return response.getHeaders();
-        }
+            @Override
+            public void close() {
+                response.close();
+            }
 
-        @Override
-        public void close() {
-            response.close();
-        }
     }
 }

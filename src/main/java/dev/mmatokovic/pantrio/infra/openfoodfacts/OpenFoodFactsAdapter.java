@@ -45,7 +45,6 @@ public class OpenFoodFactsAdapter implements ProductRepository {
             .onStatus(
                 status -> status == HttpStatus.TOO_MANY_REQUESTS,
                 (clientRequest, clientResponse) -> {
-                    // Treated as a server error so @Retryable backs off and tries again
                     throw new HttpServerErrorException(HttpStatus.TOO_MANY_REQUESTS, "Rate limited by OpenFoodFacts");
                 })
             .body(OpenFoodFactsProductResponse.class);
