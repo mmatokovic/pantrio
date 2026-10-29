@@ -9,6 +9,9 @@ RUN java -Djarmode=tools -jar app.jar extract --layers --launcher --destination 
 
 FROM eclipse-temurin:25-jre-alpine@sha256:b7528962e65d43064d8a8b67ba175367896bc948363ea2d3fcd7f10d34e1f048
 
+# The pinned base lags behind Alpine security fixes until Temurin publishes a new digest
+RUN apk upgrade --no-cache
+
 ENV SERVER_PORT=8080
 ENV TZ=Europe/Zagreb
 ENV JAVA_TOOL_OPTIONS="-XX:MaxRAMPercentage=75"
