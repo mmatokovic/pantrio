@@ -9,7 +9,7 @@ import dev.mmatokovic.pantrio.domain.storage.StorageResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.jspecify.annotations.Nullable;
+import org.jspecify.annotations.NonNull;
 import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
@@ -61,7 +61,7 @@ public class StorageController {
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<@Nullable Void> delete(@PathVariable Long id) {
+    public ResponseEntity<@NonNull Void> delete(@PathVariable Long id) {
         storageService.deleteStorage(id);
         return ResponseEntity.noContent().build();
     }
@@ -93,8 +93,8 @@ public class StorageController {
     }
 
     @DeleteMapping("/{storageId}/items/{itemId}")
-    public ResponseEntity<@Nullable Void> consumeItem(@PathVariable Long storageId,
-                                             @PathVariable Long itemId) {
+    public ResponseEntity<@NonNull Void> consumeItem(@PathVariable Long storageId,
+                                                     @PathVariable Long itemId) {
         storageService.deleteInstance(storageId, itemId);
         return ResponseEntity.noContent().build();
     }
