@@ -43,8 +43,8 @@
         <!-- BooleanParameter: team does not use inline argument comments -->
         <!-- XepExcludedPaths: MapStruct implementations are generated code -->
         <error-prone.flags>-XepAllDisabledChecksAsWarnings -XepExcludedPaths:.*/target/generated-.*sources/.* -Xep:PrivateConstructorForUtilityClass:OFF -Xep:Var:OFF -Xep:IdentifierName:OFF -Xep:VarWithPrimitive:OFF -Xep:Java8ApiChecker:OFF -Xep:AddNullMarkedToClass:OFF -Xep:ImmutableMemberCollection:OFF -Xep:UnnecessarySemicolon:OFF -Xep:BooleanParameter:OFF -Xep:MissingJavadoc:OFF</error-prone.flags>
-        <failsafe.version>3.6.0</failsafe.version>
-        <jacoco.version>0.8.15</jacoco.version>
+        <failsafe.version>3.6.1</failsafe.version>
+        <jacoco.version>0.8.16</jacoco.version>
         <argLine/>
     </properties>
     <dependencies>
