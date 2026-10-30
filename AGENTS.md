@@ -1,6 +1,6 @@
-# CLAUDE.md
+# AGENTS.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository. What the service
+Guidance for coding agents working in this repository. What the service
 is, how to run it and its endpoints are in README.md.
 
 ## Commands
@@ -59,7 +59,7 @@ The primary config file is `src/main/resources/application.properties`. Key prop
 
 ## Architecture
 
-Pantrio is a Spring Boot 4.1 / Java 25 pantry inventory management app. It applies **CQRS at the API layer** — controllers expose separate command (mutating) and query (read) operations. It is an API only, with no UI. It follows the Crosig integration-team conventions (the `integration-team:spring-boot` skill; the `household` service is the reference implementation).
+Pantrio is a Spring Boot 4.1 / Java 25 pantry inventory management app. It applies **CQRS at the API layer** — controllers expose separate command (mutating) and query (read) operations. It is an API only, with no UI. It follows the Crosig integration-team conventions (the team's `spring-boot` skill; the `household` service is the reference implementation).
 
 ### Package layout (`dev.mmatokovic.pantrio`)
 
@@ -118,4 +118,4 @@ All dependency versions are declared in the root `pom.xml` (Dependabot opens wee
 
 ### Git
 
-Never add Claude attribution (`Co-Authored-By: Claude`, "Generated with Claude Code") to commits or pull requests.
+Never add AI attribution (`Co-Authored-By` lines for an AI agent, "Generated with …" footers) to commits or pull requests.
