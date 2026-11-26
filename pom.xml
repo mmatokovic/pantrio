@@ -39,7 +39,7 @@
         <wiremock.version>4.4.3</wiremock.version>
         <checkstyle.version>14.3.0</checkstyle.version>
         <error-prone.version>2.51.0</error-prone.version>
-        <nullaway.version>0.14.3</nullaway.version>
+        <nullaway.version>0.14.4</nullaway.version>
         <!-- BooleanParameter: team does not use inline argument comments -->
         <!-- XepExcludedPaths: MapStruct implementations are generated code -->
         <error-prone.flags>-XepAllDisabledChecksAsWarnings -XepExcludedPaths:.*/target/generated-.*sources/.* -Xep:PrivateConstructorForUtilityClass:OFF -Xep:Var:OFF -Xep:IdentifierName:OFF -Xep:VarWithPrimitive:OFF -Xep:Java8ApiChecker:OFF -Xep:AddNullMarkedToClass:OFF -Xep:ImmutableMemberCollection:OFF -Xep:UnnecessarySemicolon:OFF -Xep:BooleanParameter:OFF -Xep:MissingJavadoc:OFF</error-prone.flags>
